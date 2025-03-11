@@ -1,0 +1,70 @@
+<div class="detalle-trabajador-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h3>Panel de Trabajadores</h3>
+    <ul class="nav flex-column">
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
+    </ul>
+    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+  </div>
+
+  <!-- Contenido Principal -->
+  <div class="main-content">
+    <div class="content-container">
+      <!-- Botón de regresar -->
+      <button class="btn-regresar" (click)="regresar()">⬅️ Regresar</button>
+
+      <!-- Información del Trabajador -->
+      <div class="info-trabajador">
+        <h2>Información del Trabajador 🛠️</h2>
+        <div class="info-campos">
+          <label>Nombre:
+            <input type="text" [(ngModel)]="trabajador.nombre" [readonly]="rolUsuario === 'Revisor' || !modoEdicion">
+          </label>
+          <label>Correo:
+            <input type="email" [(ngModel)]="trabajador.correo" [readonly]="rolUsuario === 'Revisor' || !modoEdicion">
+          </label>
+          <label>Teléfono:
+            <input type="text" [(ngModel)]="trabajador.telefono" [readonly]="rolUsuario === 'Revisor' || !modoEdicion">
+          </label>
+          <label>Teléfono de Emergencia:
+            <input type="text" [(ngModel)]="trabajador.telefonoEmergencia" [readonly]="rolUsuario === 'Revisor' || !modoEdicion">
+          </label>
+          <label>Dirección:
+            <input type="text" [(ngModel)]="trabajador.direccion" [readonly]="rolUsuario === 'Revisor' || !modoEdicion">
+          </label>
+          <label>Sede:
+            <select [(ngModel)]="trabajador.sede" disabled> <!-- 🔥 Deshabilitado para todos -->
+              <option *ngFor="let key of sedeKeys" [value]="key">
+                {{ sedeNombres[+key] }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Botones de Editar/Cancelar y Actualizar -->
+        <div class="botones">
+          <button class="btn-editar" *ngIf="rolUsuario !== 'Revisor'" (click)="toggleEditar()" [ngClass]="{'btn-cancelar': modoEdicion}">
+            <ng-container *ngIf="!modoEdicion">✏️ Editar</ng-container>
+            <ng-container *ngIf="modoEdicion">❌ Cancelar</ng-container>
+          </button>
+          <button class="btn-actualizar" *ngIf="rolUsuario !== 'Revisor'"  (click)="actualizarTrabajador()" [disabled]="!modoEdicion">💾 Actualizar</button>
+        </div>
+
+        <!-- Mensaje para el revisor -->
+        <div class="mensaje-revisor" *ngIf="rolUsuario === 'Revisor'">
+          🔒 Solo puedes visualizar los detalles del trabajador.
+        </div>
+      </div>
+
+      <!-- Calendario de Asistencias -->
+      <div class="calendario-container">
+        <h3>📅 Calendario de Asistencias</h3>
+        <app-calendario [asistencias]="trabajador.asistencias"></app-calendario>
+      </div>
+    </div>
+  </div>
+</div>

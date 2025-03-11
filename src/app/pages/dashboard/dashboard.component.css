@@ -1,0 +1,151 @@
+/* 📌 Contenedor principal del dashboard */
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  background: url('../../../assets/dashboard.webp') no-repeat center center fixed;
+  background-size: cover;
+}
+
+/* 📌 Sidebar (Menú lateral) */
+.sidebar {
+  background-color: #343a40;
+  color: white;
+  padding: 15px;
+  width: 250px; /* Ancho fijo del sidebar */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 📌 Título del sidebar */
+.sidebar h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* 📌 Estilo para los botones del sidebar */
+.nav {
+  width: 100%;
+}
+
+.nav-item {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.btn-sidebar {
+  width: 100%;
+  color: white;
+  text-align: left;
+  padding: 12px 15px;
+  background-color: #495057;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-sidebar:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+/* 📌 Botón de cierre de sesión */
+.btn-logout {
+  background-color: #dc3545;
+  width: 100%;
+  padding: 12px;
+  border-radius: 5px;
+  margin-top: 20px;
+  font-size: 1rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-logout:hover {
+  background-color: #c82333;
+}
+
+/* 📌 Contenido principal */
+.main-content {
+  flex-grow: 1;
+  margin-left: 250px; /* Espacio para el sidebar */
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centramos el contenido */
+  justify-content: flex-start; /* Alineamos el contenido arriba */
+  width: calc(100% - 250px); /* Ancho restante */
+  border-radius: 10px;
+  overflow-y: auto;
+}
+
+/* 📌 Tarjeta de bienvenida */
+.welcome-card {
+  width: 90%; /* Ocupa el 90% del espacio disponible */
+  max-width: 800px; /* Ancho máximo */
+  background: rgba(255, 255, 255, 0.9); /* Fondo blanco semitransparente */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: left; /* Alineamos el texto a la izquierda */
+  margin-bottom: 20px;
+}
+
+/* 📌 Contenedor de estadísticas */
+.stats-container {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Tarjetas más compactas */
+  width: 90%; /* Ocupa el 90% del espacio disponible */
+  max-width: 800px; /* Ancho máximo */
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.9); /* Fondo blanco semitransparente */
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 📌 Cards de estadísticas */
+.card {
+  background-color: rgba(255, 255, 255, 0.9); /* Fondo blanco semitransparente */
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  width: 100%;
+  text-align: left; /* Alineamos el texto a la izquierda */
+}
+
+/* 📌 Estilo adicional para mat-card */
+mat-card {
+  padding: 20px;
+}
+
+/* 📌 Ajustes responsivos */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    position: absolute;
+    left: -250px;
+    transition: left 0.3s;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 20px;
+  }
+}

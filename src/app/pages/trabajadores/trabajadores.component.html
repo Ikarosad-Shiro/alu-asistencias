@@ -1,0 +1,130 @@
+<div class="admin-dashboard-container">
+  <!-- 📌 Sidebar -->
+  <div class="sidebar">
+    <h3>Panel de Trabajadores</h3>
+    <ul class="nav flex-column">
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
+    </ul>
+    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+  </div>
+
+  <!-- 📌 Contenido principal -->
+  <div class="main-content">
+    <div class="content-container">
+      <div class="welcome-card">
+        <h2>Lista de Trabajadores 👷</h2>
+        <p>Gestiona los trabajadores registrados en el sistema.</p>
+      </div>
+
+      <!-- 📌 Barra de búsqueda y filtrado -->
+      <div class="search-container">
+        <input type="text" placeholder="Buscar por nombre..." [(ngModel)]="filtroNombre">
+        <select [(ngModel)]="filtroSede">
+          <option value="">Todas las sedes</option>
+          <option *ngFor="let sede of sedeKeys" [value]="sede">
+            {{ sedeNombres[+sede] }}
+          </option>
+        </select>
+        <button class="btn-buscar" (click)="filtrarTrabajadores()">🔍 Buscar</button>
+      </div>
+
+      <!-- 📌 Formulario para agregar trabajadores -->
+      <div class="add-worker-form" *ngIf="rolUsuario !== 'Revisor'">
+        <input type="text" placeholder="Nombre del trabajador" #nombre>
+        <select #sede class="custom-select">
+          <option *ngFor="let key of sedeKeys" [value]="key">
+            {{ sedeNombres[+key] }}
+          </option>
+        </select>
+        <button class="btn-agregar" (click)="abrirModalAgregar(nombre.value, sede.value)">➕ Agregar</button>
+      </div>
+
+      <!-- 📌 Botón para actualizar la tabla -->
+      <div class="update-table-container">
+        <button class="btn-update" (click)="actualizarTabla()">🔄 Actualizar Tabla</button>
+      </div>
+
+      <!-- 📌 Tabla de trabajadores -->
+      <div class="user-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Sede</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let trabajador of trabajadoresFiltrados">
+              <td>{{ trabajador.nombre }}</td>
+              <td>{{ sedeNombres[trabajador.sede] || 'Desconocida' }}</td>
+              <td>
+                <span [ngClass]="{'activo': trabajador.sincronizado, 'pendiente': !trabajador.sincronizado}">
+                  {{ trabajador.sincronizado ? '✅ Sincronizado' : '⏳ Pendiente' }}
+                </span>
+              </td>
+              <td class="btn-actions">
+                <button class="btn-view" (click)="verTrabajador(trabajador._id!)">
+                  <i class="fas fa-eye"></i> Ver
+                </button>
+                <button
+                class="btn-delete"
+                *ngIf="rolUsuario !== 'Revisor'"
+                (click)="abrirModalEliminar(trabajador._id!)"
+                title="Eliminar Trabajador">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para ingresar la contraseña -->
+  <div class="modal" *ngIf="mostrarModalContrasena">
+    <div class="modal-content">
+      <h3>🔒 Ingresa tu contraseña</h3>
+      <input type="password" placeholder="Contraseña" [(ngModel)]="contrasena" class="input-contraseña" />
+      <div class="modal-buttons">
+        <button class="btn-confirmar" (click)="confirmarAgregarTrabajador()">Confirmar</button>
+        <button class="btn-cancelar" (click)="cerrarModalContrasena()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para confirmar eliminación -->
+  <div class="modal" *ngIf="mostrarModalEliminar">
+    <div class="modal-content">
+      <h3>🗑️ Confirmar Eliminación</h3>
+      <p>¿Estás seguro de que deseas eliminar este trabajador?</p>
+      <input type="password" placeholder="Contraseña" [(ngModel)]="contrasena" class="input-contraseña" />
+      <div class="modal-buttons">
+        <button class="btn-confirmar" (click)="confirmarEliminarTrabajador()">Eliminar</button>
+        <button class="btn-cancelar" (click)="cerrarModalEliminar()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para mensajes personalizados -->
+  <div class="modal" *ngIf="mostrarModalMensaje">
+    <div class="modal-content" [ngClass]="{
+      'modal-exito': tipoMensajeModal === 'exito',
+      'modal-error': tipoMensajeModal === 'error',
+      'modal-advertencia': tipoMensajeModal === 'advertencia'
+    }">
+      <h3 *ngIf="tipoMensajeModal === 'exito'">🟢 Éxito</h3>
+      <h3 *ngIf="tipoMensajeModal === 'error'">🔴 Error</h3>
+      <h3 *ngIf="tipoMensajeModal === 'advertencia'">🟡 Advertencia</h3>
+      <p>{{ mensajeModal }}</p>
+      <button class="btn-cerrar" (click)="cerrarModalMensaje()">Aceptar</button>
+    </div>
+  </div>
+
+</div>

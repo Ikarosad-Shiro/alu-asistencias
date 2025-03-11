@@ -1,0 +1,66 @@
+<div class="admin-dashboard-container">
+  <!-- 📌 Barra lateral -->
+  <div class="sidebar">
+    <h3>Admin Panel</h3>
+    <ul class="nav flex-column">
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
+    </ul>
+    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+  </div>
+
+  <!-- 📌 Contenido principal -->
+  <div class="main-content">
+    <div class="content-container">
+      <div class="welcome-card">
+        <h2>Lista de Usuarios 📋</h2>
+        <p>Gestiona los usuarios registrados en el sistema.</p>
+      </div>
+
+      <!-- 📌 Tabla de usuarios con funcionalidades -->
+      <div class="user-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let usuario of usuarios">
+              <td>{{ usuario.nombre }}</td>
+              <td>{{ usuario.email }}</td>
+              <td>
+              <!-- 📌 Dropdown para cambiar el rol (Bloqueado si el usuario es "Dios") -->
+              <select [(ngModel)]="usuario.rol" (change)="cambiarRol(usuario)" [disabled]="usuario.rol === 'Dios'">
+                <option value="Revisor">Revisor</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Dios">Dios</option>
+              </select>
+              </td>
+              <td>
+                <!-- 📌 Toggle para activar/inactivar usuario -->
+                <button class="btn-estado" (click)="confirmarDesactivar(usuario)" [disabled]="usuario.rol === 'Dios'">
+                  <span *ngIf="usuario.activo" class="activo">✔️ Activo</span>
+                  <span *ngIf="!usuario.activo" class="inactivo">❌ Inactivo</span>
+                </button>
+              </td>
+              <td>
+                <!-- 📌 Botón de eliminación con confirmación (Bloqueado si es "Dios") -->
+              <button class="btn-delete" (click)="confirmarEliminar(usuario)" [disabled]="usuario.rol === 'Dios'">
+                🗑️
+              </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,45 @@
+<div class="dashboard-container">
+  <!-- Barra lateral -->
+  <div class="sidebar">
+    <h3>Dashboard</h3>
+    <ul class="nav flex-column">
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">🏢 Sedes</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
+      <li class="nav-item" *ngIf="esAdmin()">
+        <button class="btn-sidebar" routerLink="/admin-dashboard">📋 Ver Usuarios</button>
+      </li>
+    </ul>
+    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="main-content">
+    <div class="content-container">
+      <!-- Contenedor de bienvenida -->
+      <div class="welcome-card">
+        <h2>Bienvenido, {{ usuarioNombre }} 👋</h2>
+        <p>Selecciona una opción del menú para comenzar.</p>
+      </div>
+
+      <!-- Contenedor de estadísticas -->
+      <div class="stats-container">
+        <div class="card">
+          <h3>📊 Asistencia Diaria</h3>
+          <p>Aquí irá la información de asistencia diaria.</p>
+        </div>
+
+        <div class="card">
+          <h3>📍 Asistencia por Sede</h3>
+          <p>Aquí irá la información de asistencia por sede.</p>
+        </div>
+
+        <div class="card">
+          <h3>📅 Comparación Mensual</h3>
+          <p>Aquí irá la comparación de asistencia mensual.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

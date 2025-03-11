@@ -1,0 +1,212 @@
+/* 📌 Contenedor principal */
+.admin-dashboard-container {
+  display: flex;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  background: url('../../../assets/dashboard.webp') no-repeat center center fixed;
+  background-size: cover;
+}
+/* 📌 Sidebar (Menú lateral) */
+.sidebar {
+  background-color: #343a40;
+  color: white;
+  padding: 15px;
+  width: 250px; /* Ancho fijo del sidebar */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 📌 Título del sidebar */
+.sidebar h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* 📌 Estilo para los botones del sidebar */
+.nav {
+  width: 100%;
+}
+
+.nav-item {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.btn-sidebar {
+  width: 100%;
+  color: white;
+  text-align: left;
+  padding: 12px 15px;
+  background-color: #495057;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-sidebar:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+/* 📌 Botón de cierre de sesión */
+.btn-logout {
+  background-color: #dc3545;
+  width: 100%;
+  padding: 12px;
+  border-radius: 5px;
+  margin-top: 20px;
+  font-size: 1rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-logout:hover {
+  background-color: #c82333;
+}
+
+/* 📌 Contenido principal */
+.main-content {
+  flex-grow: 1;
+  margin-left: 250px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* 📌 Lo movemos más a la izquierda */
+  justify-content: flex-start;
+  width: calc(100% - 250px);
+  border-radius: 10px;
+  overflow-y: auto;
+  padding-left: 150px; /* 📌 Agregamos un margen para que no pegue tanto */
+}
+
+/* 📌 Tarjeta de bienvenida */
+.welcome-card {
+  width: 500%; /* 📌 Reducimos un poco el ancho */
+  max-width: 750px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  margin-bottom: 20px;
+  margin-left: 0; /* 📌 Alineamos a la izquierda */
+}
+
+/* 📌 Contenedor de la tabla */
+.user-table {
+  width: 900%; /* 📌 Reducimos el ancho */
+  max-width: 750px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  overflow-x: auto;
+  margin-left: 0; /* 📌 Alineamos a la izquierda */
+}
+
+/* 📌 Tabla de usuarios */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #007bff;
+  color: white;
+}
+
+/* 📌 Estado de usuario */
+.activo {
+  color: green;
+  font-weight: bold;
+}
+
+.inactivo {
+  color: red;
+  font-weight: bold;
+}
+
+/* 📌 Botón de activación/inactivación */
+.btn-estado {
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.activo {
+  color: green;
+  font-weight: bold;
+}
+
+.inactivo {
+  color: red;
+  font-weight: bold;
+}
+
+/* 📌 Dropdown de roles */
+select {
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+/* 📌 Botón de eliminación */
+.btn-delete {
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: red;
+  transition: transform 0.2s;
+}
+
+.btn-delete:hover {
+  transform: scale(1.2);
+}
+
+/* 📌 Ajustes responsivos */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    position: absolute;
+    left: -250px;
+    transition: left 0.3s;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 20px;
+    align-items: center; /* 📌 En pantallas pequeñas, centramos */
+  }
+
+  .welcome-card,
+  .user-table {
+    width: 100%;
+    margin-left: 0;
+  }
+}

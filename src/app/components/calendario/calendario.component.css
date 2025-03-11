@@ -1,0 +1,145 @@
+/* 📅 Estilos generales del calendario */
+.calendario {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+/* 📅 Header del calendario */
+.calendario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.calendario-header button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.calendario-header button:hover {
+  background-color: #0056b3;
+}
+
+/* 📅 Estilos para la cuadrícula */
+.calendario-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.dia-header {
+  font-weight: bold;
+  text-align: center;
+  padding: 0.3rem 0;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+}
+
+/* 🟢 Entradas, 🔴 Salidas, 🔵 Automáticas, 🟡 Pendientes */
+.dia-asistencia {
+  background-color: #f0f8ff;
+  border-radius: 4px;
+  padding: 5px;
+  text-align: center;
+  position: relative;
+  transition: background-color 0.3s;
+}
+
+.dia-asistencia:hover {
+  background-color: #e0f7fa;
+}
+
+/* 🔄 Marcadores de asistencia */
+.marcador-asistencia {
+  display: inline-block;
+  margin-top: 2px;
+  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 🟢 Entrada */
+.entrada {
+  background-color: #4caf50;
+}
+
+/* 🔴 Salida */
+.salida {
+  background-color: #f44336;
+}
+
+/* 🔵 Salida Automática */
+.automatica {
+  background-color: #40a9ff;
+}
+
+/* 🟡 Pendiente */
+.pendiente {
+  background-color: #ffd966;
+}
+
+/* 📅 Estilos para los diferentes estados del día */
+.estado-pendiente {
+  background-color: #fffbe6;
+  border: 1px solid #ffd966;
+  border-radius: 4px;
+}
+
+.estado-completa {
+  background-color: #e6ffed;
+  border: 1px solid #57d957;
+  border-radius: 4px;
+}
+
+.estado-automatica {
+  background-color: #e6f7ff;
+  border: 1px solid #40a9ff;
+  border-radius: 4px;
+}
+
+/* 🟢 Estilo para el día actual */
+.dia-actual {
+  border: 2px solid #007bff;
+  background-color: #e0f7fa;
+  border-radius: 4px;
+}
+
+/* 📅 Estilo para días en blanco (sin asistencia) */
+.calendario-grid > div:not(.dia-asistencia) {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.calendario-grid > div:not(.dia-asistencia):hover {
+  background-color: #f0f0f0;
+}
+
+/* Estilos para el tooltip */
+.detalles-tooltip {
+  position: absolute;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  z-index: 1000;
+  display: none;
+}
+
+.dia-asistencia:hover .detalles-tooltip {
+  display: block;
+}

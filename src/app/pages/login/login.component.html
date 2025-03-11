@@ -1,0 +1,58 @@
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+  <div class="row w-100 align-items-center">
+    <!-- Sección del logo -->
+    <div class="col-md-6 d-flex align-items-center justify-content-center">
+      <img src="assets/logo_mio.png" alt="Logo Personalizado" class="logo-image">
+    </div>
+
+    <!-- Sección del formulario de login -->
+    <div class="col-md-6 d-flex align-items-center justify-content-center">
+      <div class="card p-4 login-card">
+        <h2 class="text-center mb-4">Iniciar Sesión</h2>
+
+        <!-- ✅ Mensaje de éxito si el usuario verificó su cuenta -->
+        <div *ngIf="successMessage" class="alert alert-success text-center">
+          {{ successMessage }}
+        </div>
+
+        <!-- ❌ Mensaje de error si las credenciales son incorrectas -->
+        <div *ngIf="errorMessage" class="alert alert-danger text-center">
+          {{ errorMessage }}
+        </div>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="form-login">
+          <!-- Campo de Correo Electrónico -->
+          <div class="mb-3">
+            <label class="form-label">Correo Electrónico</label>
+            <input matInput type="email" class="form-control" formControlName="email" placeholder="Ingresa tu correo">
+            <div *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid" class="text-danger">
+              ⚠️ Proporcione un correo electrónico válido.
+            </div>
+          </div>
+
+          <!-- Campo de Contraseña -->
+          <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input matInput type="password" class="form-control" formControlName="password" placeholder="Ingresa tu contraseña">
+            <div *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="text-danger">
+              ⚠️ La contraseña es obligatoria y debe tener al menos 6 caracteres.
+            </div>
+          </div>
+
+          <!-- Botón de Iniciar Sesión -->
+          <div class="button-container">
+            <button mat-raised-button color="primary" class="full-width" [disabled]="loginForm.invalid">
+              Iniciar Sesión
+            </button>
+
+            <!-- Enlace a Registro y Recuperación de Contraseña -->
+            <div class="login-link">
+              <a routerLink="/register" class="btn-link">¿No tienes cuenta? Regístrate</a>
+              <a routerLink="/forgot-password" class="btn-link">¿Olvidaste tu contraseña?</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

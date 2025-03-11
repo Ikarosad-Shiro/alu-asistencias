@@ -1,0 +1,147 @@
+/* Estilos generales */
+:host {
+  display: block;
+  height: 100vh;
+  position: relative;
+  background-image: url('../../../assets/Fondo_Login.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* Fondo fijo */
+}
+
+/* Capa oscura sobre la imagen de fondo */
+:host::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+/* Contenedor principal */
+.container-fluid {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100vh;
+  overflow-y: auto;
+  padding-right: 10%;
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Logo */
+.logo-image {
+  max-width: 35%;
+  height: auto;
+  margin: auto;
+  display: block;
+}
+
+/* Sección del formulario */
+.card {
+  position: relative;
+  z-index: 2;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  width: 350px; /* Tamaño uniforme con el registro */
+  padding: 30px;
+}
+
+/* Títulos */
+h2 {
+  color: #ffffff;
+  text-align: center;
+}
+
+/* Etiquetas (Labels) */
+.form-label {
+  color: #dacfcf;
+  font-weight: bold;
+  display: block;
+  text-align: left;
+  margin-bottom: 5px;
+}
+
+/* Campos de entrada */
+.form-control {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid #9e3d96;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  height: 40px;
+  box-shadow: inset 0 1px 3px rgba(133, 59, 136, 0.637);
+  transition: all 0.3s ease;
+  width: 95%;
+}
+
+.form-control:focus {
+  box-shadow: 0 0 8px rgba(80, 7, 163, 0.5);
+  border-color: #5d0dc5;
+}
+
+::placeholder {
+  color: #e0e0e0;
+}
+
+/* Contenedor de los botones */
+.button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 15px;
+}
+
+/* Botón */
+button {
+  margin-top: 10px;
+  width: 80%;
+  background-color: #007bff !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Enlaces */
+.btn-link {
+  color: #9e3d96;
+  text-decoration: none;
+  font-weight: bold;
+  text-align: center;
+  display: block;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+  color: #c05bb7;
+}

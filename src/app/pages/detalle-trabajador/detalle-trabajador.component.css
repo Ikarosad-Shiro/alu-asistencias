@@ -1,0 +1,262 @@
+/* 📌 Contenedor principal con fondo y estilo del dashboard */
+.detalle-trabajador-container {
+  display: flex;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  background: url('../../../assets/dashboard.webp') no-repeat center center fixed;
+  background-size: cover;
+  overflow-x: hidden; /* 🔥 Evitar scroll horizontal */
+}
+
+/* 📌 Sidebar (Menú lateral) */
+.sidebar {
+  background-color: #343a40;
+  color: white;
+  padding: 15px;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: left 0.3s; /* 🔥 Transición para menú móvil */
+}
+
+.sidebar h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* 📌 Estilos para los botones del sidebar */
+.btn-sidebar {
+  width: 100%;
+  color: white;
+  text-align: left;
+  padding: 12px 50px;
+  background-color: #495057;
+  border: none;
+  border-radius: 5px;
+  margin-top: 10px;
+  font-size: 1rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-sidebar:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-logout {
+  background-color: #dc3545;
+  width: 100%;
+  padding: 12px;
+  border-radius: 5px;
+  margin-top: 20px;
+  font-size: 1rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-logout:hover {
+  background-color: #c82333;
+}
+
+/* 📌 Contenido principal */
+.main-content {
+  flex-grow: 1;
+  margin-left: 250px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: calc(100% - 250px);
+  border-radius: 10px;
+  overflow-y: auto;
+}
+
+/* 📌 Contenedor de la información del trabajador */
+.content-container {
+  width: 90%;
+  max-width: 800px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 📌 Títulos y etiquetas */
+.info-trabajador h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.info-campos label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #333;
+}
+
+.info-campos input {
+  width: 70%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* 📌 Botones */
+.botones {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.btn-editar, .btn-actualizar {
+  padding: 5px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #fff;
+  transition: background-color 0.3s;
+}
+
+.btn-editar {
+  background-color: #f0ad4e;
+}
+
+.btn-editar:hover {
+  background-color: #e0a800;
+}
+
+.btn-actualizar {
+  background-color: #28a745;
+}
+
+.btn-actualizar:hover {
+  background-color: #218838;
+}
+
+.btn-actualizar:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.btn-cancelar {
+  background-color: #d9534f;
+  color: #fff;
+}
+
+/* 📌 Calendario */
+.calendario-container {
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.calendario-container h3 {
+  text-align: center;
+  color: #333;
+}
+
+/* 📌 Responsividad con Media Queries */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+    position: fixed;
+    left: -200px;
+    z-index: 10;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 10px;
+  }
+
+  .content-container {
+    width: 100%;
+    padding: 15px;
+  }
+
+  .info-campos label {
+    display: block;
+    margin-bottom: 15px;
+  }
+
+  .info-campos input {
+    width: 100%;
+    margin-top: 5px;
+  }
+
+  .botones {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 180px;
+    left: -180px;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  .btn-sidebar {
+    font-size: 0.8rem;
+  }
+
+  .main-content {
+    padding: 5px;
+  }
+
+  .content-container {
+    padding: 10px;
+  }
+
+  .info-campos input {
+    padding: 3px;
+  }
+}
+
+/* 🔥 Botón "Regresar" estilizado */
+.btn-regresar {
+  display: flex;
+  align-items: center;
+  background-color: #6a1275;
+  color: #fff;
+  padding: 5px 15px;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+}
+
+.btn-regresar:hover {
+  background-color: #90409b;
+  transform: scale(1.05);
+}
+
+.btn-regresar:active {
+  transform: scale(0.95);
+}

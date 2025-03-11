@@ -1,0 +1,64 @@
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+  <div class="row w-100 align-items-center">
+    <!-- Sección del logo -->
+    <div class="col-md-6 d-flex align-items-center justify-content-center">
+      <img src="assets/logo_mio.png" alt="Logo Personalizado" class="logo-image">
+    </div>
+
+    <!-- Sección del formulario de registro -->
+    <div class="col-md-6 d-flex align-items-center justify-content-center">
+      <div class="card p-4 login-card">
+        <h2 class="text-center mb-4">Registrarse</h2>
+
+        <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="form-login">
+
+          <!-- Campo de Nombre Completo -->
+          <div class="mb-3">
+            <label class="form-label">Nombre Completo</label>
+            <input matInput type="text" class="form-control" formControlName="nombre" placeholder="Ingresa tu nombre completo">
+            <div *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid" class="text-danger">
+              El nombre completo es obligatorio.
+            </div>
+          </div>
+
+          <!-- Campo de Correo Electrónico -->
+          <div class="mb-3">
+            <label class="form-label">Correo Electrónico</label>
+            <input matInput type="email" class="form-control" formControlName="email" placeholder="Ingresa tu correo">
+            <div *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid" class="text-danger">
+              Proporcione un correo electrónico válido.
+            </div>
+          </div>
+
+          <!-- Campo de Contraseña -->
+          <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input matInput type="password" class="form-control" formControlName="password" placeholder="Ingresa tu contraseña">
+            <div *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" class="text-danger">
+              La contraseña debe tener al menos 6 caracteres.
+            </div>
+          </div>
+
+          <!-- Campo de Confirmar Contraseña -->
+          <div class="mb-3">
+            <label class="form-label">Confirmar Contraseña</label>
+            <input matInput type="password" class="form-control" formControlName="confirmPassword" placeholder="Confirma tu contraseña">
+            <div *ngIf="registerForm.hasError('passwordsMismatch') && registerForm.get('confirmPassword')?.touched" class="text-danger">
+              Las contraseñas no coinciden.
+            </div>
+          </div>
+
+          <!-- Botón de Registro -->
+          <div class="button-container">
+          <button mat-raised-button color="primary" class="full-width">Registrarse</button>
+
+          <!-- Enlace a Login -->
+          <div class="login-link">
+            <a routerLink="/login" class="btn-link">¿Ya tienes cuenta? Inicia Sesión</a>
+          </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
