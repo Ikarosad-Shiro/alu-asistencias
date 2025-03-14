@@ -46,11 +46,11 @@ export class AdminDashboardComponent implements OnInit {
       cancelButtonText: 'Cancelar'
     }).then((result: SweetAlertResult<string>) => {
       if (result.isConfirmed && result.value) {
-        const contraseña = result.value; // Obtener la contraseña ingresada
+        const contraseña = result.value;
 
         const body = {
-          rol: usuario.rol, // 🔥 ENVIAMOS EL ROL QUE SE SELECCIONÓ EN EL `select`
-          contraseña: contraseña  // 🔥 Enviamos la contraseña
+          rol: usuario.rol, // ✅ ENVIAMOS EL ROL QUE REALMENTE SELECCIONÓ
+          contraseña: contraseña
         };
 
         console.log("Enviando datos al backend:", body); // 📌 DEBUG
