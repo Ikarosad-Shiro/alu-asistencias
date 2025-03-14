@@ -141,11 +141,19 @@ export class AdminDashboardComponent implements OnInit {
       cancelButtonText: 'Cancelar'
     }).then((result: SweetAlertResult<string>) => {
       if (result.isConfirmed && result.value) {
-        const contraseña = result.value; // Obtener la contraseña ingresada
+        const contraseña = result.value;
+
         this.userService.verificarContraseña(contraseña).subscribe(
           (response) => {
-            if (response?.valido) { // ✅ Usar el campo "valido" del backend
-              this.eliminarUsuario(usuario._id, contraseña); // 🔥 Enviar contraseña aquí
+            if (response?.valido) {
+              // 🚀🔥 Validación nueva: Evitar que un Administrador elimine a otro Administrador
+              const usuarioActual = JSON.parse(localStorage.getItem('usuario') || '{}');
+              if (usuarioActual.rol === 'Administrador' && usuario.rol === 'Administrador') {
+                Swal.fire('🚫 Acción no permitida', 'No puedes eliminar a otro Administrador.', 'error');
+                return;
+              }
+
+              this.eliminarUsuario(usuario._id, contraseña);
             } else {
               Swal.fire('❌ Contraseña incorrecta', 'No puedes realizar esta acción.', 'error');
             }
@@ -158,6 +166,7 @@ export class AdminDashboardComponent implements OnInit {
       }
     });
   }
+
 
   eliminarUsuario(userId: string, contraseña: string) {
     this.userService.eliminarUsuario(userId, contraseña).subscribe(
