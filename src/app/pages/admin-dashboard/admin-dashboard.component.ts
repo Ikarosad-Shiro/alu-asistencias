@@ -48,16 +48,18 @@ export class AdminDashboardComponent implements OnInit {
       if (result.isConfirmed && result.value) {
         const contraseña = result.value; // Obtener la contraseña ingresada
 
-        const nuevoRol = usuario.rol === 'Administrador' ? 'Revisor' : 'Administrador';
         const body = {
-          rol: nuevoRol,
-          contraseña: contraseña  // 🔥 Enviar la contraseña junto con el nuevo rol
+          rol: usuario.rol, // 🔥 ENVIAMOS EL ROL QUE SE SELECCIONÓ EN EL `select`
+          contraseña: contraseña  // 🔥 Enviamos la contraseña
         };
 
+        console.log("Enviando datos al backend:", body); // 📌 DEBUG
+
         this.userService.actualizarUsuario(usuario._id, body).subscribe(
-          () => {
-            Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
-            this.cargarUsuarios(); // Recargar la lista de usuarios
+          (response) => {
+            console.log("✅ Respuesta del backend:", response); // 📌 DEBUG
+            Swal.fire('✅ Rol actualizado', `El usuario ahora es ${usuario.rol}`, 'success');
+            this.cargarUsuarios(); // 🔥 RECARGAMOS LISTA PARA REFLEJAR EL CAMBIO
           },
           (error) => {
             console.error('❌ Error al actualizar el rol:', error);
