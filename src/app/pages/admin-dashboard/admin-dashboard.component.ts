@@ -36,66 +36,56 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
-    // 🚀🔥 Obtener el usuario actual de localStorage
-    let usuarioActual = localStorage.getItem('usuario');
-
-    if (!usuarioActual) {
-      // Si no está en localStorage, intentamos obtenerlo del backend
-      this.userService.obtenerPerfil().subscribe(
-        (data: any) => { // 🔥 Agregamos "any" para evitar error
-          usuarioActual = JSON.stringify(data);
-          localStorage.setItem('usuario', usuarioActual); // Guardamos para futuras consultas
-          this.procesarCambioRol(usuario, JSON.parse(usuarioActual)); // 🔥 Ahora sí verificamos el rol
-        },
-        (error: any) => { // 🔥 Agregamos "any" para evitar error
-          console.error('❌ Error al obtener perfil del usuario:', error);
-          Swal.fire('❌ Error', 'No se pudo obtener tu información de usuario.', 'error');
+    // Obtener el perfil del usuario autenticado para validar permisos
+    this.userService.obtenerPerfil().subscribe(
+      (perfil) => {
+        if (perfil.rol === 'Administrador' && usuario.rol === 'Administrador') {
+          Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro administrador.', 'error');
+          return;
         }
-      );
-    } else {
-      this.procesarCambioRol(usuario, JSON.parse(usuarioActual)); // 🔥 Llamamos a la función de verificación
-    }
-  }
 
-  procesarCambioRol(usuario: any, usuarioActual: any) {
-    if (usuarioActual.rol === 'Administrador' && usuario.rol === 'Administrador') {
-      Swal.fire({
-        icon: 'warning',
-        title: '⚠️ Acción no permitida',
-        text: 'No puedes cambiarle el rol a otro Administrador.',
-        confirmButtonText: 'Entendido'
-      });
-      return;
-    }
+        if (perfil.rol === 'Administrador' && usuario.rol === 'Revisor') {
+          Swal.fire('🚫 Acción no permitida', 'No puedes bajar a un administrador a revisor.', 'error');
+          return;
+        }
 
-    Swal.fire({
-      title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
-      input: 'password',
-      inputPlaceholder: 'Contraseña',
-      inputAttributes: { autocapitalize: 'off', type: 'password' },
-      showCancelButton: true,
-      confirmButtonText: 'Confirmar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed && result.value) {
-        const contraseña = result.value;
+        Swal.fire({
+          title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
+          input: 'password',
+          inputPlaceholder: 'Contraseña',
+          inputAttributes: { autocapitalize: 'off', type: 'password' },
+          showCancelButton: true,
+          confirmButtonText: 'Confirmar',
+          cancelButtonText: 'Cancelar'
+        }).then((result: SweetAlertResult<string>) => {
+          if (result.isConfirmed && result.value) {
+            const contraseña = result.value;
 
-        const nuevoRol = usuario.rol === 'Administrador' ? 'Revisor' : 'Administrador';
-        const body = { rol: nuevoRol, contraseña };
+            const body = {
+              rol: usuario.rol,
+              contraseña: contraseña
+            };
 
-        this.userService.actualizarUsuario(usuario._id, body).subscribe(
-          () => {
-            Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
-            this.cargarUsuarios();
-          },
-          (error) => {
-            console.error('❌ Error al actualizar el rol:', error);
-            Swal.fire('Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
+            this.userService.actualizarUsuario(usuario._id, body).subscribe(
+              () => {
+                Swal.fire('✅ Rol actualizado', `El usuario ahora es ${usuario.rol}`, 'success');
+                this.cargarUsuarios(); // Recargar lista
+              },
+              (error) => {
+                console.error('❌ Error al actualizar el rol:', error);
+                Swal.fire('Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
+              }
+            );
           }
-        );
+        });
+      },
+      (error) => {
+        console.error('❌ Error al obtener perfil:', error);
+        Swal.fire('⚠️ Error', 'No se pudo obtener tu información de usuario.', 'error');
       }
-    });
+    );
   }
+
 
   confirmarDesactivar(usuario: any) {
     if (usuario.rol === 'Dios') {
