@@ -36,15 +36,28 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
-    // 🚀🔥 Obtener el usuario actual desde el localStorage de manera segura
-    const usuarioActual = JSON.parse(localStorage.getItem('usuario') || '{}');
+    // 🚀🔥 Obtener el usuario actual de localStorage
+    let usuarioActual = localStorage.getItem('usuario');
 
-    if (!usuarioActual || !usuarioActual.rol) {
-      Swal.fire('❌ Error', 'No se pudo obtener tu información de usuario.', 'error');
-      return;
+    if (!usuarioActual) {
+      // Si no está en localStorage, intentamos obtenerlo del backend
+      this.userService.obtenerPerfil().subscribe(
+        (data: any) => { // 🔥 Agregamos "any" para evitar error
+          usuarioActual = JSON.stringify(data);
+          localStorage.setItem('usuario', usuarioActual); // Guardamos para futuras consultas
+          this.procesarCambioRol(usuario, JSON.parse(usuarioActual)); // 🔥 Ahora sí verificamos el rol
+        },
+        (error: any) => { // 🔥 Agregamos "any" para evitar error
+          console.error('❌ Error al obtener perfil del usuario:', error);
+          Swal.fire('❌ Error', 'No se pudo obtener tu información de usuario.', 'error');
+        }
+      );
+    } else {
+      this.procesarCambioRol(usuario, JSON.parse(usuarioActual)); // 🔥 Llamamos a la función de verificación
     }
+  }
 
-    // 🚀🔥 Nueva validación: Un Administrador NO puede cambiar el rol de otro Administrador
+  procesarCambioRol(usuario: any, usuarioActual: any) {
     if (usuarioActual.rol === 'Administrador' && usuario.rol === 'Administrador') {
       Swal.fire({
         icon: 'warning',
