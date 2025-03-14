@@ -36,6 +36,25 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
+    // 🚀🔥 Obtener el usuario actual desde el localStorage de manera segura
+    const usuarioActual = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    if (!usuarioActual || !usuarioActual.rol) {
+      Swal.fire('❌ Error', 'No se pudo obtener tu información de usuario.', 'error');
+      return;
+    }
+
+    // 🚀🔥 Nueva validación: Un Administrador NO puede cambiar el rol de otro Administrador
+    if (usuarioActual.rol === 'Administrador' && usuario.rol === 'Administrador') {
+      Swal.fire({
+        icon: 'warning',
+        title: '⚠️ Acción no permitida',
+        text: 'No puedes cambiarle el rol a otro Administrador.',
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
     Swal.fire({
       title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
       input: 'password',
@@ -44,22 +63,17 @@ export class AdminDashboardComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Confirmar',
       cancelButtonText: 'Cancelar'
-    }).then((result: SweetAlertResult<string>) => {
+    }).then((result) => {
       if (result.isConfirmed && result.value) {
         const contraseña = result.value;
 
-        const body = {
-          rol: usuario.rol, // ✅ ENVIAMOS EL ROL QUE REALMENTE SELECCIONÓ
-          contraseña: contraseña
-        };
-
-        console.log("Enviando datos al backend:", body); // 📌 DEBUG
+        const nuevoRol = usuario.rol === 'Administrador' ? 'Revisor' : 'Administrador';
+        const body = { rol: nuevoRol, contraseña };
 
         this.userService.actualizarUsuario(usuario._id, body).subscribe(
-          (response) => {
-            console.log("✅ Respuesta del backend:", response); // 📌 DEBUG
-            Swal.fire('✅ Rol actualizado', `El usuario ahora es ${usuario.rol}`, 'success');
-            this.cargarUsuarios(); // 🔥 RECARGAMOS LISTA PARA REFLEJAR EL CAMBIO
+          () => {
+            Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
+            this.cargarUsuarios();
           },
           (error) => {
             console.error('❌ Error al actualizar el rol:', error);
@@ -166,7 +180,6 @@ export class AdminDashboardComponent implements OnInit {
       }
     });
   }
-
 
   eliminarUsuario(userId: string, contraseña: string) {
     this.userService.eliminarUsuario(userId, contraseña).subscribe(
