@@ -36,16 +36,17 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
-    // Obtener el perfil del usuario autenticado para validar permisos
     this.userService.obtenerPerfil().subscribe(
       (perfil) => {
-        if (perfil.rol === 'Administrador' && usuario.rol === 'Administrador') {
-          Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro administrador.', 'error');
+        const usuarioAutenticado = perfil;
+
+        if (usuarioAutenticado.rol === 'Administrador' && usuario.rol === 'Administrador') {
+          Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador.', 'error');
           return;
         }
 
-        if (perfil.rol === 'Administrador' && usuario.rol === 'Revisor') {
-          Swal.fire('🚫 Acción no permitida', 'No puedes bajar a un administrador a revisor.', 'error');
+        if (usuarioAutenticado.rol === 'Administrador' && usuario.rol === 'Revisor') {
+          Swal.fire('🚫 Acción no permitida', 'Solo "Dios" puede degradar un Administrador a Revisor.', 'error');
           return;
         }
 
@@ -60,16 +61,29 @@ export class AdminDashboardComponent implements OnInit {
         }).then((result: SweetAlertResult<string>) => {
           if (result.isConfirmed && result.value) {
             const contraseña = result.value;
+            let nuevoRol = usuario.rol === 'Administrador' ? 'Revisor' : 'Administrador';
+
+            if (nuevoRol === 'Dios') {
+              Swal.fire('🚫 Acción no permitida', 'No puedes asignar el rol de Dios.', 'error');
+              return;
+            }
+
+            // 📌 **Verificamos en la consola lo que se enviará**
+            console.log("🔹 Enviando cambio de rol:", {
+              usuarioId: usuario._id,
+              nuevoRol,
+              contraseña
+            });
 
             const body = {
-              rol: usuario.rol,
+              rol: nuevoRol,
               contraseña: contraseña
             };
 
             this.userService.actualizarUsuario(usuario._id, body).subscribe(
               () => {
-                Swal.fire('✅ Rol actualizado', `El usuario ahora es ${usuario.rol}`, 'success');
-                this.cargarUsuarios(); // Recargar lista
+                Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
+                this.cargarUsuarios();
               },
               (error) => {
                 console.error('❌ Error al actualizar el rol:', error);
@@ -80,12 +94,11 @@ export class AdminDashboardComponent implements OnInit {
         });
       },
       (error) => {
-        console.error('❌ Error al obtener perfil:', error);
-        Swal.fire('⚠️ Error', 'No se pudo obtener tu información de usuario.', 'error');
+        console.error('❌ Error al obtener perfil del usuario:', error);
+        Swal.fire('Error', 'No se pudo obtener tu información de usuario.', 'error');
       }
     );
   }
-
 
   confirmarDesactivar(usuario: any) {
     if (usuario.rol === 'Dios') {
