@@ -48,20 +48,26 @@ export class AdminDashboardComponent implements OnInit {
 
   // Cambiar el rol de un usuario
   cambiarRol(usuario: any) {
+    const userRole = this.getUserRole(); // Obtener el rol del usuario autenticado
+
+    // Validar restricciones
     if (usuario.rol === 'Dios') {
       Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de "Dios".', 'error');
       return;
     }
 
-    // Determinar el nuevo rol
-    let nuevoRol = usuario.rol === 'Revisor' ? 'Administrador' : 'Revisor';
-
-    // Validar reglas de cambio de rol
-    const userRole = this.getUserRole(); // Obtener el rol del usuario autenticado
     if (userRole === 'Administrador' && usuario.rol === 'Administrador') {
       Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador.', 'error');
       return;
     }
+
+    if (userRole === 'Revisor') {
+      Swal.fire('🚫 Acción no permitida', 'No tienes permisos para cambiar roles.', 'error');
+      return;
+    }
+
+    // Determinar el nuevo rol
+    let nuevoRol = usuario.rol === 'Revisor' ? 'Administrador' : 'Revisor';
 
     // Solicitar contraseña para confirmar el cambio
     Swal.fire({
