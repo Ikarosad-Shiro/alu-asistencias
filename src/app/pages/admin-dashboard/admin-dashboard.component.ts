@@ -51,9 +51,7 @@ export class AdminDashboardComponent implements OnInit {
 cambiarRol(usuario: any) {
   const userRole = this.getUserRole(); // Obtener el rol del usuario autenticado
 
-  console.log("🎯 Valor actual de usuario.rol:", usuario.rol); // <-- Log para depuración
-
-  // Validar restricciones
+  // 🚨 Validaciones para evitar cambios indebidos
   if (usuario.rol === 'Dios') {
     Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de "Dios".', 'error');
     return;
@@ -69,17 +67,22 @@ cambiarRol(usuario: any) {
     return;
   }
 
-  // ✅ **Calcular el nuevo rol correctamente**
-  let nuevoRol: string = usuario.rol === 'Revisor' ? 'Administrador' : 'Revisor';
+  // **🚨 Asegurarse de que el nuevo rol se calcula correctamente**
+  console.log("🎯 Valor actual de usuario.rol:", usuario.rol);
 
-  console.log("🎯 Nuevo rol calculado antes de enviar:", nuevoRol); // <-- Verificar que se calcula correctamente
-
-  // **🚀 Asegurarse de que el rol realmente cambió**
-  if (usuario.rol === nuevoRol) {
-    Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
+  let nuevoRol: string;
+  if (usuario.rol === 'Revisor') {
+    nuevoRol = 'Administrador';
+  } else if (usuario.rol === 'Administrador') {
+    nuevoRol = 'Revisor';
+  } else {
+    Swal.fire('🚫 Error', 'Rol no válido.', 'error');
     return;
   }
 
+  console.log("🎯 Nuevo rol calculado antes de enviar:", nuevoRol);
+
+  // 🚀 **Confirmar el cambio con contraseña**
   Swal.fire({
     title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
     input: 'password',
@@ -92,12 +95,13 @@ cambiarRol(usuario: any) {
     if (result.isConfirmed && result.value) {
       const contraseña = result.value;
 
+      // 🚀 **Enviar datos al backend**
       console.log("🚀 Enviando datos al backend:", { usuarioId: usuario._id, nuevoRol });
 
       this.userService.actualizarUsuario(usuario._id, { rol: nuevoRol, contraseña }).subscribe(
         () => {
           Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
-          this.cargarUsuarios();
+          this.cargarUsuarios(); // Recargar la lista de usuarios
         },
         (error) => {
           console.error('❌ Error al actualizar el rol:', error);
@@ -107,6 +111,7 @@ cambiarRol(usuario: any) {
     }
   });
 }
+
   // Confirmar desactivar o activar un usuario
   confirmarDesactivar(usuario: any) {
     if (usuario.rol === 'Dios') {
