@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+
 import { environment } from 'src/environments/environment';  // 🌟 Importa el environment
 
 @Injectable({
@@ -45,6 +46,9 @@ export class UserService {
 
   // 📌 Verificar contraseña antes de eliminar o desactivar
   verificarContraseña(contraseña: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/verificar-password`, { contraseña }, { headers: this.getAuthHeaders() });
+    const token = localStorage.getItem("token");
+    return this.http.post(`${this.apiUrl}/verificar-password`, { contraseña }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
   }
 }
