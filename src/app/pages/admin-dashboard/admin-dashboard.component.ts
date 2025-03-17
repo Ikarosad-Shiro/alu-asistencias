@@ -66,8 +66,16 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
-    // Determinar el nuevo rol
-    let nuevoRol = usuario.rol === 'Revisor' ? 'Administrador' : 'Revisor';
+    // Determinar el nuevo rol explícitamente
+    let nuevoRol;
+    if (usuario.rol === 'Revisor') {
+      nuevoRol = 'Administrador';
+    } else if (usuario.rol === 'Administrador') {
+      nuevoRol = 'Revisor';
+    } else {
+      Swal.fire('🚫 Error', 'Rol no válido.', 'error');
+      return;
+    }
 
     // Solicitar contraseña para confirmar el cambio
     Swal.fire({
