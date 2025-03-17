@@ -50,24 +50,22 @@ export class AdminDashboardComponent implements OnInit {
   // Cambiar el rol de un usuario
   cambiarRol(usuario: any) {
     const userRole = this.getUserRole(); // Obtener el rol del usuario autenticado
+    console.log("📌 Rol actual del usuario antes del cambio:", usuario.rol);
 
-    if (usuario.rol === 'Dios') {
-      Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de "Dios".', 'error');
+    // Determinar el nuevo rol explícitamente
+    let nuevoRol: string;
+    if (usuario.rol === 'Revisor') {
+      nuevoRol = 'Administrador';
+    } else if (usuario.rol === 'Administrador') {
+      nuevoRol = 'Revisor';
+    } else {
+      Swal.fire('🚫 Error', 'Rol no válido.', 'error');
       return;
     }
 
-    if (userRole === 'Administrador' && usuario.rol === 'Administrador') {
-      Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador.', 'error');
-      return;
-    }
+    console.log("🚀 Enviando cambio de rol:", { nuevoRol, usuarioId: usuario._id });
 
-    if (userRole === 'Revisor') {
-      Swal.fire('🚫 Acción no permitida', 'No tienes permisos para cambiar roles.', 'error');
-      return;
-    }
-
-    let nuevoRol = usuario.rol === 'Revisor' ? 'Administrador' : 'Revisor';
-
+    // Solicitar contraseña para confirmar el cambio
     Swal.fire({
       title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
       input: 'password',
@@ -75,23 +73,15 @@ export class AdminDashboardComponent implements OnInit {
       inputAttributes: { autocapitalize: 'off', type: 'password' },
       showCancelButton: true,
       confirmButtonText: 'Confirmar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
     }).then((result: SweetAlertResult<string>) => {
       if (result.isConfirmed && result.value) {
         const contraseña = result.value;
-
-        console.log("🚀 Enviando datos al backend:", {
-          usuarioId: usuario._id,
-          nuevoRol: nuevoRol,
-          contraseña: contraseña
-        });
         this.userService.actualizarUsuario(usuario._id, { rol: nuevoRol, contraseña }).subscribe(
           (response) => {
             console.log("✅ Respuesta del servidor:", response);
             Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
-
-            // 🔥 Actualizar manualmente el rol en la lista sin esperar la API
-            usuario.rol = nuevoRol;
+            this.cargarUsuarios(); // Recargar la lista de usuarios
           },
           (error) => {
             console.error('❌ Error al actualizar el rol:', error);
