@@ -66,6 +66,7 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
+    // **🚨 Verificar cuál es el nuevo rol antes de enviarlo**
     let nuevoRol: string;
     if (usuario.rol === 'Revisor') {
       nuevoRol = 'Administrador';
@@ -73,6 +74,12 @@ export class AdminDashboardComponent implements OnInit {
       nuevoRol = 'Revisor';
     } else {
       Swal.fire('🚫 Error', 'Rol no válido.', 'error');
+      return;
+    }
+
+    // **🚀 Asegurarse de que el rol realmente cambió**
+    if (usuario.rol === nuevoRol) {
+      Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
       return;
     }
 
