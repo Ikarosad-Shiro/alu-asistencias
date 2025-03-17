@@ -67,7 +67,7 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     // Determinar el nuevo rol explícitamente
-    let nuevoRol;
+    let nuevoRol: string; // Declarar explícitamente el tipo de `nuevoRol`
     if (usuario.rol === 'Revisor') {
       nuevoRol = 'Administrador';
     } else if (usuario.rol === 'Administrador') {
