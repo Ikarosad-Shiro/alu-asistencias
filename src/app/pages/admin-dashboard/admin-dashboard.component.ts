@@ -2,12 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { UserService } from '../../services/user.service';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
-import { SweetAlertResult } from 'sweetalert2'; // Importa el tipo correcto
+import { SweetAlertResult } from 'sweetalert2';
 
 @Component({
   selector: 'app-admin-dashboard',
   templateUrl: './admin-dashboard.component.html',
-  styleUrls: ['./admin-dashboard.component.css']
+  styleUrls: ['./admin-dashboard.component.css'],
 })
 export class AdminDashboardComponent implements OnInit {
   usuarios: any[] = [];
@@ -18,6 +18,7 @@ export class AdminDashboardComponent implements OnInit {
     this.cargarUsuarios();
   }
 
+  // Cargar la lista de usuarios
   cargarUsuarios() {
     this.userService.obtenerUsuarios().subscribe(
       (data) => {
@@ -30,6 +31,7 @@ export class AdminDashboardComponent implements OnInit {
     );
   }
 
+  // Obtener el rol del usuario autenticado desde el token
   getUserRole(): string | null {
     const token = localStorage.getItem('token');
     if (token) {
@@ -37,29 +39,31 @@ export class AdminDashboardComponent implements OnInit {
         const payload = JSON.parse(atob(token.split('.')[1])); // Decodificar el token
         return payload.rol || null;
       } catch (error) {
-        console.error("❌ Error al obtener el rol del usuario:", error);
+        console.error('❌ Error al obtener el rol del usuario:', error);
         return null;
       }
     }
     return null;
   }
 
-
+  // Cambiar el rol de un usuario
   cambiarRol(usuario: any) {
     if (usuario.rol === 'Dios') {
       Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de "Dios".', 'error');
       return;
     }
 
+    // Determinar el nuevo rol
     let nuevoRol = usuario.rol === 'Revisor' ? 'Administrador' : 'Revisor';
 
-    // 🚨 Validar reglas de cambio de rol
+    // Validar reglas de cambio de rol
     const userRole = this.getUserRole(); // Obtener el rol del usuario autenticado
     if (userRole === 'Administrador' && usuario.rol === 'Administrador') {
       Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador.', 'error');
       return;
     }
 
+    // Solicitar contraseña para confirmar el cambio
     Swal.fire({
       title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
       input: 'password',
@@ -67,17 +71,12 @@ export class AdminDashboardComponent implements OnInit {
       inputAttributes: { autocapitalize: 'off', type: 'password' },
       showCancelButton: true,
       confirmButtonText: 'Confirmar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
     }).then((result: SweetAlertResult<string>) => {
       if (result.isConfirmed && result.value) {
         const contraseña = result.value;
 
-        console.log("🔹 Enviando cambio de rol:", {
-          contraseña,
-          nuevoRol,
-          usuarioId: usuario._id
-        });
-
+        // Enviar solicitud para actualizar el rol
         this.userService.actualizarUsuario(usuario._id, { rol: nuevoRol, contraseña }).subscribe(
           () => {
             Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
@@ -92,7 +91,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-
+  // Confirmar desactivar o activar un usuario
   confirmarDesactivar(usuario: any) {
     if (usuario.rol === 'Dios') {
       Swal.fire('🚫 Acción no permitida', 'No puedes desactivar al usuario "Dios".', 'error');
@@ -106,14 +105,14 @@ export class AdminDashboardComponent implements OnInit {
       inputAttributes: { autocapitalize: 'off' },
       showCancelButton: true,
       confirmButtonText: 'Confirmar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
     }).then((result: SweetAlertResult<string>) => {
       if (result.isConfirmed && result.value) {
         const contraseña = result.value; // Obtener la contraseña ingresada
         this.userService.verificarContraseña(contraseña).subscribe(
           (response) => {
-            if (response?.valido) {  // ✅ Usar el campo "valido" del backend
-              this.toggleEstado(usuario, contraseña); // Pasar la contraseña
+            if (response?.valido) {
+              this.toggleEstado(usuario, contraseña); // Cambiar el estado del usuario
             } else {
               Swal.fire('❌ Contraseña incorrecta', 'No puedes realizar esta acción.', 'error');
             }
@@ -127,13 +126,14 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  // Cambiar el estado de un usuario (activo/inactivo)
   toggleEstado(usuario: any, contraseña: string) {
     const nuevoEstado = !usuario.activo;
 
     // Incluir la contraseña en el cuerpo de la solicitud
     const body = {
       activo: nuevoEstado,
-      contraseña: contraseña // Asegúrate de incluir la contraseña
+      contraseña: contraseña,
     };
 
     this.userService.actualizarUsuario(usuario._id, body).subscribe(
@@ -148,6 +148,7 @@ export class AdminDashboardComponent implements OnInit {
     );
   }
 
+  // Confirmar la eliminación de un usuario
   confirmarEliminar(usuario: any) {
     if (usuario.rol === 'Dios') {
       Swal.fire('🚫 Acción no permitida', 'No puedes eliminar al usuario "Dios".', 'error');
@@ -161,7 +162,7 @@ export class AdminDashboardComponent implements OnInit {
       inputAttributes: { autocapitalize: 'off', type: 'password' },
       showCancelButton: true,
       confirmButtonText: 'Confirmar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
     }).then((result: SweetAlertResult<string>) => {
       if (result.isConfirmed && result.value) {
         const contraseña = result.value;
@@ -169,7 +170,7 @@ export class AdminDashboardComponent implements OnInit {
         this.userService.verificarContraseña(contraseña).subscribe(
           (response) => {
             if (response?.valido) {
-              // 🚀🔥 Validación nueva: Evitar que un Administrador elimine a otro Administrador
+              // Evitar que un Administrador elimine a otro Administrador
               const usuarioActual = JSON.parse(localStorage.getItem('usuario') || '{}');
               if (usuarioActual.rol === 'Administrador' && usuario.rol === 'Administrador') {
                 Swal.fire('🚫 Acción no permitida', 'No puedes eliminar a otro Administrador.', 'error');
@@ -190,6 +191,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  // Eliminar un usuario
   eliminarUsuario(userId: string, contraseña: string) {
     this.userService.eliminarUsuario(userId, contraseña).subscribe(
       () => {
@@ -203,6 +205,7 @@ export class AdminDashboardComponent implements OnInit {
     );
   }
 
+  // Cerrar sesión
   cerrarSesion() {
     localStorage.clear();
     this.router.navigate(['/login']);
