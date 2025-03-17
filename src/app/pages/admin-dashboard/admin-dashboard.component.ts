@@ -22,6 +22,7 @@ export class AdminDashboardComponent implements OnInit {
   cargarUsuarios() {
     this.userService.obtenerUsuarios().subscribe(
       (data) => {
+        console.log("🔄 Usuarios actualizados desde el backend:", data); // 👈 Agrega esto
         this.usuarios = data;
       },
       (error) => {
@@ -84,12 +85,13 @@ export class AdminDashboardComponent implements OnInit {
           nuevoRol: nuevoRol,
           contraseña: contraseña
         });
-
         this.userService.actualizarUsuario(usuario._id, { rol: nuevoRol, contraseña }).subscribe(
           (response) => {
             console.log("✅ Respuesta del servidor:", response);
             Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
-            this.cargarUsuarios(); // Recargar la lista de usuarios
+
+            // 🔥 Actualizar manualmente el rol en la lista sin esperar la API
+            usuario.rol = nuevoRol;
           },
           (error) => {
             console.error('❌ Error al actualizar el rol:', error);
