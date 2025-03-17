@@ -67,13 +67,13 @@ cambiarRol(usuario: any) {
     return;
   }
 
-  // 🔥 **Asegurar que el nuevo rol se asigne correctamente**
+  // 🔥 **Forzar la asignación del nuevo rol**
   let nuevoRol = usuario.rol === 'Revisor' ? 'Administrador' : 'Revisor';
 
-  // 🚨 **Forzar la reasignación en el frontend antes de enviarlo**
+  // 🚀 **FORZAR EL CAMBIO ANTES DE ENVIAR**
   usuario.rol = nuevoRol;
 
-  // 📌 **Depuración: Imprimir valores antes de enviar**
+  // 📌 **Depuración: Verificar valores antes de enviar**
   console.log("🎯 Valor actual de usuario.rol:", usuario.rol);
   console.log("🎯 Nuevo rol calculado antes de enviar:", nuevoRol);
 
