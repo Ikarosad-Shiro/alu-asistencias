@@ -50,7 +50,6 @@ export class AdminDashboardComponent implements OnInit {
   cambiarRol(usuario: any) {
     const userRole = this.getUserRole(); // Obtener el rol del usuario autenticado
 
-    // Validar restricciones
     if (usuario.rol === 'Dios') {
       Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de "Dios".', 'error');
       return;
@@ -66,18 +65,8 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
-    // Determinar el nuevo rol explícitamente
-    let nuevoRol: string; // Declarar explícitamente el tipo de `nuevoRol`
-    if (usuario.rol === 'Revisor') {
-      nuevoRol = 'Administrador';
-    } else if (usuario.rol === 'Administrador') {
-      nuevoRol = 'Revisor';
-    } else {
-      Swal.fire('🚫 Error', 'Rol no válido.', 'error');
-      return;
-    }
+    let nuevoRol = usuario.rol === 'Revisor' ? 'Administrador' : 'Revisor';
 
-    // Solicitar contraseña para confirmar el cambio
     Swal.fire({
       title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
       input: 'password',
@@ -85,14 +74,20 @@ export class AdminDashboardComponent implements OnInit {
       inputAttributes: { autocapitalize: 'off', type: 'password' },
       showCancelButton: true,
       confirmButtonText: 'Confirmar',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: 'Cancelar'
     }).then((result: SweetAlertResult<string>) => {
       if (result.isConfirmed && result.value) {
         const contraseña = result.value;
 
-        // Enviar solicitud para actualizar el rol
+        console.log("🚀 Enviando datos al backend:", {
+          usuarioId: usuario._id,
+          nuevoRol: nuevoRol,
+          contraseña: contraseña
+        });
+
         this.userService.actualizarUsuario(usuario._id, { rol: nuevoRol, contraseña }).subscribe(
-          () => {
+          (response) => {
+            console.log("✅ Respuesta del servidor:", response);
             Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
             this.cargarUsuarios(); // Recargar la lista de usuarios
           },
