@@ -48,7 +48,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
 // Cambiar el rol de un usuario
-cambiarRol(usuario: any) {
+cambiarRol(usuario: any, event: Event) {
   const userRole = this.getUserRole();
 
   if (usuario.rol === 'Dios') {
@@ -66,13 +66,13 @@ cambiarRol(usuario: any) {
     return;
   }
 
-  // 📌 Obtener el valor actual del usuario antes del cambio
+  // 📌 Capturar el valor anterior del usuario antes de cambiarlo en el `select`
   const rolActual = usuario.rol;
-  console.log("🎯 Valor actual de usuario.rol:", rolActual);
+  console.log("🎯 Valor actual antes del cambio:", rolActual);
 
-  // 📌 Obtener el nuevo valor del `select`
-  const nuevoRol = (rolActual === 'Administrador') ? 'Revisor' : 'Administrador';
-  console.log("🎯 Nuevo rol calculado antes de enviar:", nuevoRol);
+  // 📌 Obtener el nuevo valor desde el `select`
+  const nuevoRol = (event.target as HTMLSelectElement).value;
+  console.log("🎯 Nuevo rol seleccionado:", nuevoRol);
 
   // **🚀 Asegurarse de que el rol realmente cambió**
   if (rolActual === nuevoRol) {
@@ -106,6 +106,9 @@ cambiarRol(usuario: any) {
           Swal.fire('Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
         }
       );
+    } else {
+      // **Restaurar el rol anterior si se cancela**
+      usuario.rol = rolActual;
     }
   });
 }
