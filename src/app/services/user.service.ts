@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
 import { environment } from 'src/environments/environment';  // 🌟 Importa el environment
 
 @Injectable({
@@ -31,9 +30,10 @@ export class UserService {
     return this.http.get(`${environment.apiUrl}/auth/perfil`, { headers: this.getAuthHeaders() });
   }
 
-  // 📌 Actualizar usuario (cambiar rol o activar/desactivar)
-  actualizarUsuario(userId: string, updateData: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${userId}`, updateData, { headers: this.getAuthHeaders() });
+  // 📌 **Actualizar usuario (ahora sin duplicar `/usuarios/`)**
+  actualizarUsuario(id: string, datos: any): Observable<any> {
+    console.log("📤 Enviando solicitud PUT al backend con:", datos);
+    return this.http.put(`${this.apiUrl}/${id}`, datos, { headers: this.getAuthHeaders() });
   }
 
   // 📌 Eliminar usuario (con contraseña en el body)
@@ -45,9 +45,6 @@ export class UserService {
 
   // 📌 Verificar contraseña antes de eliminar o desactivar
   verificarContraseña(contraseña: string): Observable<any> {
-    const token = localStorage.getItem("token");
-    return this.http.post(`${this.apiUrl}/verificar-password`, { contraseña }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    return this.http.post(`${this.apiUrl}/verificar-password`, { contraseña }, { headers: this.getAuthHeaders() });
   }
 }

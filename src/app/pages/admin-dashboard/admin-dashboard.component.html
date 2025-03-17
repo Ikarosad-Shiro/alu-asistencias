@@ -38,7 +38,7 @@
               <td>{{ usuario.email }}</td>
               <td>
               <!-- 📌 Dropdown para cambiar el rol (Bloqueado si el usuario es "Dios") -->
-              <select [ngModel]="usuario.rol" (change)="cambiarRol($event, usuario)" [disabled]="usuario.rol === 'Dios'">
+              <select [(ngModel)]="usuario.rol" (change)="cambiarRol(usuario)" [disabled]="usuario.rol === 'Dios'">
                 <option value="Revisor">Revisor</option>
                 <option value="Administrador">Administrador</option>
                 <option value="Dios">Dios</option>

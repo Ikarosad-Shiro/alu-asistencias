@@ -47,13 +47,33 @@ export class AdminDashboardComponent implements OnInit {
     return null;
   }
 
-// 📌 Cambiar el rol de un usuario
-cambiarRol(event: any, usuario: any) {
-  const nuevoRol = event.target.value; // 🚀 Obtener el nuevo valor del select directamente
+// Cambiar el rol de un usuario
+cambiarRol(usuario: any) {
+  const userRole = this.getUserRole();
+
+  if (usuario.rol === "Dios") {
+    Swal.fire("🚫 Acción no permitida", "No puedes cambiar el rol de 'Dios'.", "error");
+    return;
+  }
+
+  if (userRole === "Administrador" && usuario.rol === "Administrador") {
+    Swal.fire("🚫 Acción no permitida", "No puedes cambiar el rol de otro Administrador.", "error");
+    return;
+  }
+
+  if (userRole === "Revisor") {
+    Swal.fire("🚫 Acción no permitida", "No tienes permisos para cambiar roles.", "error");
+    return;
+  }
+
+  // **🚀 Normalizar el nuevo rol antes de enviarlo**
+  let nuevoRol: string = usuario.rol.trim();
+  nuevoRol = nuevoRol.charAt(0).toUpperCase() + nuevoRol.slice(1).toLowerCase(); // "administrador" -> "Administrador"
+
   console.log("🎯 Valor actual de usuario.rol:", usuario.rol);
   console.log("🎯 Nuevo rol calculado antes de enviar:", nuevoRol);
 
-  // 🚨 Evitar actualizar si el rol no cambió
+  // **🚀 Asegurarse de que el rol realmente cambió**
   if (usuario.rol === nuevoRol) {
     Swal.fire("ℹ️ Sin cambios", `El usuario ya tiene el rol ${nuevoRol}.`, "info");
     return;
@@ -67,27 +87,26 @@ cambiarRol(event: any, usuario: any) {
     showCancelButton: true,
     confirmButtonText: "Confirmar",
     cancelButtonText: "Cancelar",
-  }).then((result: SweetAlertResult<string>) => {
+  }).then((result) => {
     if (result.isConfirmed && result.value) {
       const contraseña = result.value;
-      const datos = { usuarioId: usuario._id, nuevoRol, contraseña };
+      console.log("🚀 Enviando datos al backend:", { usuarioId: usuario._id, nuevoRol, contraseña });
 
-      console.log("🚀 Enviando datos al backend:", datos);
-
-      this.userService.actualizarUsuario(usuario._id, datos).subscribe(
-        (respuesta) => {
-          Swal.fire("✅ Rol actualizado", `El usuario ahora es ${nuevoRol}`, "success");
-          this.cargarUsuarios(); // Recargar la lista de usuarios
-        },
-        (error) => {
-          console.error("❌ Error al actualizar el rol:", error);
-          Swal.fire("Error", error.error?.message || "No se pudo actualizar el rol.", "error");
-        }
-      );
+      this.userService
+        .actualizarUsuario(usuario._id, { rol: nuevoRol, contraseña })
+        .subscribe(
+          () => {
+            Swal.fire("✅ Rol actualizado", `El usuario ahora es ${nuevoRol}`, "success");
+            this.cargarUsuarios();
+          },
+          (error) => {
+            console.error("❌ Error al actualizar el rol:", error);
+            Swal.fire("Error", error.error?.message || "No se pudo actualizar el rol.", "error");
+          }
+        );
     }
   });
 }
-
 
   // Confirmar desactivar o activar un usuario
   confirmarDesactivar(usuario: any) {
