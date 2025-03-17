@@ -66,27 +66,19 @@ cambiarRol(usuario: any) {
     return;
   }
 
-  // 🔥 Guardamos el rol original de la base de datos (no del <select>)
-  const rolOriginal = usuario.rol;
+  // 📌 Obtener el valor actual del usuario antes del cambio
+  const rolActual = usuario.rol;
+  console.log("🎯 Valor actual de usuario.rol:", rolActual);
 
-  // **🚨 Verificar cuál es el nuevo rol antes de enviarlo**
-  let nuevoRol: string;
-  if (rolOriginal === 'Revisor') {
-    nuevoRol = 'Administrador';
-  } else if (rolOriginal === 'Administrador') {
-    nuevoRol = 'Revisor';
-  } else {
-    Swal.fire('🚫 Error', 'Rol no válido.', 'error');
-    return;
-  }
+  // 📌 Obtener el nuevo valor del `select`
+  const nuevoRol = (rolActual === 'Administrador') ? 'Revisor' : 'Administrador';
+  console.log("🎯 Nuevo rol calculado antes de enviar:", nuevoRol);
 
   // **🚀 Asegurarse de que el rol realmente cambió**
-  if (rolOriginal === nuevoRol) {
+  if (rolActual === nuevoRol) {
     Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
     return;
   }
-
-  console.log("🚀 Enviando datos al backend:", { usuarioId: usuario._id, nuevoRol });
 
   Swal.fire({
     title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
@@ -100,20 +92,20 @@ cambiarRol(usuario: any) {
     if (result.isConfirmed && result.value) {
       const contraseña = result.value;
 
-      // 🔥 Enviar solicitud al backend con el ID del usuario, su nuevo rol y la contraseña
-      this.userService.actualizarUsuario(usuario._id, { rol: nuevoRol, contraseña }).subscribe(
+      // 📌 **Enviar correctamente el nuevo rol al backend**
+      const datos = { rol: nuevoRol, contraseña };
+      console.log("📤 Enviando solicitud PUT al backend con:", datos);
+
+      this.userService.actualizarUsuario(usuario._id, datos).subscribe(
         () => {
           Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
-          this.cargarUsuarios(); // 🔄 Recargar la lista de usuarios después del cambio
+          this.cargarUsuarios();
         },
         (error) => {
           console.error('❌ Error al actualizar el rol:', error);
           Swal.fire('Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
         }
       );
-    } else {
-      // ⚠️ Si el usuario cancela, restauramos el rol en el <select>
-      usuario.rol = rolOriginal;
     }
   });
 }
