@@ -51,59 +51,69 @@ export class AdminDashboardComponent implements OnInit {
 cambiarRol(usuario: any) {
   const userRole = this.getUserRole();
 
-  if (usuario.rol === "Dios") {
-    Swal.fire("🚫 Acción no permitida", "No puedes cambiar el rol de 'Dios'.", "error");
+  if (usuario.rol === 'Dios') {
+    Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de "Dios".', 'error');
     return;
   }
 
-  if (userRole === "Administrador" && usuario.rol === "Administrador") {
-    Swal.fire("🚫 Acción no permitida", "No puedes cambiar el rol de otro Administrador.", "error");
+  if (userRole === 'Administrador' && usuario.rol === 'Administrador') {
+    Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador.', 'error');
     return;
   }
 
-  if (userRole === "Revisor") {
-    Swal.fire("🚫 Acción no permitida", "No tienes permisos para cambiar roles.", "error");
+  if (userRole === 'Revisor') {
+    Swal.fire('🚫 Acción no permitida', 'No tienes permisos para cambiar roles.', 'error');
     return;
   }
 
-  // **🚀 Normalizar el nuevo rol antes de enviarlo**
-  let nuevoRol: string = usuario.rol.trim();
-  nuevoRol = nuevoRol.charAt(0).toUpperCase() + nuevoRol.slice(1).toLowerCase(); // "administrador" -> "Administrador"
+  // 🔥 Guardamos el rol original de la base de datos (no del <select>)
+  const rolOriginal = usuario.rol;
 
-  console.log("🎯 Valor actual de usuario.rol:", usuario.rol);
-  console.log("🎯 Nuevo rol calculado antes de enviar:", nuevoRol);
+  // **🚨 Verificar cuál es el nuevo rol antes de enviarlo**
+  let nuevoRol: string;
+  if (rolOriginal === 'Revisor') {
+    nuevoRol = 'Administrador';
+  } else if (rolOriginal === 'Administrador') {
+    nuevoRol = 'Revisor';
+  } else {
+    Swal.fire('🚫 Error', 'Rol no válido.', 'error');
+    return;
+  }
 
   // **🚀 Asegurarse de que el rol realmente cambió**
-  if (usuario.rol === nuevoRol) {
-    Swal.fire("ℹ️ Sin cambios", `El usuario ya tiene el rol ${nuevoRol}.`, "info");
+  if (rolOriginal === nuevoRol) {
+    Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
     return;
   }
 
+  console.log("🚀 Enviando datos al backend:", { usuarioId: usuario._id, nuevoRol });
+
   Swal.fire({
-    title: "🔒 Ingresa tu contraseña para confirmar el cambio de rol",
-    input: "password",
-    inputPlaceholder: "Contraseña",
-    inputAttributes: { autocapitalize: "off", type: "password" },
+    title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
+    input: 'password',
+    inputPlaceholder: 'Contraseña',
+    inputAttributes: { autocapitalize: 'off', type: 'password' },
     showCancelButton: true,
-    confirmButtonText: "Confirmar",
-    cancelButtonText: "Cancelar",
-  }).then((result) => {
+    confirmButtonText: 'Confirmar',
+    cancelButtonText: 'Cancelar',
+  }).then((result: SweetAlertResult<string>) => {
     if (result.isConfirmed && result.value) {
       const contraseña = result.value;
-      console.log("🚀 Enviando datos al backend:", { usuarioId: usuario._id, nuevoRol, contraseña });
 
-      this.userService
-        .actualizarUsuario(usuario._id, { rol: nuevoRol, contraseña })
-        .subscribe(
-          () => {
-            Swal.fire("✅ Rol actualizado", `El usuario ahora es ${nuevoRol}`, "success");
-            this.cargarUsuarios();
-          },
-          (error) => {
-            console.error("❌ Error al actualizar el rol:", error);
-            Swal.fire("Error", error.error?.message || "No se pudo actualizar el rol.", "error");
-          }
-        );
+      // 🔥 Enviar solicitud al backend con el ID del usuario, su nuevo rol y la contraseña
+      this.userService.actualizarUsuario(usuario._id, { rol: nuevoRol, contraseña }).subscribe(
+        () => {
+          Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
+          this.cargarUsuarios(); // 🔄 Recargar la lista de usuarios después del cambio
+        },
+        (error) => {
+          console.error('❌ Error al actualizar el rol:', error);
+          Swal.fire('Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
+        }
+      );
+    } else {
+      // ⚠️ Si el usuario cancela, restauramos el rol en el <select>
+      usuario.rol = rolOriginal;
     }
   });
 }
