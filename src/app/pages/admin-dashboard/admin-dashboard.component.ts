@@ -67,30 +67,15 @@ cambiarRol(usuario: any) {
     return;
   }
 
-  // 🔥 **Verificar el nuevo rol antes de enviarlo**
-  let nuevoRol: string;
-  if (usuario.rol === 'Revisor') {
-    nuevoRol = 'Administrador';
-  } else if (usuario.rol === 'Administrador') {
-    nuevoRol = 'Revisor';
-  } else {
-    Swal.fire('🚫 Error', 'Rol no válido.', 'error');
-    return;
-  }
+  // 🔥 **Asegurar que el nuevo rol se asigne correctamente**
+  let nuevoRol = usuario.rol === 'Revisor' ? 'Administrador' : 'Revisor';
 
-  // 🔥 **Asegurar que el rol realmente cambia**
-  if (usuario.rol === nuevoRol) {
-    Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
-    return;
-  }
-
-  // 🔥 **Forzar el cambio de rol en el frontend antes de enviarlo**
+  // 🚨 **Forzar la reasignación en el frontend antes de enviarlo**
   usuario.rol = nuevoRol;
 
   // 📌 **Depuración: Imprimir valores antes de enviar**
   console.log("🎯 Valor actual de usuario.rol:", usuario.rol);
   console.log("🎯 Nuevo rol calculado antes de enviar:", nuevoRol);
-  console.log("🚀 Enviando datos al backend:", { usuarioId: usuario._id, nuevoRol });
 
   // 🔒 **Confirmación con contraseña**
   Swal.fire({
