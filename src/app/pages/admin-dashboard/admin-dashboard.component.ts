@@ -152,11 +152,13 @@ cambiarRol(usuario: any, event: Event) {
   toggleEstado(usuario: any, contraseña: string) {
     const nuevoEstado = !usuario.activo;
 
-    // Incluir la contraseña en el cuerpo de la solicitud
+    // 📌 Incluir la contraseña en el cuerpo de la solicitud
     const body = {
       activo: nuevoEstado,
       contraseña: contraseña,
     };
+
+    console.log("📤 Enviando datos al backend:", body); // 👀 Ver qué se está enviando realmente
 
     this.userService.actualizarUsuario(usuario._id, body).subscribe(
       () => {
@@ -168,7 +170,7 @@ cambiarRol(usuario: any, event: Event) {
         Swal.fire('Error', 'No se pudo cambiar el estado del usuario.', 'error');
       }
     );
-  }
+}
 
   // Confirmar la eliminación de un usuario
   confirmarEliminar(usuario: any) {
