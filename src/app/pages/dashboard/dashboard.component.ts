@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -6,34 +6,26 @@ import { Router } from '@angular/router';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit {
-  usuarioNombre: string = 'Usuario'; // Esto debería venir desde el servicio de autenticación
+export class DashboardComponent {
+  usuarioNombre: string = '';
+  usuarioRol: string = '';
 
-  constructor(private router: Router) {}
-
-  ngOnInit(): void {
-    // Simulación de obtener nombre del usuario
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-    if (usuario && usuario.nombre) {
-      this.usuarioNombre = usuario.nombre;
-    }
+  constructor(private router: Router) {
+    this.usuarioNombre = localStorage.getItem('nombre') || 'Usuario';
+    this.usuarioRol = localStorage.getItem('rol') || '';
   }
 
-  // 📌 Función para mostrar/ocultar la sidebar en móviles
-  toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-      sidebar.classList.toggle('active');
-    }
-  }
-
-  // 📌 Función para verificar si es administrador
+  // 🔥 Método para saber si el usuario es Admin o Dios
   esAdmin(): boolean {
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-    return usuario.rol === 'Administrador' || usuario.rol === 'Dios';
+    return this.usuarioRol === 'Dios' || this.usuarioRol === 'Administrador';
   }
 
-  // 📌 Función para cerrar sesión
+  // 🔥 Redirigir al `AdminDashboard` cuando hagan clic en el botón
+  verUsuarios() {
+    this.router.navigate(['/admin-dashboard']);
+  }
+
+  // 🔥 Cerrar sesión
   cerrarSesion() {
     localStorage.clear();
     this.router.navigate(['/login']);
