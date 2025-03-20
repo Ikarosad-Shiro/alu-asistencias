@@ -52,8 +52,8 @@ toggleSidebar() {
   if (sidebar && overlay) {
     sidebar.classList.toggle('active');
     overlay.classList.toggle('active');
-    }
-  }
+    }
+  }
   // 📌 Función para verificar si es administrador o Dios
   esAdmin(): boolean {
     console.log("🛠️ Verificando rol en esAdmin():", this.usuarioRol);
