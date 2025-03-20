@@ -49,13 +49,12 @@ export class LoginComponent implements OnInit {
 
         // ✅ Guardamos el token y datos del usuario en `localStorage`
         localStorage.setItem('token', response.token);
-        localStorage.setItem('usuario', JSON.stringify(response.usuario)); // 🔥 Guardamos todo el usuario
+        localStorage.setItem('usuario', JSON.stringify(response.usuario));
 
-        // ✅ 🚀 🔄 Forzamos la actualización del usuario en el Dashboard
-        window.dispatchEvent(new Event('storage'));
-
-        // 🔥 Redirigir a TODOS al Dashboard
-        this.router.navigate(['/dashboard']);
+        // ✅ 🚀 🔄 Redirigir al Dashboard y forzar actualización
+        this.router.navigate(['/dashboard']).then(() => {
+          window.location.reload(); // 🔄 Esto fuerza la recarga con el usuario correcto
+        });
       },
       (error: any) => {
         console.error('❌ Error al iniciar sesión:', error);
