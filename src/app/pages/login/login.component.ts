@@ -47,12 +47,14 @@ export class LoginComponent implements OnInit {
       (response: any) => {
         console.log('✅ Inicio de sesión exitoso:', response);
 
-        // ✅ Guardamos el token, rol y nombre del usuario en `localStorage`
+        // ✅ Guardamos el token y datos del usuario en `localStorage`
         localStorage.setItem('token', response.token);
-        localStorage.setItem('rol', response.usuario.rol);
-        localStorage.setItem('nombre', response.usuario.nombre); // 🔥 Se usa en el Dashboard
+        localStorage.setItem('usuario', JSON.stringify(response.usuario)); // 🔥 Guardamos todo el usuario
 
-        // 🔥 Redirigir a TODOS al mismo Dashboard
+        // ✅ 🚀 🔄 Forzamos la actualización del usuario en el Dashboard
+        window.dispatchEvent(new Event('storage'));
+
+        // 🔥 Redirigir a TODOS al Dashboard
         this.router.navigate(['/dashboard']);
       },
       (error: any) => {
