@@ -33,7 +33,9 @@ export class DashboardComponent implements OnInit {
 
   // 📌 Función para verificar si es administrador o Dios
   esAdmin(): boolean {
-    return this.usuarioRol === 'Administrador' || this.usuarioRol === 'Dios';
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    console.log("🛠️ Verificando rol:", usuario.rol); // 👀 Verificar en consola
+    return usuario.rol === 'Administrador' || usuario.rol === 'Dios';
   }
 
   // 📌 Redirigir al `AdminDashboard` cuando hagan clic en el botón
