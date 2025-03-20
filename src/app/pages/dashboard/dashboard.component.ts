@@ -33,8 +33,16 @@ export class DashboardComponent implements OnInit {
 
   // 📌 Función para verificar si es administrador o Dios
   esAdmin(): boolean {
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-    console.log("🛠️ Verificando rol:", usuario.rol); // 👀 Verificar en consola
+    const usuarioJSON = localStorage.getItem('usuario');
+
+    if (!usuarioJSON) {
+      console.log("🚨 No hay usuario en localStorage");
+      return false;
+    }
+
+    const usuario = JSON.parse(usuarioJSON);
+    console.log("🛠️ Verificando rol desde localStorage:", usuario.rol);
+
     return usuario.rol === 'Administrador' || usuario.rol === 'Dios';
   }
 
