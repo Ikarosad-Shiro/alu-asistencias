@@ -47,56 +47,60 @@ export class AdminDashboardComponent implements OnInit {
     return null;
   }
 
-  // 📌 Cambiar el rol de un usuario con restricciones y contraseña
-  cambiarRol(usuario: any, event: Event) {
-    const userRole = this.getUserRole();
-    const nuevoRol = (event.target as HTMLSelectElement).value;
-    const rolActual = usuario.rol;
+// 📌 Cambiar el rol de un usuario con restricciones y contraseña
+cambiarRol(usuario: any, event: Event) {
+  const userRole = this.getUserRole();
+  const nuevoRol = (event.target as HTMLSelectElement).value;
+  const rolActual = usuario.rol;
 
-    if (rolActual === nuevoRol) {
-      Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
-      return;
-    }
-
-    // 🔴 Aplicar restricciones según el rol del usuario autenticado
-    if (userRole === 'Administrador') {
-      if (rolActual === 'Administrador' || nuevoRol === 'Dios') {
-        Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador ni ascender a alguien a Dios.', 'error');
-        return;
-      }
-    } else if (userRole === 'Revisor') {
-      Swal.fire('🚫 Acción no permitida', 'No tienes permisos para cambiar roles.', 'error');
-      return;
-    }
-
-    // 🔒 Pedir contraseña antes de aplicar cambios
-    Swal.fire({
-      title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
-      input: 'password',
-      inputPlaceholder: 'Contraseña',
-      inputAttributes: { autocapitalize: 'off', type: 'password' },
-      showCancelButton: true,
-      confirmButtonText: 'Confirmar',
-      cancelButtonText: 'Cancelar',
-    }).then((result: SweetAlertResult<string>) => {
-      if (result.isConfirmed && result.value) {
-        const contraseña = result.value;
-
-        const datos = { rol: nuevoRol, contraseña };
-        this.userService.actualizarUsuario(usuario._id, datos).subscribe(
-          () => {
-            Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
-            this.cargarUsuarios();
-          },
-          (error) => {
-            Swal.fire('❌ Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
-          }
-        );
-      } else {
-        usuario.rol = rolActual; // Restaurar rol si cancela
-      }
-    });
+  if (rolActual === nuevoRol) {
+    Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
+    return;
   }
+
+  // 🔴 Aplicar restricciones según el rol del usuario autenticado
+  if (userRole === 'Administrador') {
+    if (rolActual === 'Administrador' || nuevoRol === 'Dios') {
+      Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador ni ascender a alguien a Dios.', 'error');
+      return;
+    }
+  } else if (userRole === 'Revisor') {
+    Swal.fire('🚫 Acción no permitida', 'No tienes permisos para cambiar roles.', 'error');
+    return;
+  }
+
+  // 🔒 Pedir contraseña antes de aplicar cambios
+  Swal.fire({
+    title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
+    input: 'password',
+    inputPlaceholder: 'Contraseña',
+    inputAttributes: { autocapitalize: 'off', type: 'password' },
+    showCancelButton: true,
+    confirmButtonText: 'Confirmar',
+    cancelButtonText: 'Cancelar',
+  }).then((result: SweetAlertResult<string>) => {
+    if (result.isConfirmed && result.value) {
+      const contraseña = result.value;
+
+      // 📌 **Asegurar que enviamos correctamente el rol y la contraseña**
+      const datos = { rol: nuevoRol, contraseña };
+
+      console.log("📤 Enviando solicitud PUT con:", datos); // 👀 DEBUG
+
+      this.userService.actualizarUsuario(usuario._id, datos).subscribe(
+        () => {
+          Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
+          this.cargarUsuarios();
+        },
+        (error) => {
+          Swal.fire('❌ Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
+        }
+      );
+    } else {
+      usuario.rol = rolActual; // Restaurar el rol si se cancela
+    }
+  });
+}
 
   // 📌 Confirmar activar/desactivar usuario con restricciones y contraseña
   confirmarDesactivar(usuario: any) {
