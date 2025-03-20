@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -6,21 +6,22 @@ import { Router } from '@angular/router';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit {
-  usuarioNombre: string = 'Usuario'; // Nombre del usuario
-  usuarioRol: string = ''; // Rol del usuario
+export class DashboardComponent {
+  usuarioNombre: string = 'Usuario';
+  usuarioRol: string = '';
 
-  constructor(private router: Router) {}
-
-  ngOnInit(): void {
-    // Obtener datos del usuario desde localStorage
+  constructor(private router: Router) {
+    // 📌 Obtener usuario directamente en el constructor para evitar errores
     const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-    if (usuario && usuario.nombre) {
+
+    if (usuario.nombre) {
       this.usuarioNombre = usuario.nombre;
     }
-    if (usuario && usuario.rol) {
+    if (usuario.rol) {
       this.usuarioRol = usuario.rol;
     }
+
+    console.log("✅ Usuario cargado en el constructor:", usuario);
   }
 
   // 📌 Función para mostrar/ocultar la sidebar en móviles
@@ -33,17 +34,8 @@ export class DashboardComponent implements OnInit {
 
   // 📌 Función para verificar si es administrador o Dios
   esAdmin(): boolean {
-    const usuarioJSON = localStorage.getItem('usuario');
-
-    if (!usuarioJSON) {
-      console.log("🚨 No hay usuario en localStorage");
-      return false;
-    }
-
-    const usuario = JSON.parse(usuarioJSON);
-    console.log("🛠️ Verificando rol desde localStorage:", usuario.rol);
-
-    return usuario.rol === 'Administrador' || usuario.rol === 'Dios';
+    console.log("🛠️ Verificando rol en esAdmin():", this.usuarioRol);
+    return this.usuarioRol === 'Administrador' || this.usuarioRol === 'Dios';
   }
 
   // 📌 Redirigir al `AdminDashboard` cuando hagan clic en el botón
