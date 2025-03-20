@@ -12,8 +12,26 @@ export class DashboardComponent implements OnInit {
 
   constructor(private router: Router) {
     console.log("📌 Constructor ejecutado.");
+    this.obtenerUsuario(); // Llamar función para obtener usuario
+  }
 
-    // Intentar cargar el usuario desde localStorage
+  ngOnInit(): void {
+    console.log("📌 ngOnInit ejecutado.");
+
+    // **Escuchar cambios en `localStorage`** por si el usuario se actualiza después del login
+    window.addEventListener('storage', () => {
+      console.log("🔄 Se detectó un cambio en localStorage.");
+      this.obtenerUsuario();
+    });
+
+    // **También actualizar usuario en `ngOnInit()`** por seguridad
+    setTimeout(() => {
+      this.obtenerUsuario();
+    }, 500);
+  }
+
+  // 📌 **Función para obtener el usuario desde localStorage**
+  obtenerUsuario() {
     const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
 
     if (usuario.nombre) {
@@ -23,25 +41,7 @@ export class DashboardComponent implements OnInit {
       this.usuarioRol = usuario.rol;
     }
 
-    console.log("✅ Usuario cargado en el constructor:", usuario);
-  }
-
-  ngOnInit(): void {
-    console.log("📌 ngOnInit ejecutado.");
-
-    // 📌 Intentar obtener el usuario con retraso para asegurar que ya se guardó en localStorage
-    setTimeout(() => {
-      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-
-      if (usuario.nombre) {
-        this.usuarioNombre = usuario.nombre;
-      }
-      if (usuario.rol) {
-        this.usuarioRol = usuario.rol;
-      }
-
-      console.log("✅ Usuario actualizado en ngOnInit:", usuario);
-    }, 500); // Espera 500ms antes de intentar obtener los datos
+    console.log("✅ Usuario actualizado:", usuario);
   }
 
   // 📌 Función para mostrar/ocultar la sidebar en móviles
