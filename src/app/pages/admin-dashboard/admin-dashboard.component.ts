@@ -18,11 +18,11 @@ export class AdminDashboardComponent implements OnInit {
     this.cargarUsuarios();
   }
 
-  // Cargar la lista de usuarios
+  // Cargar la lista de usuarios desde el backend
   cargarUsuarios() {
     this.userService.obtenerUsuarios().subscribe(
       (data) => {
-        console.log("🔄 Usuarios actualizados desde el backend:", data); // 👈 Agrega esto
+        console.log("🔄 Usuarios actualizados desde el backend:", data);
         this.usuarios = data;
       },
       (error) => {
@@ -47,79 +47,72 @@ export class AdminDashboardComponent implements OnInit {
     return null;
   }
 
-// Cambiar el rol de un usuario
-cambiarRol(usuario: any, event: Event) {
-  const userRole = this.getUserRole();
+  // 📌 Cambiar el rol de un usuario con restricciones y contraseña
+  cambiarRol(usuario: any, event: Event) {
+    const userRole = this.getUserRole();
+    const nuevoRol = (event.target as HTMLSelectElement).value;
+    const rolActual = usuario.rol;
 
-  if (usuario.rol === 'Dios') {
-    Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de "Dios".', 'error');
-    return;
-  }
-
-  if (userRole === 'Administrador' && usuario.rol === 'Administrador') {
-    Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador.', 'error');
-    return;
-  }
-
-  if (userRole === 'Revisor') {
-    Swal.fire('🚫 Acción no permitida', 'No tienes permisos para cambiar roles.', 'error');
-    return;
-  }
-
-  // 📌 Capturar el valor anterior del usuario antes de cambiarlo en el `select`
-  const rolActual = usuario.rol;
-  console.log("🎯 Valor actual antes del cambio:", rolActual);
-
-  // 📌 Obtener el nuevo valor desde el `select`
-  const nuevoRol = (event.target as HTMLSelectElement).value;
-  console.log("🎯 Nuevo rol seleccionado:", nuevoRol);
-
-  // **🚀 Asegurarse de que el rol realmente cambió**
-  if (rolActual === nuevoRol) {
-    Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
-    return;
-  }
-
-  Swal.fire({
-    title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
-    input: 'password',
-    inputPlaceholder: 'Contraseña',
-    inputAttributes: { autocapitalize: 'off', type: 'password' },
-    showCancelButton: true,
-    confirmButtonText: 'Confirmar',
-    cancelButtonText: 'Cancelar',
-  }).then((result: SweetAlertResult<string>) => {
-    if (result.isConfirmed && result.value) {
-      const contraseña = result.value;
-
-      // 📌 **Enviar correctamente el nuevo rol al backend**
-      const datos = { rol: nuevoRol, contraseña };
-      console.log("📤 Enviando solicitud PUT al backend con:", datos);
-
-      this.userService.actualizarUsuario(usuario._id, datos).subscribe(
-        () => {
-          Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
-          this.cargarUsuarios();
-        },
-        (error) => {
-          console.error('❌ Error al actualizar el rol:', error);
-          Swal.fire('Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
-        }
-      );
-    } else {
-      // **Restaurar el rol anterior si se cancela**
-      usuario.rol = rolActual;
+    if (rolActual === nuevoRol) {
+      Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
+      return;
     }
-  });
-}
 
-  // Confirmar desactivar o activar un usuario
+    // 🔴 Aplicar restricciones según el rol del usuario autenticado
+    if (userRole === 'Administrador') {
+      if (rolActual === 'Administrador' || nuevoRol === 'Dios') {
+        Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador ni ascender a alguien a Dios.', 'error');
+        return;
+      }
+    } else if (userRole === 'Revisor') {
+      Swal.fire('🚫 Acción no permitida', 'No tienes permisos para cambiar roles.', 'error');
+      return;
+    }
+
+    // 🔒 Pedir contraseña antes de aplicar cambios
+    Swal.fire({
+      title: '🔒 Ingresa tu contraseña para confirmar el cambio de rol',
+      input: 'password',
+      inputPlaceholder: 'Contraseña',
+      inputAttributes: { autocapitalize: 'off', type: 'password' },
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar',
+      cancelButtonText: 'Cancelar',
+    }).then((result: SweetAlertResult<string>) => {
+      if (result.isConfirmed && result.value) {
+        const contraseña = result.value;
+
+        const datos = { rol: nuevoRol, contraseña };
+        this.userService.actualizarUsuario(usuario._id, datos).subscribe(
+          () => {
+            Swal.fire('✅ Rol actualizado', `El usuario ahora es ${nuevoRol}`, 'success');
+            this.cargarUsuarios();
+          },
+          (error) => {
+            Swal.fire('❌ Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
+          }
+        );
+      } else {
+        usuario.rol = rolActual; // Restaurar rol si cancela
+      }
+    });
+  }
+
+  // 📌 Confirmar activar/desactivar usuario con restricciones y contraseña
   confirmarDesactivar(usuario: any) {
+    const userRole = this.getUserRole();
+
     if (usuario.rol === 'Dios') {
       Swal.fire('🚫 Acción no permitida', 'No puedes desactivar al usuario "Dios".', 'error');
       return;
     }
 
+    if (userRole === 'Administrador' && usuario.rol === 'Administrador') {
+      Swal.fire('🚫 Acción no permitida', 'No puedes desactivar a otro Administrador.', 'error');
+      return;
+    }
+
+    // 🔒 Solicitar contraseña antes de activar/desactivar
     Swal.fire({
       title: '🔒 Ingresa tu contraseña',
       input: 'password',
@@ -130,49 +123,25 @@ cambiarRol(usuario: any, event: Event) {
       cancelButtonText: 'Cancelar',
     }).then((result: SweetAlertResult<string>) => {
       if (result.isConfirmed && result.value) {
-        const contraseña = result.value; // Obtener la contraseña ingresada
-        this.userService.verificarContraseña(contraseña).subscribe(
-          (response) => {
-            if (response?.valido) {
-              this.toggleEstado(usuario, contraseña); // Cambiar el estado del usuario
-            } else {
-              Swal.fire('❌ Contraseña incorrecta', 'No puedes realizar esta acción.', 'error');
-            }
+        const contraseña = result.value;
+
+        const nuevoEstado = !usuario.activo;
+        const datos = { activo: nuevoEstado, contraseña };
+
+        this.userService.actualizarUsuario(usuario._id, datos).subscribe(
+          () => {
+            Swal.fire('✅ Estado cambiado', `El usuario está ahora ${nuevoEstado ? 'Activo' : 'Inactivo'}`, 'success');
+            this.cargarUsuarios();
           },
           (error) => {
-            console.error('❌ Error al verificar contraseña:', error);
-            Swal.fire('⚠️ Error', 'No se pudo verificar la contraseña.', 'error');
+            Swal.fire('❌ Error', error.error?.message || 'No se pudo cambiar el estado.', 'error');
           }
         );
       }
     });
   }
 
-  // Cambiar el estado de un usuario (activo/inactivo)
-  toggleEstado(usuario: any, contraseña: string) {
-    const nuevoEstado = !usuario.activo;
-
-    // 📌 Incluir la contraseña en el cuerpo de la solicitud
-    const body = {
-      activo: nuevoEstado,
-      contraseña: contraseña,
-    };
-
-    console.log("📤 Enviando datos al backend:", body); // 👀 Ver qué se está enviando realmente
-
-    this.userService.actualizarUsuario(usuario._id, body).subscribe(
-      () => {
-        Swal.fire('✅ Estado cambiado', `El usuario está ahora ${nuevoEstado ? 'Activo' : 'Inactivo'}`, 'success');
-        this.cargarUsuarios(); // Recargar la lista de usuarios
-      },
-      (error) => {
-        console.error('❌ Error al cambiar el estado:', error);
-        Swal.fire('Error', 'No se pudo cambiar el estado del usuario.', 'error');
-      }
-    );
-}
-
-  // Confirmar la eliminación de un usuario
+  // 📌 Confirmar eliminación de usuario con contraseña
   confirmarEliminar(usuario: any) {
     if (usuario.rol === 'Dios') {
       Swal.fire('🚫 Acción no permitida', 'No puedes eliminar al usuario "Dios".', 'error');
@@ -180,7 +149,7 @@ cambiarRol(usuario: any, event: Event) {
     }
 
     Swal.fire({
-      title: '🔒 Ingresa tu contraseña para confirmar',
+      title: '🔒 Ingresa tu contraseña para confirmar la eliminación',
       input: 'password',
       inputPlaceholder: 'Contraseña',
       inputAttributes: { autocapitalize: 'off', type: 'password' },
@@ -194,7 +163,6 @@ cambiarRol(usuario: any, event: Event) {
         this.userService.verificarContraseña(contraseña).subscribe(
           (response) => {
             if (response?.valido) {
-              // Evitar que un Administrador elimine a otro Administrador
               const usuarioActual = JSON.parse(localStorage.getItem('usuario') || '{}');
               if (usuarioActual.rol === 'Administrador' && usuario.rol === 'Administrador') {
                 Swal.fire('🚫 Acción no permitida', 'No puedes eliminar a otro Administrador.', 'error');
@@ -207,7 +175,6 @@ cambiarRol(usuario: any, event: Event) {
             }
           },
           (error) => {
-            console.error('❌ Error en verificación de contraseña:', error);
             Swal.fire('⚠️ Error', 'No se pudo verificar la contraseña.', 'error');
           }
         );
@@ -215,21 +182,20 @@ cambiarRol(usuario: any, event: Event) {
     });
   }
 
-  // Eliminar un usuario
+  // 📌 Eliminar un usuario
   eliminarUsuario(userId: string, contraseña: string) {
     this.userService.eliminarUsuario(userId, contraseña).subscribe(
       () => {
         Swal.fire('✅ Usuario eliminado', 'El usuario ha sido eliminado correctamente.', 'success');
-        this.cargarUsuarios(); // Recargar la lista de usuarios
+        this.cargarUsuarios();
       },
       (error) => {
-        console.error('❌ Error al eliminar usuario:', error);
         Swal.fire('⚠️ Error', error.error?.message || 'Hubo un problema al eliminar el usuario.', 'error');
       }
     );
   }
 
-  // Cerrar sesión
+  // 📌 Cerrar sesión
   cerrarSesion() {
     localStorage.clear();
     this.router.navigate(['/login']);
