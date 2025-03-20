@@ -24,6 +24,16 @@ export class TrabajadoresComponent implements OnInit {
   sedeKeys: (string | number)[] = [];
   rolUsuario: string = '';
 
+  toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+
+    if (sidebar && overlay) {
+      sidebar.classList.toggle('active'); // 🔥 Abre/cierra el sidebar
+      overlay.classList.toggle('active'); // 🔥 Muestra/oculta el fondo oscuro
+    }
+  }
+
   // 📌 Modales y mensajes personalizados
   mostrarModalContrasena: boolean = false;
   mostrarModalEliminar: boolean = false;

@@ -1,4 +1,10 @@
 <div class="admin-dashboard-container">
+  <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+  <!-- 📌 Botón para abrir el sidebar en móviles -->
+  <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
+
+<!-- 📌 Fondo para cerrar el sidebar en móviles -->
+  <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
   <!-- 📌 Sidebar -->
   <div class="sidebar">
     <h3>Panel de Trabajadores</h3>
