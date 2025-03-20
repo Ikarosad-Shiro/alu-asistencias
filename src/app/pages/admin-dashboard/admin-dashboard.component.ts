@@ -51,7 +51,7 @@ export class AdminDashboardComponent implements OnInit {
 cambiarRol(usuario: any, event: Event) {
   const userRole = this.getUserRole();
   const nuevoRol = (event.target as HTMLSelectElement).value;
-  const rolActual = usuario.rol;
+  const rolActual = usuario.rol; // 🔹 Guardamos el rol original
 
   if (rolActual === nuevoRol) {
     Swal.fire('ℹ️ Sin cambios', `El usuario ya tiene el rol ${nuevoRol}.`, 'info');
@@ -62,10 +62,12 @@ cambiarRol(usuario: any, event: Event) {
   if (userRole === 'Administrador') {
     if (rolActual === 'Administrador' || nuevoRol === 'Dios') {
       Swal.fire('🚫 Acción no permitida', 'No puedes cambiar el rol de otro Administrador ni ascender a alguien a Dios.', 'error');
+      usuario.rol = rolActual; // 🔥 Restauramos el valor original
       return;
     }
   } else if (userRole === 'Revisor') {
     Swal.fire('🚫 Acción no permitida', 'No tienes permisos para cambiar roles.', 'error');
+    usuario.rol = rolActual; // 🔥 Restauramos el valor original
     return;
   }
 
@@ -94,10 +96,11 @@ cambiarRol(usuario: any, event: Event) {
         },
         (error) => {
           Swal.fire('❌ Error', error.error?.message || 'No se pudo actualizar el rol.', 'error');
+          usuario.rol = rolActual; // 🔥 Restauramos el valor original si hay error
         }
       );
     } else {
-      usuario.rol = rolActual; // Restaurar el rol si se cancela
+      usuario.rol = rolActual; // 🔥 Restauramos el valor original si el usuario cancela
     }
   });
 }
