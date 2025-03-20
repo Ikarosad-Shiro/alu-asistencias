@@ -12,25 +12,25 @@ export class DashboardComponent implements OnInit {
 
   constructor(private router: Router) {
     console.log("📌 Constructor ejecutado.");
-    this.obtenerUsuario(); // Llamar función para obtener usuario
+    this.obtenerUsuario(); // Intentar obtener usuario al inicio
+
+    // **Escuchar cambios en localStorage (cuando el usuario inicia sesión)**
+    window.addEventListener('storage', () => {
+      console.log("🔄 Cambio detectado en localStorage.");
+      this.obtenerUsuario(); // Vuelve a obtener los datos
+    });
   }
 
   ngOnInit(): void {
     console.log("📌 ngOnInit ejecutado.");
 
-    // **Escuchar cambios en `localStorage`** por si el usuario se actualiza después del login
-    window.addEventListener('storage', () => {
-      console.log("🔄 Se detectó un cambio en localStorage.");
-      this.obtenerUsuario();
-    });
-
-    // **También actualizar usuario en `ngOnInit()`** por seguridad
+    // **Asegurar que los datos se actualicen después de la carga inicial**
     setTimeout(() => {
       this.obtenerUsuario();
     }, 500);
   }
 
-  // 📌 **Función para obtener el usuario desde localStorage**
+  // 📌 **Obtener usuario desde localStorage**
   obtenerUsuario() {
     const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
 
@@ -58,7 +58,7 @@ export class DashboardComponent implements OnInit {
     return this.usuarioRol === 'Administrador' || this.usuarioRol === 'Dios';
   }
 
-  // 📌 Redirigir al `AdminDashboard` cuando hagan clic en el botón
+  // 📌 Redirigir al `AdminDashboard`
   verUsuarios() {
     this.router.navigate(['/admin-dashboard']);
   }
