@@ -117,45 +117,41 @@
 /* 📌 Botones */
 .botones {
   display: flex;
-  gap: 10px;
   justify-content: center;
-  margin-top: 15px;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
-.btn-editar, .btn-actualizar {
-  padding: 5px 15px;
+.editar {
+  background-color: #f57c00;
+  color: white;
+  font-weight: bold;
   border: none;
-  border-radius: 5px;
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
   cursor: pointer;
-  color: #fff;
-  transition: background-color 0.3s;
 }
 
-.btn-editar {
-  background-color: #f0ad4e;
+.actualizar {
+  background-color: #1ab331;
+  color: white;
+  font-weight: bold;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-.btn-editar:hover {
-  background-color: #e0a800;
+.cancelar {
+  background-color: #d32f2f;
+  color: white;
+  font-weight: bold;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-.btn-actualizar {
-  background-color: #28a745;
-}
-
-.btn-actualizar:hover {
-  background-color: #218838;
-}
-
-.btn-actualizar:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-}
-
-.btn-cancelar {
-  background-color: #d9534f;
-  color: #fff;
-}
 
 /* 📌 Calendario */
 .calendario-container {
@@ -259,4 +255,22 @@
 
 .btn-regresar:active {
   transform: scale(0.95);
+}
+
+.titulo-nombre {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.subtitulo-sede {
+  color: #bbb;
+  font-style: italic;
+  margin-top: -0.8rem;
+  margin-bottom: 1rem;
 }

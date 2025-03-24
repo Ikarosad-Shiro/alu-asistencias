@@ -2,17 +2,28 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TrabajadoresService } from 'src/app/services/trabajadores.service';
 
+
 @Component({
   selector: 'app-detalle-trabajador',
   templateUrl: './detalle-trabajador.component.html',
   styleUrls: ['./detalle-trabajador.component.css']
+
 })
 export class DetalleTrabajadorComponent implements OnInit {
   trabajador: any = {};               // Propiedad para los datos del trabajador
+  trabajadorOriginal: any;
   editando: boolean = false;          // Modo edición
   rolUsuario: string = '';            // Rol del usuario
   sedeKeys: number[] = [];            // Lista de sedes
   modoEdicion: boolean = false;       // Modo edición activado o no
+  activarEdicion() {
+    this.modoEdicion = true;
+  }
+  cancelarEdicion() {
+    this.modoEdicion = false;
+    // Restauramos los datos originales
+    this.trabajador = JSON.parse(JSON.stringify(this.trabajadorOriginal));
+  }
 
   // Mapear IDs de sedes a nombres
   sedeNombres: { [key: number]: string } = {

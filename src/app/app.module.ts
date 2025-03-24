@@ -28,6 +28,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 // Servicios
 import { AuthService } from './services/auth.service';
@@ -62,6 +63,7 @@ import { AuthService } from './services/auth.service';
     MatIconModule,
     MatTableModule,
     CommonModule,
+    MatExpansionModule
   ],
   providers: [AuthService],
   bootstrap: [AppComponent]
