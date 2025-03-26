@@ -58,4 +58,21 @@ export class AuthService {
   resetPasswordConfirm(token: string, password: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/reset-password/confirm`, { token, password });
   }
+
+  obtenerDatosDesdeToken(): { nombre: string; rol: string } | null {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return {
+        nombre: payload.nombre,
+        rol: payload.rol
+      };
+    } catch (error) {
+      console.error('❌ Error al decodificar el token:', error);
+      return null;
+    }
+  }
+
 }
