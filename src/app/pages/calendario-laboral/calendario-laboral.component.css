@@ -4,11 +4,29 @@
   align-items: flex-start;
   padding: 2rem;
   min-height: 100vh;
-  background: var(--background-color, #f3f3f3); /* Si tienes fondo general */
+  background: var(--background-color, #f3f3f3); /* Fondo general opcional */
+}
+
+/* 📌 Contenedor principal con fondo semitransparente */
+.main-content {
+  flex-grow: 1;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 100vh;
+  background: none; /* Ya tienes fondo desde el body */
+}
+
+/* 📌 Card central */
+.bg-white\/90 {
+  background-color: rgba(255, 255, 255, 0.9); /* Compatibilidad sin Tailwind */
+  backdrop-filter: blur(6px);
 }
 
 .contenedor-calendario {
-  background: rgba(255, 255, 255, 0.9); /* Fondo semitransparente */
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 20px;
   padding: 2rem;
   box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
@@ -35,7 +53,54 @@ h2 {
   width: 200px;
 }
 
+/* 📌 Responsive para formularios en pantallas pequeñas */
+@media (max-width: 768px) {
+  .formulario-calendario {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .mat-form-field {
+    width: 100%;
+  }
+}
+
+/* 📌 Botón centrado */
 .boton-consultar {
   display: flex;
   justify-content: center;
+}
+
+/* 📌 Botón material */
+button[mat-raised-button] {
+  font-weight: bold;
+  padding: 10px 20px;
+  font-size: 15px;
+}
+
+/* 📌 Tabla con bordes suaves */
+table.mat-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* 📌 Celdas y encabezados */
+.mat-header-cell, .mat-cell {
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.mat-header-cell {
+  font-weight: bold;
+  background-color: #f5f5f5;
+}
+
+/* 📌 Scroll horizontal suave en tablas pequeñas */
+.overflow-auto {
+  overflow-x: auto;
+}
+
+/* 📌 Estilo opcional para mat-card (si se usa después) */
+mat-card {
+  margin-bottom: 1rem;
 }
