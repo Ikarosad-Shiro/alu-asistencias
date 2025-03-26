@@ -8,7 +8,7 @@ import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { TrabajadoresComponent } from './pages/trabajadores/trabajadores.component';
 import { DetalleTrabajadorComponent } from './pages/detalle-trabajador/detalle-trabajador.component';
-
+import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
 import { AuthGuard } from './guards/auth.guard';
 
 
@@ -21,6 +21,7 @@ const routes: Routes = [
   { path: 'admin-dashboard', component: AdminDashboardComponent, canActivate: [AuthGuard] },
   { path: 'trabajadores', component: TrabajadoresComponent, canActivate: [AuthGuard]},
   { path: 'trabajadores/:id', component: DetalleTrabajadorComponent, canActivate: [AuthGuard] },
+  { path: 'calendario-laboral', component: CalendarioLaboralComponent, canActivate: [AuthGuard] },
   { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent},
   { path: '**', redirectTo: 'login' } // 🔥 Cualquier ruta desconocida también va al login
