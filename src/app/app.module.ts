@@ -29,9 +29,11 @@ import { MatTableModule } from '@angular/material/table';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatSelectModule } from '@angular/material/select';
 
 // Servicios
 import { AuthService } from './services/auth.service';
+import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
 
 @NgModule({
   declarations: [
@@ -45,6 +47,7 @@ import { AuthService } from './services/auth.service';
     TrabajadoresComponent,
     CalendarioComponent,
     DetalleTrabajadorComponent,
+    CalendarioLaboralComponent,
   ],
   imports: [
     BrowserModule,
@@ -63,7 +66,8 @@ import { AuthService } from './services/auth.service';
     MatIconModule,
     MatTableModule,
     CommonModule,
-    MatExpansionModule
+    MatExpansionModule,
+    MatSelectModule
   ],
   providers: [AuthService],
   bootstrap: [AppComponent]
