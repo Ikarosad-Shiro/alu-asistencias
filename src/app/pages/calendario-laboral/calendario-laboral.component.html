@@ -5,7 +5,7 @@
 
   <!-- 📌 Sidebar -->
   <div class="sidebar" [class.active]="sidebarAbierto">
-    <h3>Dashboard</h3>
+    <h3>Configuracion de Calendario Labaroal</h3>
     <ul class="nav flex-column">
       <li class="nav-item">
         <button class="btn-sidebar" routerLink="/sedes">🏢 Sedes</button>
@@ -29,58 +29,69 @@
   <!-- 📌 Contenido principal -->
   <div class="main-content">
     <div class="contenedor-calendario">
-      <h2>Configuración de Calendario Laboral</h2>
+      <h2>Configuracion de Calendario Laboral</h2>
 
-      <!-- Selector de sede y año -->
-      <div class="formulario-calendario">
-        <mat-form-field appearance="outline">
+      <!-- 📅 Formulario -->
+      <form class="formulario-calendario" (ngSubmit)="consultarCalendario()">
+        <mat-form-field appearance="outline" class="mat-field">
           <mat-label>Sede</mat-label>
-          <mat-select [(value)]="sedeSeleccionada">
+          <mat-select [(value)]="sedeSeleccionada" required>
             <mat-option *ngFor="let sede of sedes" [value]="sede.id">
               {{ sede.nombre }}
             </mat-option>
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="mat-field">
           <mat-label>Año</mat-label>
-          <input matInput type="number" [(ngModel)]="anioSeleccionado" />
+          <input matInput type="number" [(ngModel)]="anioSeleccionado" name="anio" required />
         </mat-form-field>
 
         <div class="boton-consultar">
-          <button mat-raised-button color="primary" (click)="consultarCalendario()">
+          <button mat-raised-button color="primary" type="submit">
             Consultar configuración
           </button>
         </div>
-      </div>
+      </form>
 
-      <!-- Tabla de días especiales -->
-      <div *ngIf="diasEspeciales.length > 0" class="overflow-auto">
-        <h3 class="font-semibold text-lg mb-2">Días Especiales</h3>
+      <!-- 🗓️ Tabla de resultados --> <!-- Tabla de días especiales -->
+    <div *ngIf="diasEspeciales.length > 0" class="overflow-auto">
+      <h3 class="font-semibold text-lg mb-2">Días Especiales</h3>
 
-        <table mat-table [dataSource]="diasEspeciales" class="mat-elevation-z8" matSort>
-          <!-- Fecha -->
-          <ng-container matColumnDef="fecha">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
-            <td mat-cell *matCellDef="let dia">{{ dia.fecha | date }}</td>
-          </ng-container>
+      <table mat-table [dataSource]="diasEspeciales" class="mat-elevation-z8" matSort>
+      <!-- Fecha -->
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
+        <td mat-cell *matCellDef="let dia">{{ dia.fecha | date }}</td>
+      </ng-container>
 
-          <!-- Tipo -->
-          <ng-container matColumnDef="tipo">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
-            <td mat-cell *matCellDef="let dia">{{ dia.tipo }}</td>
-          </ng-container>
+      <!-- Tipo -->
+      <ng-container matColumnDef="tipo">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+        <td mat-cell *matCellDef="let dia">{{ dia.tipo }}</td>
+      </ng-container>
 
-          <!-- Descripción -->
-          <ng-container matColumnDef="descripcion">
-            <th mat-header-cell *matHeaderCellDef>Descripción</th>
-            <td mat-cell *matCellDef="let dia">{{ dia.descripcion }}</td>
-          </ng-container>
+      <!-- Descripción -->
+      <ng-container matColumnDef="descripcion">
+        <th mat-header-cell *matHeaderCellDef>Descripción</th>
+        <td mat-cell *matCellDef="let dia">{{ dia.descripcion }}</td>
+      </ng-container>
 
-          <!-- Filas -->
-          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-          <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
-        </table>
+      <!-- Filas -->
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
+    </table>
+  </div>
+
+  <!-- 🛑 Mensaje si no hay días especiales configurados -->
+  <div *ngIf="busquedaRealizada && diasEspeciales.length === 0" class="text-center mt-6">
+    <p class="text-gray-700 font-medium">📭 No hay configuración de calendario para esta sede y año.</p>
+  </div>
+
+
+      <!-- ❌ Sin resultados -->
+      <div *ngIf="diasEspeciales.length === 0 && busquedaRealizada" class="text-center text-gray-600 mt-4">
+        No se encontraron días especiales para la sede y año seleccionados.
       </div>
     </div>
   </div>

@@ -18,6 +18,7 @@ export class CalendarioLaboralComponent implements OnInit {
   sidebarAbierto: boolean = false;
   usuarioNombre: string = '';
   usuarioRol: string = '';
+  busquedaRealizada: boolean = false;
 
   constructor(
     private calendarioService: CalendarioService,
@@ -32,7 +33,7 @@ export class CalendarioLaboralComponent implements OnInit {
   }
 
   obtenerUsuario() {
-    const usuario = this.authService.obtenerDatosDesdeToken?.(); // Manejo defensivo
+    const usuario = this.authService.obtenerDatosDesdeToken(); // Manejo defensivo
     this.usuarioNombre = usuario?.nombre || 'Usuario';
     this.usuarioRol = usuario?.rol || '';
   }
@@ -51,17 +52,17 @@ export class CalendarioLaboralComponent implements OnInit {
   consultarCalendario() {
     if (!this.sedeSeleccionada || !this.anioSeleccionado) return;
 
-    this.calendarioService
-      .obtenerPorSedeYAnio(this.sedeSeleccionada, this.anioSeleccionado)
-      .subscribe({
-        next: (res: any) => {
-          this.diasEspeciales = res?.diasEspeciales || [];
-        },
-        error: (err: any) => {
-          console.error('❌ Error al consultar calendario:', err);
-          this.diasEspeciales = [];
-        }
-      });
+    this.calendarioService.obtenerPorSedeYAnio(this.sedeSeleccionada, this.anioSeleccionado).subscribe({
+      next: (res: any) => {
+        this.diasEspeciales = res.diasEspeciales;
+        this.busquedaRealizada = true;
+      },
+      error: (err: any) => {
+        console.error('Error al consultar calendario:', err);
+        this.diasEspeciales = [];
+        this.busquedaRealizada = true;
+      }
+    });
   }
 
   cerrarSesion() {
