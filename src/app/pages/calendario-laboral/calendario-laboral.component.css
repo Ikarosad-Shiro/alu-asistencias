@@ -6,7 +6,7 @@
   font-family: Arial, sans-serif;
 }
 
-/* 📌 Estructura principal */
+/* 📌 Contenedor principal */
 .dashboard-container {
   display: flex;
   width: 100%;
@@ -97,7 +97,7 @@
   }
 }
 
-/* 📌 Overlay para móvil */
+/* 📌 Overlay móvil */
 .sidebar-overlay {
   position: fixed;
   top: 0;
@@ -113,7 +113,7 @@
   display: block;
 }
 
-/* 📌 Botón de menú (móvil) */
+/* 📌 Botón hamburguesa móvil */
 .menu-toggle {
   display: none;
   position: fixed;
@@ -139,7 +139,7 @@
   }
 }
 
-/* 📌 Contenido principal */
+/* 📌 Contenido */
 .main-content {
   flex-grow: 1;
   padding: 20px;
@@ -152,7 +152,7 @@
   overflow-y: auto;
 }
 
-/* 📌 Contenedor del calendario */
+/* 📌 Tarjeta principal */
 .contenedor-calendario {
   background: rgba(255, 255, 255, 0.9);
   border-radius: 20px;
@@ -162,6 +162,7 @@
   max-width: 900px;
 }
 
+/* 📌 Título */
 h2 {
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
@@ -169,6 +170,7 @@ h2 {
   text-align: center;
 }
 
+/* 📌 Formulario */
 .formulario-calendario {
   display: flex;
   gap: 1rem;
@@ -181,20 +183,27 @@ h2 {
   width: 200px;
 }
 
-/* 📌 Botón consultar centrado */
+/* 📌 Botón consultar */
 .boton-consultar {
   display: flex;
   align-items: center;
 }
 
-/* 📌 Botón de Angular Material */
 button[mat-raised-button] {
   font-weight: bold;
   padding: 10px 20px;
   font-size: 15px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* 📌 Tabla de resultados */
+button[mat-raised-button][disabled] {
+  background-color: #cccccc !important;
+  color: #666 !important;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 📌 Tabla */
 table.mat-table {
   border-collapse: collapse;
   width: 100%;
@@ -218,6 +227,26 @@ table.mat-table {
   overflow-x: auto;
 }
 
+/* 📌 Mensajes */
+.mensaje-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.mensaje-info .material-icons {
+  font-size: 20px;
+  color: #007bff;
+}
+
 /* 📱 Responsive */
 @media (max-width: 768px) {
   .formulario-calendario {
@@ -233,24 +262,4 @@ table.mat-table {
     margin-left: 0;
     width: 100%;
   }
-
-  .mensaje-info {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #333;
-    font-size: 16px;
-    font-weight: 500;
-    padding: 1rem;
-    background-color: rgba(255, 255, 255, 0.7);
-    border-radius: 10px;
-    margin-top: 20px;
-  }
-
-  .mensaje-info .material-icons {
-    font-size: 20px;
-    margin-right: 8px;
-    color: #007bff;
-  }
-
 }
