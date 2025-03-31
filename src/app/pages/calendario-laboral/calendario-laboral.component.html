@@ -88,6 +88,11 @@
     <p class="text-gray-700 font-medium">📭 No hay configuración de calendario para esta sede y año.</p>
   </div>
 
+  <!-- 📌 Mensaje si no hay sede o año seleccionado -->
+  <div *ngIf="busquedaRealizada && (!sedeSeleccionada || !anioSeleccionado)" class="mensaje-info">
+    <span class="material-icons">info</span>
+    Por favor selecciona una sede y un año para consultar el calendario.
+  </div>
 
       <!-- ❌ Sin resultados -->
       <div *ngIf="diasEspeciales.length === 0 && busquedaRealizada" class="text-center text-gray-600 mt-4">

@@ -233,4 +233,24 @@ table.mat-table {
     margin-left: 0;
     width: 100%;
   }
+
+  .mensaje-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 1rem;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    margin-top: 20px;
+  }
+
+  .mensaje-info .material-icons {
+    font-size: 20px;
+    margin-right: 8px;
+    color: #007bff;
+  }
+
 }
