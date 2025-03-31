@@ -28,16 +28,17 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
-import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSelectModule } from '@angular/material/select';
+import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 
-// Servicios
-import { AuthService } from './services/auth.service';
+// Angular Calendar
 import { CalendarModule, DateAdapter } from 'angular-calendar';
 import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 
+// Servicios
+import { AuthService } from './services/auth.service';
 
 @NgModule({
   declarations: [
@@ -70,10 +71,10 @@ import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
     MatListModule,
     MatIconModule,
     MatTableModule,
-    CommonModule,
     MatExpansionModule,
     MatSelectModule,
-    CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory })
+    CommonModule,
+    CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),
   ],
   providers: [AuthService],
   bootstrap: [AppComponent]
