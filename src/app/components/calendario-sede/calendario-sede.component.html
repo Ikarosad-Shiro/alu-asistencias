@@ -1,21 +1,24 @@
 <!-- calendario-sede.component.html -->
 <div class="calendario-wrapper">
+  <!-- 📝 Título -->
   <div class="titulo-seccion">
     <h3>Calendario Laboral {{ anio }}</h3>
   </div>
 
+  <!-- 📅 Calendario -->
   <div class="calendario-contenedor">
     <mwl-calendar-month-view
       [viewDate]="viewDate"
       [events]="eventos"
       [locale]="locale"
-      [activeDayIsOpen]="true"
       [refresh]="refresh"
-      (dayClicked)="onDayClick($event.day.date)"
-      [weekStartsOn]="1">
+      [weekStartsOn]="1"
+      [activeDayIsOpen]="false"
+      (dayClicked)="onDayClick($event.day.date)">
     </mwl-calendar-month-view>
   </div>
 
+  <!-- 🎨 Leyenda -->
   <div class="leyenda">
     <span><span class="color-box descanso"></span> Descanso</span>
     <span><span class="color-box festivo"></span> Festivo</span>

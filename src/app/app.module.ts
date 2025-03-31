@@ -14,6 +14,8 @@ import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password
 import { TrabajadoresComponent } from './pages/trabajadores/trabajadores.component';
 import { CalendarioComponent } from './components/calendario/calendario.component';
 import { DetalleTrabajadorComponent } from './pages/detalle-trabajador/detalle-trabajador.component';
+import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
+import { CalendarioSedeComponent } from './components/calendario-sede/calendario-sede.component';
 
 // Formularios y Material
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -33,10 +35,9 @@ import { MatSelectModule } from '@angular/material/select';
 
 // Servicios
 import { AuthService } from './services/auth.service';
-import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
 import { CalendarModule, DateAdapter } from 'angular-calendar';
 import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
-import { CalendarioSedeComponent } from './components/calendario-sede/calendario-sede.component';
+
 
 @NgModule({
   declarations: [
