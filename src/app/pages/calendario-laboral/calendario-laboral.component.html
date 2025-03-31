@@ -31,7 +31,7 @@
     <div class="contenedor-calendario">
       <h2>Configuración de Calendario Laboral</h2>
 
-      <!-- 📅 Formulario -->
+      <!-- 📅 Formulario de selección -->
       <form class="formulario-calendario" (ngSubmit)="consultarCalendario()">
         <mat-form-field appearance="outline" class="mat-field">
           <mat-label>Sede</mat-label>
@@ -58,16 +58,16 @@
         </div>
       </form>
 
-      <!-- 📅 Calendario visual en lugar de la tabla -->
+      <!-- 📅 Calendario visual -->
       <app-calendario-sede
-        *ngIf="busquedaRealizada && diasEspeciales.length > 0"
+        *ngIf="busquedaRealizada"
         [sede]="sedeSeleccionada!"
         [anio]="anioSeleccionado"
         [dias]="diasEspeciales">
       </app-calendario-sede>
 
       <!-- 🛑 Mensaje si no hay días especiales configurados -->
-      <div *ngIf="busquedaRealizada && diasEspeciales.length === 0 && sedeSeleccionada && anioSeleccionado" class="text-center mt-6">
+      <div *ngIf="busquedaRealizada && diasEspeciales.length === 0" class="text-center mt-6">
         <p class="text-gray-700 font-medium">📭 No hay configuración de calendario para esta sede y año.</p>
         <p class="text-gray-600">No se encontraron días especiales para la sede y año seleccionados.</p>
       </div>
