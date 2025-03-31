@@ -34,6 +34,9 @@ import { MatSelectModule } from '@angular/material/select';
 // Servicios
 import { AuthService } from './services/auth.service';
 import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
+import { CalendarModule, DateAdapter } from 'angular-calendar';
+import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
+import { CalendarioSedeComponent } from './components/calendario-sede/calendario-sede.component';
 
 @NgModule({
   declarations: [
@@ -48,6 +51,7 @@ import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendari
     CalendarioComponent,
     DetalleTrabajadorComponent,
     CalendarioLaboralComponent,
+    CalendarioSedeComponent,
   ],
   imports: [
     BrowserModule,
@@ -67,7 +71,8 @@ import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendari
     MatTableModule,
     CommonModule,
     MatExpansionModule,
-    MatSelectModule
+    MatSelectModule,
+    CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory })
   ],
   providers: [AuthService],
   bootstrap: [AppComponent]

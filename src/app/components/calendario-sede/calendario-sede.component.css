@@ -1,0 +1,47 @@
+.calendario-wrapper {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.titulo-seccion h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: bold;
+  font-size: 1.8rem;
+}
+
+.calendario-contenedor {
+  margin-bottom: 20px;
+}
+
+.leyenda {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-weight: 500;
+}
+
+.color-box {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  border-radius: 3px;
+}
+
+.color-box.descanso {
+  background-color: #ad2121;
+}
+
+.color-box.festivo {
+  background-color: #f6c23e;
+}
+
+.color-box.personalizado {
+  background-color: #1e90ff;
+}

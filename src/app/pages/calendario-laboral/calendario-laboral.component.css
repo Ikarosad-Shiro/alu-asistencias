@@ -203,28 +203,62 @@ button[mat-raised-button][disabled] {
   box-shadow: none;
 }
 
-/* 📌 Tabla */
-table.mat-table {
-  border-collapse: collapse;
-  width: 100%;
-  background-color: white;
+/* 📅 Contenedor principal del calendario */
+.calendario-wrapper {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+/* 📝 Título */
+.titulo-seccion {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.titulo-seccion h3 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 📅 Calendario */
+.calendario-contenedor {
   border-radius: 10px;
   overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.mat-header-cell,
-.mat-cell {
-  padding: 12px;
-  border-bottom: 1px solid #e0e0e0;
+/* 📌 Leyenda */
+.leyenda {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: #555;
 }
 
-.mat-header-cell {
-  font-weight: bold;
-  background-color: #f5f5f5;
+.color-box {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  border-radius: 3px;
 }
 
-.overflow-auto {
-  overflow-x: auto;
+.color-box.descanso {
+  background-color: #ad2121;
+}
+
+.color-box.festivo {
+  background-color: #1e90ff;
+}
+
+.color-box.personalizado {
+  background-color: #e3bc08;
 }
 
 /* 📌 Mensajes */

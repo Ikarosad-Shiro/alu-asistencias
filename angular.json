@@ -26,6 +26,7 @@
               "src/_redirects"
             ],
             "styles": [
+              "node_modules/angular-calendar/css/angular-calendar.css",
               "@angular/material/prebuilt-themes/deeppurple-amber.css",
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
@@ -93,6 +94,7 @@
               "src/_redirects"
             ],
             "styles": [
+              "node_modules/angular-calendar/css/angular-calendar.css",
               "@angular/material/prebuilt-themes/deeppurple-amber.css",
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "node_modules/@fortawesome/fontawesome-free/css/all.min.css",

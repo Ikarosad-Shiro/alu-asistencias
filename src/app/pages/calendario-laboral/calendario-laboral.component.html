@@ -58,34 +58,13 @@
         </div>
       </form>
 
-      <!-- 🗓️ Tabla de días especiales -->
-      <div *ngIf="diasEspeciales.length > 0" class="overflow-auto">
-        <h3 class="font-semibold text-lg mb-2">Días Especiales</h3>
-
-        <table mat-table [dataSource]="diasEspeciales" class="mat-elevation-z8" matSort>
-          <!-- Fecha -->
-          <ng-container matColumnDef="fecha">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
-            <td mat-cell *matCellDef="let dia">{{ dia.fecha | date }}</td>
-          </ng-container>
-
-          <!-- Tipo -->
-          <ng-container matColumnDef="tipo">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
-            <td mat-cell *matCellDef="let dia">{{ dia.tipo }}</td>
-          </ng-container>
-
-          <!-- Descripción -->
-          <ng-container matColumnDef="descripcion">
-            <th mat-header-cell *matHeaderCellDef>Descripción</th>
-            <td mat-cell *matCellDef="let dia">{{ dia.descripcion }}</td>
-          </ng-container>
-
-          <!-- Filas -->
-          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-          <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
-        </table>
-      </div>
+      <!-- 📅 Calendario visual en lugar de la tabla -->
+      <app-calendario-sede
+        *ngIf="busquedaRealizada && diasEspeciales.length > 0"
+        [sede]="sedeSeleccionada!"
+        [anio]="anioSeleccionado"
+        [dias]="diasEspeciales">
+      </app-calendario-sede>
 
       <!-- 🛑 Mensaje si no hay días especiales configurados -->
       <div *ngIf="busquedaRealizada && diasEspeciales.length === 0 && sedeSeleccionada && anioSeleccionado" class="text-center mt-6">
