@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -33,7 +33,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 
-// 🗓️ Angular Calendar
+// Angular Calendar 🗓️
 import { CalendarModule, DateAdapter } from 'angular-calendar';
 import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { CalendarCommonModule } from 'angular-calendar';
@@ -81,6 +81,7 @@ import { AuthService } from './services/auth.service';
     CalendarCommonModule
   ],
   providers: [AuthService],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA] // 💥 ¡Esto desbloquea mwl-calendar-month-view!
 })
 export class AppModule {}
