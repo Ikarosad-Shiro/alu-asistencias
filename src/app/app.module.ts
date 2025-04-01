@@ -33,9 +33,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 
-// Angular Calendar 🗓️
+// 🗓️ Angular Calendar
 import { CalendarModule, DateAdapter } from 'angular-calendar';
 import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
+import { CalendarCommonModule } from 'angular-calendar';
 
 // Servicios
 import { AuthService } from './services/auth.service';
@@ -53,7 +54,7 @@ import { AuthService } from './services/auth.service';
     CalendarioComponent,
     DetalleTrabajadorComponent,
     CalendarioLaboralComponent,
-    CalendarioSedeComponent,
+    CalendarioSedeComponent
   ],
   imports: [
     BrowserModule,
@@ -75,13 +76,11 @@ import { AuthService } from './services/auth.service';
     MatSelectModule,
     CommonModule,
 
-    // 🗓️ Calendario
-    CalendarModule.forRoot({
-      provide: DateAdapter,
-      useFactory: adapterFactory,
-    }),
+    // 🗓️ Angular Calendar
+    CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),
+    CalendarCommonModule
   ],
   providers: [AuthService],
-  bootstrap: [AppComponent],
+  bootstrap: [AppComponent]
 })
 export class AppModule {}
