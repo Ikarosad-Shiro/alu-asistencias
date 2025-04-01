@@ -12,9 +12,9 @@ import { Router } from '@angular/router';
 export class CalendarioLaboralComponent implements OnInit {
   sedes: { id: number, nombre: string }[] = [];
   sedeSeleccionada: number | null = null;
+  sedeSeleccionadaNombre: string = '';
   anioSeleccionado: number = new Date().getFullYear();
-  diasEspeciales: { fecha: string, tipo: string, descripcion: string }[] = [];
-  columnas: string[] = ['fecha', 'tipo', 'descripcion'];
+  diasEspeciales: any[] = [];
   sidebarAbierto: boolean = false;
   usuarioNombre: string = '';
   usuarioRol: string = '';
@@ -33,7 +33,7 @@ export class CalendarioLaboralComponent implements OnInit {
   }
 
   obtenerUsuario() {
-    const usuario = this.authService.obtenerDatosDesdeToken(); // Manejo defensivo
+    const usuario = this.authService.obtenerDatosDesdeToken();
     this.usuarioNombre = usuario?.nombre || 'Usuario';
     this.usuarioRol = usuario?.rol || '';
   }
@@ -44,9 +44,15 @@ export class CalendarioLaboralComponent implements OnInit {
         this.sedes = res;
       },
       error: (err: any) => {
-        console.error('❌ Error al obtener sedes:', err);
+        console.error('Error al obtener sedes:', err);
       }
     });
+  }
+
+  onSedeChange() {
+    const sede = this.sedes.find(s => s.id === this.sedeSeleccionada);
+    this.sedeSeleccionadaNombre = sede ? sede.nombre : '';
+    this.consultarCalendario();
   }
 
   consultarCalendario() {
@@ -54,10 +60,8 @@ export class CalendarioLaboralComponent implements OnInit {
 
     this.calendarioService.obtenerPorSedeYAnio(this.sedeSeleccionada, this.anioSeleccionado).subscribe({
       next: (res: any) => {
-        this.diasEspeciales = Array.isArray(res.diasEspeciales) ? res.diasEspeciales : [];
+        this.diasEspeciales = Array.isArray(res?.diasEspeciales) ? res.diasEspeciales : [];
         this.busquedaRealizada = true;
-
-        console.log("🎉 Días especiales:", this.diasEspeciales);
       },
       error: (err: any) => {
         console.error('Error al consultar calendario:', err);
@@ -67,6 +71,24 @@ export class CalendarioLaboralComponent implements OnInit {
     });
   }
 
+  onEventoGuardado(evento: any) {
+    if (!this.sedeSeleccionada) return;
+
+    const eventoCompleto = {
+      ...evento,
+      sede: this.sedeSeleccionada,
+      año: this.anioSeleccionado
+    };
+
+    this.calendarioService.agregarDia(eventoCompleto).subscribe({
+      next: () => {
+        this.consultarCalendario();
+      },
+      error: (err: any) => {
+        console.error('Error al guardar día especial:', err);
+      }
+    });
+  }
 
   cerrarSesion() {
     this.authService.logout();
@@ -78,13 +100,6 @@ export class CalendarioLaboralComponent implements OnInit {
   }
 
   toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-
-    if (sidebar && overlay) {
-      sidebar.classList.toggle('active');
-      overlay.classList.toggle('active');
-    }
     this.sidebarAbierto = !this.sidebarAbierto;
   }
 }

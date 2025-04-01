@@ -1,81 +1,65 @@
 <div class="dashboard-container">
-  <!-- 📌 Botón de menú para dispositivos móviles -->
+  <!-- Botón de menú móvil -->
   <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
   <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
 
-  <!-- 📌 Sidebar -->
+  <!-- Sidebar -->
   <div class="sidebar" [class.active]="sidebarAbierto">
     <h3>Configuración de Calendario Laboral</h3>
     <ul class="nav flex-column">
       <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/sedes">🏢 Sedes</button>
+        <mat-checkbox>Sedes</mat-checkbox>
       </li>
       <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button>
+        <mat-checkbox checked>Trabajadores</mat-checkbox>
       </li>
       <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button>
+        <mat-checkbox>Perfil</mat-checkbox>
       </li>
       <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button>
+        <mat-checkbox>Acerca de</mat-checkbox>
       </li>
       <li class="nav-item" *ngIf="esAdmin()">
-        <button class="btn-sidebar" routerLink="/admin-dashboard">📋 Ver Usuarios</button>
+        <mat-checkbox>Ver Usuarios</mat-checkbox>
       </li>
     </ul>
-    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+    <mat-checkbox checked class="btn-logout">Cerrar Sesión</mat-checkbox>
   </div>
 
-  <!-- 📌 Contenido principal -->
+  <!-- Contenido principal -->
   <div class="main-content">
     <div class="contenedor-calendario">
       <h2>Configuración de Calendario Laboral</h2>
 
-      <!-- 📅 Formulario de selección -->
-      <form class="formulario-calendario" (ngSubmit)="consultarCalendario()">
-        <mat-form-field appearance="outline" class="mat-field">
+      <!-- Filtros -->
+      <div class="filtros">
+        <mat-form-field appearance="outline">
           <mat-label>Sede</mat-label>
-          <mat-select [(value)]="sedeSeleccionada" required>
+          <mat-select [(value)]="sedeSeleccionada" (selectionChange)="onSedeChange()">
             <mat-option *ngFor="let sede of sedes" [value]="sede.id">
               {{ sede.nombre }}
             </mat-option>
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="mat-field">
+        <mat-form-field appearance="outline">
           <mat-label>Año</mat-label>
-          <input matInput type="number" [(ngModel)]="anioSeleccionado" name="anio" required />
+          <input matInput type="number" [(ngModel)]="anioSeleccionado" min="2023" max="2030">
         </mat-form-field>
-
-        <div class="boton-consultar">
-          <button
-            mat-raised-button
-            color="primary"
-            type="submit"
-            [disabled]="!sedeSeleccionada || !anioSeleccionado">
-            Consultar configuración
-          </button>
-        </div>
-      </form>
-
-      <!-- 📅 Calendario visual -->
-      <app-calendario-sede
-        *ngIf="busquedaRealizada"
-        [sede]="sedeSeleccionada!"
-        [anio]="anioSeleccionado"
-        [dias]="diasEspeciales">
-      </app-calendario-sede>
-
-      <!-- 🛑 Mensaje si no hay días especiales configurados -->
-      <div *ngIf="busquedaRealizada && diasEspeciales.length === 0" class="text-center mt-6">
-        <p class="text-gray-700 font-medium">📭 No hay configuración de calendario para esta sede y año.</p>
-        <p class="text-gray-600">No se encontraron días especiales para la sede y año seleccionados.</p>
       </div>
 
-      <!-- 📌 Mensaje si no hay sede o año seleccionado -->
-      <div *ngIf="busquedaRealizada && (!sedeSeleccionada || !anioSeleccionado)" class="mensaje-info text-center mt-4">
-        <span class="material-icons">info</span>
-        Por favor selecciona una sede y un año para consultar el calendario.
+      <app-calendario-sede
+      *ngIf="busquedaRealizada && sedeSeleccionada !== null"
+      [sede]="sedeSeleccionada!"
+      [sedeNombre]="sedeSeleccionadaNombre"
+      [anio]="anioSeleccionado"
+      [eventos]="diasEspeciales"
+      (eventoGuardado)="onEventoGuardado($event)">
+    </app-calendario-sede>
+
+      <!-- Mensajes -->
+      <div *ngIf="busquedaRealizada && diasEspeciales.length === 0" class="mensaje-vacio">
+        <p>No hay configuración de calendario para esta sede y año.</p>
       </div>
     </div>
   </div>
