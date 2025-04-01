@@ -1,6 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { CalendarEvent, CalendarView } from 'angular-calendar';
-import { CalendarioService } from '../../services/calendario.service';
+import { addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
 
 @Component({
   selector: 'app-calendario-sede',
@@ -9,77 +8,84 @@ import { CalendarioService } from '../../services/calendario.service';
 })
 export class CalendarioSedeComponent implements OnInit {
   @Input() sede!: number;
-  @Input() anio!: number;
   @Input() sedeNombre: string = '';
+  @Input() anio!: number;
+  @Input() eventos: any[] = [];
 
-  // Calendario
-  view: CalendarView = CalendarView.Month;
-  viewDate: Date = new Date();
-  eventos: CalendarEvent[] = [];
-  locale: string = 'es';
-
-  // Modal
-  mostrarModal: boolean = false;
+  mesActual = new Date();
+  diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  diasMes: any[] = [];
+  mostrarModal = false;
   fechaSeleccionada!: Date;
-  nuevoEvento: any = {
+
+  nuevoEvento = {
     tipo: '',
     descripcion: ''
   };
 
-  constructor(private calendarioService: CalendarioService) {}
-
   ngOnInit(): void {
-    this.cargarEventos();
+    this.mesActual = new Date(this.anio, 0, 1); // Enero del año seleccionado
+    this.generarDiasMes();
   }
 
-  cargarEventos(): void {
-    this.calendarioService.obtenerPorSedeYAnio(this.sede, this.anio).subscribe({
-      next: (eventos) => {
-        this.eventos = eventos.map((evento: any) => this.formatearEvento(evento));
-      },
-      error: (err) => console.error('Error al cargar eventos:', err)
-    });
+  generarDiasMes(): void {
+    const inicioMes = startOfMonth(this.mesActual);
+    const finMes = endOfMonth(this.mesActual);
+    const dias = eachDayOfInterval({ start: inicioMes, end: finMes });
+
+    // Ajustar para que comience en domingo
+    const primerDia = inicioMes.getDay();
+    const diasVacios = Array(primerDia).fill(null);
+
+    this.diasMes = [
+      ...diasVacios,
+      ...dias.map(dia => ({
+        fecha: dia,
+        seleccionado: false,
+        evento: this.eventos.find(e => isSameDay(new Date(e.fecha), dia))
+      }))
+    ];
   }
 
-  onDayClick(day: any): void {
-    this.fechaSeleccionada = day.date;
-    this.abrirModalAgregar();
-  }
+  seleccionarDia(dia: any): void {
+    if (!dia.fecha) return;
 
-  abrirModalAgregar(): void {
-    this.nuevoEvento = { tipo: '', descripcion: '' };
+    this.fechaSeleccionada = dia.fecha;
+    if (dia.evento) {
+      this.nuevoEvento = { ...dia.evento };
+    } else {
+      this.nuevoEvento = { tipo: '', descripcion: '' };
+    }
     this.mostrarModal = true;
   }
 
-  guardarEvento(): void {
-    const eventoData = {
-      sede: this.sede,
-      año: this.anio,
-      fecha: this.fechaSeleccionada.toISOString(),
-      tipo: this.nuevoEvento.tipo,
-      descripcion: this.nuevoEvento.descripcion
-    };
-
-    this.calendarioService.agregarDia(eventoData).subscribe({
-      next: () => {
-        this.cargarEventos();
-        this.cerrarModal();
-      },
-      error: (err) => console.error('Error al guardar:', err)
-    });
+  esHoy(fecha: Date): boolean {
+    return isToday(fecha);
   }
 
-  private formatearEvento(evento: any): CalendarEvent {
-    let color = { primary: '#1e90ff', secondary: '#D1E8FF' };
-    if (evento.tipo === 'descanso') color = { primary: '#ad2121', secondary: '#FAE3E3' };
-    if (evento.tipo === 'festivo') color = { primary: '#f6c23e', secondary: '#fff3cd' };
+  mesAnterior(): void {
+    this.mesActual = subMonths(this.mesActual, 1);
+    this.generarDiasMes();
+  }
 
-    return {
-      start: new Date(evento.fecha),
-      title: `${evento.tipo.toUpperCase()}: ${evento.descripcion}`,
-      color,
-      allDay: true
+  mesSiguiente(): void {
+    this.mesActual = addMonths(this.mesActual, 1);
+    this.generarDiasMes();
+  }
+
+  guardarEvento(): void {
+    // Lógica para guardar el evento
+    const nuevoDiaEspecial = {
+      fecha: this.fechaSeleccionada,
+      tipo: this.nuevoEvento.tipo,
+      descripcion: this.nuevoEvento.descripcion,
+      sede: this.sede
     };
+
+    // Aquí llamarías a tu servicio para guardar
+    console.log('Guardando:', nuevoDiaEspecial);
+    this.cerrarModal();
+    this.generarDiasMes(); // Refrescar la vista
   }
 
   cerrarModal(): void {
