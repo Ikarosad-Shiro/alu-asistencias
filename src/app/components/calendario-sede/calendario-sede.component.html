@@ -1,27 +1,46 @@
-<!-- calendario-sede.component.html -->
 <div class="calendario-wrapper">
-  <!-- 📝 Título -->
-  <div class="titulo-seccion">
-    <h3>Calendario Laboral {{ anio }}</h3>
+  <!-- Cabecera con sede y año -->
+  <div class="cabecera">
+    <h2>Calendario Laboral: {{ sedeNombre }} - {{ anio }}</h2>
+    <button mat-raised-button color="primary" (click)="abrirModalAgregar()">
+      + Agregar día especial
+    </button>
   </div>
 
-  <!-- 📅 Calendario -->
-  <div class="calendario-contenedor">
-    <mwl-calendar-month-view
-      [viewDate]="viewDate"
-      [events]="eventos"
-      [locale]="locale"
-      [refresh]="refresh"
-      [weekStartsOn]="1"
-      [activeDayIsOpen]="false"
-      (dayClicked)="onDayClick($event.day.date)">
-    </mwl-calendar-month-view>
-  </div>
+  <!-- Calendario -->
+  <mwl-calendar-month-view
+    [viewDate]="viewDate"
+    [events]="eventos"
+    [locale]="locale"
+    [activeDayIsOpen]="false"
+    (dayClicked)="onDayClick($event.day)">
+  </mwl-calendar-month-view>
 
-  <!-- 🎨 Leyenda -->
-  <div class="leyenda">
-    <span><span class="color-box descanso"></span> Descanso</span>
-    <span><span class="color-box festivo"></span> Festivo</span>
-    <span><span class="color-box personalizado"></span> Otros</span>
+  <!-- Modal para agregar/editar -->
+  <div class="modal" *ngIf="mostrarModal">
+    <div class="modal-contenido">
+      <h3>{{ fechaSeleccionada | date:'fullDate':'es' }}</h3>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Tipo de día</mat-label>
+        <mat-select [(ngModel)]="nuevoEvento.tipo">
+          <mat-option value="festivo">Festivo</mat-option>
+          <mat-option value="descanso">Descanso</mat-option>
+          <mat-option value="otros">Otros</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Descripción</mat-label>
+        <input matInput [(ngModel)]="nuevoEvento.descripcion">
+      </mat-form-field>
+
+      <div class="modal-acciones">
+        <button mat-button (click)="cerrarModal()">Cancelar</button>
+        <button mat-raised-button color="primary" (click)="guardarEvento()">
+          Guardar
+        </button>
+      </div>
+    </div>
   </div>
 </div>
