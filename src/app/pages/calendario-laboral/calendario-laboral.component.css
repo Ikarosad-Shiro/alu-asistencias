@@ -1,48 +1,188 @@
 .dashboard-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  font-family: Arial, sans-serif;
   background: url('../../../assets/dashboard.webp') no-repeat center center fixed;
   background-size: cover;
-  font-family: Arial, sans-serif;
 }
 
-/* Sidebar */
+/* 📌 Sidebar flotante y optimizado en la página de trabajadores */
 .sidebar {
+  background-color: #343a40;
+  color: white;
+  padding: 15px;
   width: 250px;
-  background: #343a40;
-  color: white;
-  padding: 20px;
-  transition: transform 0.3s ease;
+  height: 100vh;
+  position: fixed;
+  left: -260px; /* Oculto por defecto en móviles */
+  top: 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: left 0.3s ease-in-out;
+  z-index: 1000;
 }
 
+/* 📌 Sidebar (Menú lateral) */
+.sidebar {
+  background-color: #343a40;
+  color: white;
+  padding: 15px;
+  width: 250px; /* Ancho fijo del sidebar */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 📌 Cuando se activa en móviles */
 .sidebar.active {
-  transform: translateX(0);
+  left: 0;
 }
 
-.sidebar h3 {
+/* 📌 Sidebar oculto en móviles por defecto */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 70%;
+    max-width: 280px;
+    left: -280px; /* 🔥 Lo escondemos por defecto */
+    position: fixed;
+    transition: left 0.3s ease-in-out;
+    z-index: 1000;
+  }
+}
+
+
+  /* 📌 Cuando el sidebar está activo, se muestra */
+  .sidebar.active {
+    left: 0;
+  }
+
+
+/* 📌 Fondo semitransparente al abrir el sidebar */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
+
+  /* 📌 Mostramos la capa de fondo al abrir el sidebar */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .sidebar-overlay.active {
+    display: block; /* 🔥 Se muestra cuando el sidebar está activo */
+  }
+
+   /* 📌 Ajuste del contenido para que no se vea cortado */
+   .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+
+/* 📌 Botón de menú para móviles */
+.menu-toggle {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  background-color: #007bff;
   color: white;
-  margin-bottom: 20px;
+  border: none;
+  padding: 10px 15px;
+  font-size: 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1100;
 }
 
+.menu-toggle:hover {
+  background-color: #0056b3;
+}
+
+/* 📌 Título del sidebar */
+.sidebar h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* 📌 Estilo para los botones del sidebar */
 .nav {
-  list-style: none;
-  padding: 0;
+  width: 100%;
 }
 
 .nav-item {
-  margin-bottom: 10px;
+  width: 100%;
+  margin-bottom: 15px;
 }
 
-.btn-logout {
-  margin-top: 30px;
+.btn-sidebar {
+  width: 100%;
+  color: white;
+  text-align: left;
+  padding: 12px 15px;
+  background-color: #495057;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-sidebar:hover {
+  background-color: #007bff;
   color: white;
 }
 
-/* Main content */
+/* 📌 Botón de cierre de sesión */
+.btn-logout {
+  background-color: #dc3545;
+  width: 100%;
+  padding: 12px;
+  border-radius: 5px;
+  margin-top: 20px;
+  font-size: 1rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+/* 📌 Contenido principal */
 .main-content {
-  flex: 1;
-  padding: 30px;
-  background: rgba(255, 255, 255, 0.9);
+  flex-grow: 1;
+  margin-left: 250px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* 📌 Lo movemos más a la izquierda */
+  justify-content: flex-start;
+  width: calc(100% - 250px);
+  border-radius: 10px;
+  overflow-y: auto;
+  padding-left: 150px; /* 📌 Agregamos un margen para que no pegue tanto */
 }
 
 .contenedor-calendario {
@@ -74,28 +214,45 @@ mat-form-field {
   margin-top: 20px;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* 📌 Mostrar el sidebar siempre en pantallas grandes */
+@media (min-width: 1025px) {
   .sidebar {
-    position: fixed;
-    transform: translateX(-100%);
-    z-index: 1000;
-    height: 100vh;
+    left: 0 !important;
   }
+  .sidebar-overlay {
+    display: none !important;
+  }
+}
 
+/* 📌 Ajustes responsivos */
+@media (max-width: 1024px) {
   .menu-toggle {
     display: block;
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1100;
   }
-
-  .filtros {
-    flex-direction: column;
+  .sidebar {
+    width: 70%; /* Sidebar más compacto */
+    max-width: 280px;
+    left: -280px; /* Se esconde inicialmente */
   }
-
-  mat-form-field {
+  .sidebar.active {
+    left: 0;
+  }
+  .main-content {
+    margin-left: 0;
     width: 100%;
+  }
+}
+
+/* 📌 Asegurar que el sidebar siempre se muestre en pantallas grandes */
+@media (min-width: 1025px) {
+  .sidebar {
+    left: 0 !important; /* 🔥 Se muestra siempre en escritorio */
+  }
+  .sidebar-overlay {
+    display: none !important; /* 🔥 Se oculta el fondo en escritorio */
+  }
+  .main-content {
+    margin-left: 250px; /* 🔥 Evita que el contenido cubra el sidebar */
+    width: calc(100% - 250px);
   }
 }

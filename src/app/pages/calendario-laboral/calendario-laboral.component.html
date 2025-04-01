@@ -1,29 +1,21 @@
-<div class="dashboard-container">
-  <!-- Botón de menú móvil -->
-  <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
+<div class="admin-dashboard-container">
   <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+  <!-- 📌 Botón para abrir el sidebar en móviles -->
+  <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
 
-  <!-- Sidebar -->
-  <div class="sidebar" [class.active]="sidebarAbierto">
-    <h3>Configuración de Calendario Laboral</h3>
+<!-- 📌 Fondo para cerrar el sidebar en móviles -->
+  <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+  <!-- 📌 Sidebar -->
+  <div class="sidebar">
+    <h3>Panel de Trabajadores</h3>
     <ul class="nav flex-column">
-      <li class="nav-item">
-        <mat-checkbox>Sedes</mat-checkbox>
-      </li>
-      <li class="nav-item">
-        <mat-checkbox checked>Trabajadores</mat-checkbox>
-      </li>
-      <li class="nav-item">
-        <mat-checkbox>Perfil</mat-checkbox>
-      </li>
-      <li class="nav-item">
-        <mat-checkbox>Acerca de</mat-checkbox>
-      </li>
-      <li class="nav-item" *ngIf="esAdmin()">
-        <mat-checkbox>Ver Usuarios</mat-checkbox>
-      </li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
     </ul>
-    <mat-checkbox checked class="btn-logout">Cerrar Sesión</mat-checkbox>
+    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
   </div>
 
   <!-- Contenido principal -->
