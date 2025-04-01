@@ -34,12 +34,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 
 // Angular Calendar
-import {
-  CalendarModule,
-  DateAdapter,
-  CalendarCommonModule,
-  CalendarMonthModule
-} from 'angular-calendar';
+import { CalendarModule, DateAdapter, CalendarCommonModule, CalendarMonthModule } from 'angular-calendar';
 import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 
 // Servicios
@@ -79,9 +74,11 @@ import { AuthService } from './services/auth.service';
     MatExpansionModule,
     MatSelectModule,
     CommonModule,
-    CalendarCommonModule,
-    CalendarMonthModule,
+
+    // 🗓️ Angular Calendar
     CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),
+    CalendarCommonModule,
+    CalendarMonthModule
   ],
   providers: [AuthService],
   bootstrap: [AppComponent]
