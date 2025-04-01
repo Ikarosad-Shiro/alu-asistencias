@@ -54,8 +54,10 @@ export class CalendarioLaboralComponent implements OnInit {
 
     this.calendarioService.obtenerPorSedeYAnio(this.sedeSeleccionada, this.anioSeleccionado).subscribe({
       next: (res: any) => {
-        this.diasEspeciales = res.diasEspeciales;
+        this.diasEspeciales = Array.isArray(res.diasEspeciales) ? res.diasEspeciales : [];
         this.busquedaRealizada = true;
+
+        console.log("🎉 Días especiales:", this.diasEspeciales);
       },
       error: (err: any) => {
         console.error('Error al consultar calendario:', err);
@@ -64,6 +66,7 @@ export class CalendarioLaboralComponent implements OnInit {
       }
     });
   }
+
 
   cerrarSesion() {
     this.authService.logout();
