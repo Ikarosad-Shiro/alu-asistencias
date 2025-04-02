@@ -1,11 +1,8 @@
 <div class="admin-dashboard-container">
   <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
-  <!-- 📌 Botón para abrir el sidebar en móviles -->
   <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
 
-<!-- 📌 Fondo para cerrar el sidebar en móviles -->
-  <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
-  <!-- 📌 Sidebar -->
+  <!-- Sidebar -->
   <div class="sidebar">
     <h3>Panel de Trabajadores</h3>
     <ul class="nav flex-column">
@@ -20,11 +17,13 @@
 
   <!-- Contenido principal -->
   <div class="main-content">
-    <div class="contenedor-calendario">
-      <h2>Configuración de Calendario Laboral</h2>
+    <div class="content-container">
+      <div class="welcome-card">
+        <h2>Configuración de Calendario Laboral 📅</h2>
+        <p>Consulta y administra los días especiales por sede.</p>
+      </div>
 
-      <!-- Filtros -->
-      <div class="filtros">
+      <div class="search-container">
         <mat-form-field appearance="outline">
           <mat-label>Sede</mat-label>
           <mat-select [(value)]="sedeSeleccionada" (selectionChange)="onSedeChange()">
@@ -41,15 +40,14 @@
       </div>
 
       <app-calendario-sede
-      *ngIf="busquedaRealizada && sedeSeleccionada !== null"
-      [sede]="sedeSeleccionada!"
-      [sedeNombre]="sedeSeleccionadaNombre"
-      [anio]="anioSeleccionado"
-      [eventos]="diasEspeciales"
-      (eventoGuardado)="onEventoGuardado($event)">
-    </app-calendario-sede>
+        *ngIf="busquedaRealizada && sedeSeleccionada !== null"
+        [sede]="sedeSeleccionada!"
+        [sedeNombre]="sedeSeleccionadaNombre"
+        [anio]="anioSeleccionado"
+        [eventos]="diasEspeciales"
+        (eventoGuardado)="onEventoGuardado($event)">
+      </app-calendario-sede>
 
-      <!-- Mensajes -->
       <div *ngIf="busquedaRealizada && diasEspeciales.length === 0" class="mensaje-vacio">
         <p>No hay configuración de calendario para esta sede y año.</p>
       </div>
