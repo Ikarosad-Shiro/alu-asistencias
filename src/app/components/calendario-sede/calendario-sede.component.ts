@@ -33,17 +33,20 @@ export class CalendarioSedeComponent implements OnInit {
     const finMes = endOfMonth(this.mesActual);
     const dias = eachDayOfInterval({ start: inicioMes, end: finMes });
 
-    // Ajustar para que comience en domingo
-    const primerDia = inicioMes.getDay();
-    const diasVacios = Array(primerDia).fill(null);
+    const primerDia = inicioMes.getDay(); // 0 (Domingo) - 6 (Sábado)
+    const diasVaciosAntes = Array(primerDia).fill({ fecha: null });
+
+    const ultimoDia = finMes.getDay(); // 0 - 6
+    const diasVaciosDespues = Array(6 - ultimoDia).fill({ fecha: null });
 
     this.diasMes = [
-      ...diasVacios,
+      ...diasVaciosAntes,
       ...dias.map(dia => ({
         fecha: dia,
         seleccionado: false,
-        evento: this.eventos.find(e => isSameDay(new Date(e.fecha), dia))
-      }))
+        evento: this.eventos.find(e => e?.fecha && isSameDay(new Date(e.fecha), dia))
+      })),
+      ...diasVaciosDespues
     ];
   }
 
