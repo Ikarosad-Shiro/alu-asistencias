@@ -60,7 +60,14 @@ export class CalendarioLaboralComponent implements OnInit {
 
     this.calendarioService.obtenerPorSedeYAnio(this.sedeSeleccionada, this.anioSeleccionado).subscribe({
       next: (res: any) => {
-        this.diasEspeciales = Array.isArray(res?.diasEspeciales) ? res.diasEspeciales : [];
+        // ✅ Convertimos las fechas a objetos Date válidos
+        this.diasEspeciales = Array.isArray(res?.diasEspeciales)
+          ? res.diasEspeciales.map((e: any) => ({
+              ...e,
+              fecha: new Date(e.fecha?.$date ?? e.fecha)
+            }))
+          : [];
+
         this.busquedaRealizada = true;
       },
       error: (err: any) => {
