@@ -59,12 +59,15 @@
       <!-- Lista de sedes si se activa -->
       <div class="lista-sedes-extra" *ngIf="aplicarAMasSedes && todasLasSedes?.length">
         <p>Selecciona las sedes adicionales:</p>
-        <mat-checkbox
-          *ngFor="let sedeExtra of todasLasSedes"
-          [(ngModel)]="sedeExtra.seleccionada"
-          [disabled]="sedeExtra.id === sede">
-          {{ sedeExtra.nombre }}
-        </mat-checkbox>
+
+        <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
+          <mat-checkbox
+            [(ngModel)]="sedeExtra.seleccionada"
+            [name]="'sede-' + sedeExtra.id"
+            [disabled]="sedeExtra.id === sede">
+            {{ sedeExtra.nombre }}
+          </mat-checkbox>
+        </ng-container>
       </div>
 
       <div class="modal-acciones">

@@ -129,4 +129,8 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     this.mostrarModal = false;
     this.aplicarAMasSedes = false;
   }
+
+  trackBySede(index: number, sede: any): number {
+    return sede.id;
+  }
 }

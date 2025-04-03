@@ -43,15 +43,11 @@
           <mat-label>Año</mat-label>
           <input matInput type="number" [(ngModel)]="anioSeleccionado" min="2023" max="2030" />
         </mat-form-field>
-
-        <button mat-raised-button color="primary" (click)="consultarCalendario()">
-          Consultar configuración
-        </button>
       </div>
 
       <!-- 📆 Calendario visual -->
       <app-calendario-sede
-        *ngIf="busquedaRealizada && sedeSeleccionada !== null"
+        *ngIf="busquedaRealizada && sedeSeleccionada !== null && sedes.length"
         [sede]="sedeSeleccionada!"
         [sedeNombre]="sedeSeleccionadaNombre"
         [anio]="anioSeleccionado"
