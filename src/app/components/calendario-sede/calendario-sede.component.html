@@ -63,6 +63,7 @@
         <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
           <mat-checkbox
             [(ngModel)]="sedeExtra.seleccionada"
+            [ngModelOptions]="{ standalone: true }"
             [name]="'sede-' + sedeExtra.id"
             [disabled]="sedeExtra.id === sede">
             {{ sedeExtra.nombre }}
