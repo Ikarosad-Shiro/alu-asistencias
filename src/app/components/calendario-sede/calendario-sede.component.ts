@@ -1,12 +1,20 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
+import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import {
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  isToday
+} from 'date-fns';
 
 @Component({
   selector: 'app-calendario-sede',
   templateUrl: './calendario-sede.component.html',
   styleUrls: ['./calendario-sede.component.css']
 })
-export class CalendarioSedeComponent implements OnInit {
+export class CalendarioSedeComponent implements OnInit, OnChanges {
   @Input() sede!: number;
   @Input() sedeNombre: string = '';
   @Input() anio!: number;
@@ -28,6 +36,12 @@ export class CalendarioSedeComponent implements OnInit {
     this.generarDiasMes();
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['eventos']) {
+      this.generarDiasMes();
+    }
+  }
+
   generarDiasMes(): void {
     const inicioMes = startOfMonth(this.mesActual);
     const finMes = endOfMonth(this.mesActual);
@@ -36,7 +50,7 @@ export class CalendarioSedeComponent implements OnInit {
     const primerDia = inicioMes.getDay(); // 0 (Domingo) - 6 (Sábado)
     const diasVaciosAntes = Array(primerDia).fill({ fecha: null });
 
-    const ultimoDia = finMes.getDay(); // 0 - 6
+    const ultimoDia = finMes.getDay();
     const diasVaciosDespues = Array(6 - ultimoDia).fill({ fecha: null });
 
     this.diasMes = [
@@ -77,7 +91,6 @@ export class CalendarioSedeComponent implements OnInit {
   }
 
   guardarEvento(): void {
-    // Lógica para guardar el evento
     const nuevoDiaEspecial = {
       fecha: this.fechaSeleccionada,
       tipo: this.nuevoEvento.tipo,
@@ -85,10 +98,9 @@ export class CalendarioSedeComponent implements OnInit {
       sede: this.sede
     };
 
-    // Aquí llamarías a tu servicio para guardar
     console.log('Guardando:', nuevoDiaEspecial);
     this.cerrarModal();
-    this.generarDiasMes(); // Refrescar la vista
+    this.generarDiasMes();
   }
 
   cerrarModal(): void {
