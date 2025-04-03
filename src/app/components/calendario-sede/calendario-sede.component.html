@@ -57,7 +57,7 @@
       </div>
 
       <!-- Lista de sedes si se activa -->
-      <div class="lista-sedes-extra" *ngIf="aplicarAMasSedes">
+      <div class="lista-sedes-extra" *ngIf="aplicarAMasSedes && todasLasSedes?.length">
         <p>Selecciona las sedes adicionales:</p>
         <mat-checkbox
           *ngFor="let sedeExtra of todasLasSedes"

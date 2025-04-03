@@ -37,10 +37,13 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     this.mesActual = new Date(this.anio, 0, 1);
     this.generarDiasMes();
 
-    // Inicializar seleccionadas para evitar errores
-    this.todasLasSedes?.forEach(s => {
-      if (s.seleccionada === undefined) s.seleccionada = false;
-    });
+    // Inicializar seleccionadas
+    if (this.todasLasSedes) {
+      this.todasLasSedes = this.todasLasSedes.map(s => ({
+        ...s,
+        seleccionada: s.seleccionada ?? false
+      }));
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -97,8 +100,8 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   }
 
   onToggleAplicarSedes(): void {
-    if (!this.aplicarAMasSedes) {
-      this.todasLasSedes?.forEach(s => s.seleccionada = false);
+    if (!this.aplicarAMasSedes && this.todasLasSedes) {
+      this.todasLasSedes.forEach(s => s.seleccionada = false);
     }
   }
 
@@ -109,14 +112,13 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
       descripcion: this.nuevoEvento.descripcion
     };
 
-    if (this.aplicarAMasSedes) {
+    if (this.aplicarAMasSedes && this.todasLasSedes) {
       const sedesSeleccionadas = this.todasLasSedes.filter(s => s.seleccionada);
       sedesSeleccionadas.forEach(sedeExtra => {
         this.eventoGuardado.emit({ ...eventoBase, sede: sedeExtra.id });
       });
     }
 
-    // Siempre guardar para sede actual también
     this.eventoGuardado.emit({ ...eventoBase, sede: this.sede });
 
     this.cerrarModal();
