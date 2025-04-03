@@ -5,19 +5,23 @@
   <!-- 📌 Fondo para cerrar el sidebar en móviles -->
   <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
 
-  <!-- 📌 Sidebar -->
-  <div class="sidebar">
-    <h3>Panel de Trabajadores</h3>
-    <ul class="nav flex-column">
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
-      <li class="nav-item" *ngIf="esAdmin()"><button class="btn-sidebar" routerLink="/usuarios">🧑‍💼 Ver Usuarios</button></li>
-    </ul>
-    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
-  </div>
+<!-- 📌 Sidebar -->
+<div class="sidebar" [class.active]="sidebarAbierto">
+  <h3>Panel de Trabajadores</h3>
+  <ul class="nav flex-column">
+    <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+    <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
+    <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+    <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
+    <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
+    <li class="nav-item" *ngIf="esAdmin()"><button class="btn-sidebar" routerLink="/usuarios">🧑‍💼 Ver Usuarios</button></li>
+  </ul>
+  <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+</div>
+
+<!-- 📌 Fondo para cerrar el sidebar en móviles -->
+<div class="sidebar-overlay" [class.active]="sidebarAbierto" (click)="toggleSidebar()"></div>
+
 
   <!-- 📌 Contenido principal -->
   <div class="main-content">
