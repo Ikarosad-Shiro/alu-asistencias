@@ -1,8 +1,11 @@
 <div class="admin-dashboard-container">
-  <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+  <!-- 📌 Botón para abrir el sidebar en móviles -->
   <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
 
-  <!-- Sidebar -->
+  <!-- 📌 Fondo para cerrar el sidebar en móviles -->
+  <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+
+  <!-- 📌 Sidebar -->
   <div class="sidebar">
     <h3>Panel de Trabajadores</h3>
     <ul class="nav flex-column">
@@ -11,34 +14,38 @@
       <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
       <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
       <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
+      <li class="nav-item" *ngIf="esAdmin()"><button class="btn-sidebar" routerLink="/usuarios">🧑‍💼 Ver Usuarios</button></li>
     </ul>
     <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
   </div>
 
-  <!-- Contenido principal -->
+  <!-- 📌 Contenido principal -->
   <div class="main-content">
-    <div class="content-container">
-      <div class="welcome-card">
-        <h2>Configuración de Calendario Laboral 📅</h2>
-        <p>Consulta y administra los días especiales por sede.</p>
-      </div>
+    <div class="contenedor-calendario">
+      <!-- 📝 Título -->
+      <h2 class="mat-title text-center" style="margin-bottom: 20px;">Configuración de Calendario Laboral</h2>
+      <p class="text-center" style="margin-bottom: 30px;">Consulta y administra los días especiales por sede</p>
 
-      <div class="search-container">
+      <!-- 📌 Filtros -->
+      <div class="filtros">
         <mat-form-field appearance="outline">
           <mat-label>Sede</mat-label>
           <mat-select [(value)]="sedeSeleccionada" (selectionChange)="onSedeChange()">
-            <mat-option *ngFor="let sede of sedes" [value]="sede.id">
-              {{ sede.nombre }}
-            </mat-option>
+            <mat-option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</mat-option>
           </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Año</mat-label>
-          <input matInput type="number" [(ngModel)]="anioSeleccionado" min="2023" max="2030">
+          <input matInput type="number" [(ngModel)]="anioSeleccionado" min="2023" max="2030" />
         </mat-form-field>
+
+        <button mat-raised-button color="primary" (click)="consultarCalendario()">
+          Consultar configuración
+        </button>
       </div>
 
+      <!-- 📆 Calendario visual -->
       <app-calendario-sede
         *ngIf="busquedaRealizada && sedeSeleccionada !== null"
         [sede]="sedeSeleccionada!"
@@ -48,6 +55,7 @@
         (eventoGuardado)="onEventoGuardado($event)">
       </app-calendario-sede>
 
+      <!-- 💬 Mensaje si no hay configuración -->
       <div *ngIf="busquedaRealizada && diasEspeciales.length === 0" class="mensaje-vacio">
         <p>No hay configuración de calendario para esta sede y año.</p>
       </div>
