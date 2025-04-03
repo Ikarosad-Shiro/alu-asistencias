@@ -20,6 +20,10 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   @Input() anio!: number;
   @Input() eventos: any[] = [];
 
+  // 💖 Nuevas funcionalidades
+  @Input() todasLasSedes: { id: number, nombre: string, seleccionada?: boolean }[] = [];
+  aplicarAMasSedes: boolean = false;
+
   mesActual = new Date();
   diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   diasMes: any[] = [];
@@ -91,19 +95,42 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   }
 
   guardarEvento(): void {
-    const nuevoDiaEspecial = {
-      fecha: this.fechaSeleccionada,
-      tipo: this.nuevoEvento.tipo,
-      descripcion: this.nuevoEvento.descripcion,
-      sede: this.sede
-    };
+    const sedesAplicables = [this.sede]; // Sede actual
 
-    console.log('Guardando:', nuevoDiaEspecial);
+    if (this.aplicarAMasSedes) {
+      const sedesExtra = this.todasLasSedes
+        .filter(s => s.seleccionada && s.id !== this.sede)
+        .map(s => s.id);
+
+      sedesAplicables.push(...sedesExtra);
+    }
+
+    sedesAplicables.forEach(sedeId => {
+      const evento = {
+        fecha: this.fechaSeleccionada,
+        tipo: this.nuevoEvento.tipo,
+        descripcion: this.nuevoEvento.descripcion,
+        sede: sedeId,
+        año: this.mesActual.getFullYear()
+      };
+
+      // Aquí llamas al servicio (emit, http, etc.)
+      console.log('Guardar evento en sede', sedeId, evento);
+      // this.calendarioService.agregarDia(evento).subscribe(...);
+    });
+
     this.cerrarModal();
-    this.generarDiasMes();
+    this.generarDiasMes(); // Refrescar vista
   }
 
   cerrarModal(): void {
     this.mostrarModal = false;
+  }
+
+  onToggleAplicarSedes(): void {
+    if (!this.aplicarAMasSedes) {
+      // 💡 Limpiar las selecciones si se desactiva
+      this.todasLasSedes.forEach(s => s.seleccionada = false);
+    }
   }
 }

@@ -25,7 +25,6 @@
          [class.descanso]="dia.evento?.tipo === 'descanso'"
          [class.festivo]="dia.evento?.tipo === 'festivo'"
          (click)="seleccionarDia(dia)">
-
       <div class="numero-dia">{{ dia.fecha | date:'d' }}</div>
       <div *ngIf="dia.evento" class="indicador-evento"></div>
     </div>
@@ -50,6 +49,19 @@
         <input matInput [(ngModel)]="nuevoEvento.descripcion">
       </mat-form-field>
 
+      <!-- Checkbox para aplicar a más sedes -->
+      <mat-checkbox [(ngModel)]="aplicarAMasSedes" (change)="onToggleAplicarSedes()">
+        ¿Desea que esta configuración se aplique a más sedes?
+      </mat-checkbox>
+
+      <!-- Lista desplegable de sedes -->
+      <div *ngIf="aplicarAMasSedes" class="lista-sedes-extra">
+        <label *ngFor="let sede of todasLasSedes">
+          <mat-checkbox [(ngModel)]="sede.seleccionada">{{ sede.nombre }}</mat-checkbox>
+        </label>
+      </div>
+
+      <!-- Botones -->
       <div class="modal-acciones">
         <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>
         <button mat-raised-button color="primary" (click)="guardarEvento()">Guardar</button>
