@@ -1,5 +1,5 @@
 <div class="calendario-sede-container">
-  <!-- Encabezado con sede y controles -->
+  <!-- Header -->
   <div class="calendario-header">
     <button mat-icon-button (click)="mesAnterior()">
       <mat-icon>chevron_left</mat-icon>
@@ -15,7 +15,7 @@
     <div *ngFor="let dia of diasSemana" class="dia-header">{{ dia }}</div>
   </div>
 
-  <!-- Cuadrícula del calendario -->
+  <!-- Cuadrícula -->
   <div class="cuadricula-mes">
     <div *ngFor="let dia of diasMes"
          class="dia-calendario"
@@ -30,7 +30,7 @@
     </div>
   </div>
 
-  <!-- Modal para agregar/editar días -->
+  <!-- Modal -->
   <div class="modal" *ngIf="mostrarModal">
     <div class="modal-contenido">
       <h3>{{ fechaSeleccionada | date:'fullDate':'es' }}</h3>
@@ -49,19 +49,24 @@
         <input matInput [(ngModel)]="nuevoEvento.descripcion">
       </mat-form-field>
 
-      <!-- Checkbox para aplicar a más sedes -->
-      <mat-checkbox [(ngModel)]="aplicarAMasSedes" (change)="onToggleAplicarSedes()">
-        ¿Desea que esta configuración se aplique a más sedes?
-      </mat-checkbox>
-
-      <!-- Lista desplegable de sedes -->
-      <div *ngIf="aplicarAMasSedes" class="lista-sedes-extra">
-        <label *ngFor="let sede of todasLasSedes">
-          <mat-checkbox [(ngModel)]="sede.seleccionada">{{ sede.nombre }}</mat-checkbox>
-        </label>
+      <!-- Checkbox -->
+      <div class="form-group">
+        <mat-checkbox [(ngModel)]="aplicarAMasSedes" (change)="onToggleAplicarSedes()">
+          ¿Desea que esta configuración se aplique a más sedes?
+        </mat-checkbox>
       </div>
 
-      <!-- Botones -->
+      <!-- Lista de sedes si se activa -->
+      <div class="lista-sedes-extra" *ngIf="aplicarAMasSedes">
+        <p>Selecciona las sedes adicionales:</p>
+        <mat-checkbox
+          *ngFor="let sedeExtra of todasLasSedes"
+          [(ngModel)]="sedeExtra.seleccionada"
+          [disabled]="sedeExtra.id === sede">
+          {{ sedeExtra.nombre }}
+        </mat-checkbox>
+      </div>
+
       <div class="modal-acciones">
         <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>
         <button mat-raised-button color="primary" (click)="guardarEvento()">Guardar</button>

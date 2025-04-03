@@ -1,12 +1,9 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import {
-  addMonths,
-  subMonths,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isSameDay,
-  isToday
+  Component, Input, OnInit, OnChanges, SimpleChanges, Output, EventEmitter
+} from '@angular/core';
+import {
+  addMonths, subMonths, startOfMonth, endOfMonth,
+  eachDayOfInterval, isSameDay, isToday
 } from 'date-fns';
 
 @Component({
@@ -19,10 +16,9 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   @Input() sedeNombre: string = '';
   @Input() anio!: number;
   @Input() eventos: any[] = [];
-
-  // 💖 Nuevas funcionalidades
   @Input() todasLasSedes: { id: number, nombre: string, seleccionada?: boolean }[] = [];
-  aplicarAMasSedes: boolean = false;
+
+  @Output() eventoGuardado = new EventEmitter<any>();
 
   mesActual = new Date();
   diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -35,9 +31,16 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     descripcion: ''
   };
 
+  aplicarAMasSedes: boolean = false;
+
   ngOnInit(): void {
-    this.mesActual = new Date(this.anio, 0, 1); // Enero del año seleccionado
+    this.mesActual = new Date(this.anio, 0, 1);
     this.generarDiasMes();
+
+    // Inicializar seleccionadas para evitar errores
+    this.todasLasSedes?.forEach(s => {
+      if (s.seleccionada === undefined) s.seleccionada = false;
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -51,7 +54,7 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     const finMes = endOfMonth(this.mesActual);
     const dias = eachDayOfInterval({ start: inicioMes, end: finMes });
 
-    const primerDia = inicioMes.getDay(); // 0 (Domingo) - 6 (Sábado)
+    const primerDia = inicioMes.getDay();
     const diasVaciosAntes = Array(primerDia).fill({ fecha: null });
 
     const ultimoDia = finMes.getDay();
@@ -72,11 +75,10 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     if (!dia.fecha) return;
 
     this.fechaSeleccionada = dia.fecha;
-    if (dia.evento) {
-      this.nuevoEvento = { ...dia.evento };
-    } else {
-      this.nuevoEvento = { tipo: '', descripcion: '' };
-    }
+    this.nuevoEvento = dia.evento
+      ? { ...dia.evento }
+      : { tipo: '', descripcion: '' };
+
     this.mostrarModal = true;
   }
 
@@ -94,43 +96,35 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     this.generarDiasMes();
   }
 
+  onToggleAplicarSedes(): void {
+    if (!this.aplicarAMasSedes) {
+      this.todasLasSedes?.forEach(s => s.seleccionada = false);
+    }
+  }
+
   guardarEvento(): void {
-    const sedesAplicables = [this.sede]; // Sede actual
+    const eventoBase = {
+      fecha: this.fechaSeleccionada,
+      tipo: this.nuevoEvento.tipo,
+      descripcion: this.nuevoEvento.descripcion
+    };
 
     if (this.aplicarAMasSedes) {
-      const sedesExtra = this.todasLasSedes
-        .filter(s => s.seleccionada && s.id !== this.sede)
-        .map(s => s.id);
-
-      sedesAplicables.push(...sedesExtra);
+      const sedesSeleccionadas = this.todasLasSedes.filter(s => s.seleccionada);
+      sedesSeleccionadas.forEach(sedeExtra => {
+        this.eventoGuardado.emit({ ...eventoBase, sede: sedeExtra.id });
+      });
     }
 
-    sedesAplicables.forEach(sedeId => {
-      const evento = {
-        fecha: this.fechaSeleccionada,
-        tipo: this.nuevoEvento.tipo,
-        descripcion: this.nuevoEvento.descripcion,
-        sede: sedeId,
-        año: this.mesActual.getFullYear()
-      };
-
-      // Aquí llamas al servicio (emit, http, etc.)
-      console.log('Guardar evento en sede', sedeId, evento);
-      // this.calendarioService.agregarDia(evento).subscribe(...);
-    });
+    // Siempre guardar para sede actual también
+    this.eventoGuardado.emit({ ...eventoBase, sede: this.sede });
 
     this.cerrarModal();
-    this.generarDiasMes(); // Refrescar vista
+    this.generarDiasMes();
   }
 
   cerrarModal(): void {
     this.mostrarModal = false;
-  }
-
-  onToggleAplicarSedes(): void {
-    if (!this.aplicarAMasSedes) {
-      // 💡 Limpiar las selecciones si se desactiva
-      this.todasLasSedes.forEach(s => s.seleccionada = false);
-    }
+    this.aplicarAMasSedes = false;
   }
 }
