@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
   styleUrls: ['./calendario-laboral.component.css']
 })
 export class CalendarioLaboralComponent implements OnInit {
-  sedes: { id: number, nombre: string }[] = [];
+  sedes: { id: number, nombre: string, seleccionada?: boolean }[] = [];
   sedeSeleccionada: number | null = null;
   sedeSeleccionadaNombre: string = '';
   anioSeleccionado: number = new Date().getFullYear();
@@ -41,7 +41,10 @@ export class CalendarioLaboralComponent implements OnInit {
   obtenerSedes() {
     this.sedeService.obtenerSedes().subscribe({
       next: (res: any) => {
-        this.sedes = res;
+        this.sedes = res.map((s: any) => ({
+          ...s,
+          seleccionada: false // importante para checkbox de sedes extra
+        }));
       },
       error: (err: any) => {
         console.error('Error al obtener sedes:', err);
@@ -60,11 +63,10 @@ export class CalendarioLaboralComponent implements OnInit {
 
     this.calendarioService.obtenerPorSedeYAnio(this.sedeSeleccionada, this.anioSeleccionado).subscribe({
       next: (res: any) => {
-        // ✅ Convertimos las fechas a objetos Date válidos
         this.diasEspeciales = Array.isArray(res?.diasEspeciales)
           ? res.diasEspeciales.map((e: any) => ({
               ...e,
-              fecha: new Date(e.fecha?.$date ?? e.fecha)
+              fecha: new Date(e.fecha?.$date ?? e.fecha) // 🧠 importante para evitar errores con fechas
             }))
           : [];
 
@@ -79,11 +81,8 @@ export class CalendarioLaboralComponent implements OnInit {
   }
 
   onEventoGuardado(evento: any) {
-    if (!this.sedeSeleccionada) return;
-
     const eventoCompleto = {
       ...evento,
-      sede: this.sedeSeleccionada,
       año: this.anioSeleccionado
     };
 
