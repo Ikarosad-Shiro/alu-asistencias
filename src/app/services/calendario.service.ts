@@ -24,32 +24,44 @@ export class CalendarioService {
   agregarDia(data: {
     año: number;
     sede: number;
-    fecha: string;
+    fecha: Date | string;
     tipo: string;
     descripcion: string;
   }) {
-    return this.http.post<any>(`${this.baseUrl}/agregar-dia`, data);
+    const payload = {
+      ...data,
+      fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
+    };
+    return this.http.post<any>(`${this.baseUrl}/agregar-dia`, payload);
   }
 
   // ✏️ Editar un día especial
   editarDia(data: {
     año: number;
     sede: number;
-    fecha: string;
+    fecha: Date | string;
     nuevoTipo: string;
     nuevaDescripcion: string;
   }) {
-    return this.http.put<any>(`${this.baseUrl}/editar-dia`, data);
+    const payload = {
+      ...data,
+      fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
+    };
+    return this.http.put<any>(`${this.baseUrl}/editar-dia`, payload);
   }
 
   // ❌ Eliminar un día especial
   eliminarDia(data: {
     año: number;
     sede: number;
-    fecha: string;
+    fecha: Date | string;
   }) {
+    const payload = {
+      ...data,
+      fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
+    };
     return this.http.request<any>('delete', `${this.baseUrl}/eliminar-dia`, {
-      body: data
+      body: payload
     });
   }
 
