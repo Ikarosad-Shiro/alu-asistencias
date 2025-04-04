@@ -47,14 +47,15 @@
 
       <!-- 📆 Calendario visual -->
       <app-calendario-sede
-        *ngIf="busquedaRealizada && sedeSeleccionada !== null && sedes.length"
-        [sede]="sedeSeleccionada!"
-        [sedeNombre]="sedeSeleccionadaNombre"
-        [anio]="anioSeleccionado"
-        [eventos]="diasEspeciales"
-        [todasLasSedes]="sedes"
-        (eventoGuardado)="onEventoGuardado($event)">
-      </app-calendario-sede>
+      *ngIf="busquedaRealizada && sedeSeleccionada !== null && sedes.length"
+      [sede]="sedeSeleccionada!"
+      [sedeNombre]="sedeSeleccionadaNombre"
+      [anio]="anioSeleccionado"
+      [eventos]="diasEspeciales"
+      [todasLasSedes]="sedes"
+      (eventoGuardado)="onEventoGuardado($event)"
+      (eventoEliminado)="onEventoEliminado($event)"> <!-- ✅ Agregado aquí -->
+    </app-calendario-sede>
 
       <!-- 💬 Mensaje si no hay configuración -->
       <div *ngIf="busquedaRealizada && diasEspeciales.length === 0" class="mensaje-vacio">

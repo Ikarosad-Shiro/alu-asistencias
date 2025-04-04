@@ -104,7 +104,10 @@ export class CalendarioLaboralComponent implements OnInit {
       next: (resp: any) => {
         if (resp.valido) {
           this.calendarioService.eliminarDia(datosEvento).subscribe({
-            next: () => this.consultarCalendario(),
+            next: () => {
+              Swal.fire('✅ Eliminado', 'El día fue eliminado correctamente.', 'success');
+              this.consultarCalendario();
+            },
             error: (err) => {
               Swal.fire('Error', err.error?.message || 'No se pudo eliminar el día', 'error');
             }
