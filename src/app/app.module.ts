@@ -35,6 +35,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox'; // 📌 importante
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Angular Calendar
 import { CalendarModule, DateAdapter } from 'angular-calendar';
@@ -83,6 +84,7 @@ import { AuthService } from './services/auth.service';
     MatSelectModule,
     MatCheckboxModule,
     MatDialogModule,
+    MatTooltipModule,
 
     // Angular Calendar
     CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),

@@ -37,7 +37,6 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     this.mesActual = new Date(this.anio, 0, 1);
     this.generarDiasMes();
 
-    // Inicializar seleccionadas
     if (this.todasLasSedes) {
       this.todasLasSedes = this.todasLasSedes.map(s => ({
         ...s,
@@ -82,7 +81,6 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
       ? { ...dia.evento }
       : { tipo: '', descripcion: '' };
 
-    // 🛡️ Asegurar que todasLasSedes estén listas y tengan `seleccionada`
     if (this.todasLasSedes) {
       this.todasLasSedes = this.todasLasSedes.map(s => ({
         ...s,

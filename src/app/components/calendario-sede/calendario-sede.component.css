@@ -77,21 +77,54 @@
   bottom: 5px;
 }
 
-/* Estilos para tipos de días */
+/* Tipos de día */
+.festivo {
+  background-color: #FFF8E1;
+}
+.festivo .indicador-evento {
+  background-color: #FFC107;
+}
+
 .descanso {
   background-color: #FFEBEE;
 }
-
 .descanso .indicador-evento {
   background-color: #F44336;
 }
 
-.festivo {
-  background-color: #FFF8E1;
+.puente {
+  background-color: #E8F5E9;
+}
+.puente .indicador-evento {
+  background-color: #43A047;
 }
 
-.festivo .indicador-evento {
-  background-color: #FFC107;
+.media-jornada {
+  background-color: #F3E5F5;
+}
+.media-jornada .indicador-evento {
+  background-color: #8E24AA;
+}
+
+.capacitación {
+  background-color: #E1F5FE;
+}
+.capacitación .indicador-evento {
+  background-color: #039BE5;
+}
+
+.evento {
+  background-color: #FFF3E0;
+}
+.evento .indicador-evento {
+  background-color: #FB8C00;
+}
+
+.suspensión {
+  background-color: #FBE9E7;
+}
+.suspensión .indicador-evento {
+  background-color: #D84315;
 }
 
 /* Modal */
@@ -124,7 +157,6 @@
   margin-top: 20px;
 }
 
-/* Lista de sedes adicionales */
 .lista-sedes-extra {
   margin-top: 15px;
   padding: 10px;
@@ -135,7 +167,6 @@
   overflow-y: auto;
 }
 
-/* Formulario */
 .form-group {
   margin-top: 15px;
 }

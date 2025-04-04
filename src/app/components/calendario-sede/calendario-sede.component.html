@@ -25,6 +25,12 @@
            [class.dia-especial]="dia.evento"
            [class.descanso]="dia.evento?.tipo === 'descanso'"
            [class.festivo]="dia.evento?.tipo === 'festivo'"
+           [class.puente]="dia.evento?.tipo === 'puente'"
+           [class.media-jornada]="dia.evento?.tipo === 'media jornada'"
+           [class.capacitación]="dia.evento?.tipo === 'capacitación'"
+           [class.evento]="dia.evento?.tipo === 'evento'"
+           [class.suspensión]="dia.evento?.tipo === 'suspensión'"
+           [matTooltip]="dia.evento?.tipo | titlecase"
            (click)="seleccionarDia(dia)">
         <div class="numero-dia">{{ dia.fecha | date:'d' }}</div>
         <div *ngIf="dia.evento" class="indicador-evento"></div>
@@ -40,8 +46,12 @@
           <mat-label>Tipo de día</mat-label>
           <mat-select [(ngModel)]="nuevoEvento.tipo">
             <mat-option value="festivo">Festivo</mat-option>
+            <mat-option value="puente">Puente</mat-option>
             <mat-option value="descanso">Descanso</mat-option>
-            <mat-option value="otro">Otro</mat-option>
+            <mat-option value="media jornada">Media jornada</mat-option>
+            <mat-option value="capacitación">Capacitación</mat-option>
+            <mat-option value="evento">Evento</mat-option>
+            <mat-option value="suspensión">Suspensión</mat-option>
           </mat-select>
         </mat-form-field>
 
