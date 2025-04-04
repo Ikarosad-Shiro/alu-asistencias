@@ -29,9 +29,13 @@ export class CalendarioService {
     descripcion: string;
   }) {
     const payload = {
-      ...data,
+      año: data.año,
+      sede: data.sede,
+      tipo: data.tipo,
+      descripcion: data.descripcion || '',
       fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
     };
+
     return this.http.post<any>(`${this.baseUrl}/agregar-dia`, payload);
   }
 
@@ -44,9 +48,13 @@ export class CalendarioService {
     nuevaDescripcion: string;
   }) {
     const payload = {
-      ...data,
+      año: data.año,
+      sede: data.sede,
+      nuevoTipo: data.nuevoTipo,
+      nuevaDescripcion: data.nuevaDescripcion,
       fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
     };
+
     return this.http.put<any>(`${this.baseUrl}/editar-dia`, payload);
   }
 
@@ -57,9 +65,11 @@ export class CalendarioService {
     fecha: Date | string;
   }) {
     const payload = {
-      ...data,
+      año: data.año,
+      sede: data.sede,
       fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
     };
+
     return this.http.request<any>('delete', `${this.baseUrl}/eliminar-dia`, {
       body: payload
     });

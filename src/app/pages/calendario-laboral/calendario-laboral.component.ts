@@ -86,12 +86,14 @@ export class CalendarioLaboralComponent implements OnInit {
       año: this.anioSeleccionado
     };
 
+    console.log('📤 Evento enviado al backend:', eventoCompleto); // ← agrega esto
+
     this.calendarioService.agregarDia(eventoCompleto).subscribe({
       next: () => {
         this.consultarCalendario();
       },
       error: (err: any) => {
-        console.error('Error al guardar día especial:', err);
+        console.error('❌ Error al guardar día especial:', err.error?.message || err.message || err);
       }
     });
   }
