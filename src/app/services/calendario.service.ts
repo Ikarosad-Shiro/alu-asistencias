@@ -44,14 +44,14 @@ export class CalendarioService {
     año: number;
     sede: number;
     fecha: Date | string;
-    nuevoTipo: string;
-    nuevaDescripcion: string;
+    tipo: string;
+    descripcion: string;
   }) {
     const payload = {
       año: data.año,
       sede: data.sede,
-      nuevoTipo: data.nuevoTipo,
-      nuevaDescripcion: data.nuevaDescripcion,
+      tipo: data.tipo,
+      descripcion: data.descripcion || '',
       fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
     };
 

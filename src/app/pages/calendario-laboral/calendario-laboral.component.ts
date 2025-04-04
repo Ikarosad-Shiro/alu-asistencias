@@ -88,15 +88,31 @@ export class CalendarioLaboralComponent implements OnInit {
       año: this.anioSeleccionado
     };
 
-    this.calendarioService.agregarDia(eventoCompleto).subscribe({
-      next: () => {
-        this.consultarCalendario();
-      },
-      error: (err: any) => {
-        console.error('❌ Error al guardar día especial:', err.error?.message || err.message || err);
-      }
-    });
+    if (evento.editar) {
+      // Llamamos al servicio de edición
+      this.calendarioService.editarDia(eventoCompleto).subscribe({
+        next: () => {
+          this.consultarCalendario();
+        },
+        error: (err: any) => {
+          console.error('❌ Error al editar día especial:', err.error?.message || err.message || err);
+          Swal.fire('Error', err.error?.message || 'No se pudo editar el día', 'error');
+        }
+      });
+    } else {
+      // Llamamos al servicio de agregar
+      this.calendarioService.agregarDia(eventoCompleto).subscribe({
+        next: () => {
+          this.consultarCalendario();
+        },
+        error: (err: any) => {
+          console.error('❌ Error al guardar día especial:', err.error?.message || err.message || err);
+          Swal.fire('Error', err.error?.message || 'No se pudo guardar el día', 'error');
+        }
+      });
+    }
   }
+
 
   onEventoEliminado(evento: any) {
     console.log('📥 Evento recibido para eliminar:', evento);
