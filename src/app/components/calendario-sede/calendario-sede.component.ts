@@ -174,7 +174,7 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
           sede: this.sede,
           año: this.anio,
           fecha: this.fechaSeleccionada,
-          password: result.value
+          contraseña: result.value
         };
         this.eventoEliminado.emit(evento);
         this.cerrarModal();

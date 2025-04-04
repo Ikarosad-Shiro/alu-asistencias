@@ -43,6 +43,7 @@
         <h3>{{ fechaSeleccionada | date:'fullDate':'es' }}</h3>
 
         <ng-container *ngIf="puedeEditar; else soloLectura">
+          <!-- Selector de tipo de día -->
           <mat-form-field appearance="fill">
             <mat-label>Tipo de día</mat-label>
             <mat-select [(ngModel)]="nuevoEvento.tipo">
@@ -56,20 +57,22 @@
             </mat-select>
           </mat-form-field>
 
+          <!-- Descripción -->
           <mat-form-field appearance="fill">
             <mat-label>Descripción</mat-label>
             <input matInput [(ngModel)]="nuevoEvento.descripcion">
           </mat-form-field>
 
+          <!-- Aplicar a más sedes -->
           <div class="form-group">
             <mat-checkbox [(ngModel)]="aplicarAMasSedes" (change)="onToggleAplicarSedes()">
               ¿Desea que esta configuración se aplique a más sedes?
             </mat-checkbox>
           </div>
 
+          <!-- Lista de sedes adicionales -->
           <ng-container *ngIf="aplicarAMasSedes && todasLasSedes?.length">
             <p>Selecciona las sedes adicionales:</p>
-
             <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
               <ng-container *ngIf="sedeExtra && sedeExtra.id !== sede">
                 <mat-checkbox
@@ -81,15 +84,23 @@
             </ng-container>
           </ng-container>
 
+          <!-- Acciones -->
           <div class="modal-acciones">
             <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>
             <button mat-raised-button color="primary" (click)="guardarEvento()">Guardar</button>
-            <button mat-button color="warn" *ngIf="nuevoEvento?.tipo" (click)="eliminarEvento()">Eliminar configuración de este día</button>
+            <button mat-button color="warn"
+                    *ngIf="nuevoEvento?.tipo"
+                    (click)="eliminarEvento()">
+              Eliminar configuración de este día
+            </button>
           </div>
         </ng-container>
 
+        <!-- Solo lectura para Revisores -->
         <ng-template #soloLectura>
-          <p class="text-muted">Solo los usuarios con rol <b>Dios</b> o <b>Administrador</b> pueden modificar el calendario.</p>
+          <p class="text-muted">
+            Solo los usuarios con rol <b>Dios</b> o <b>Administrador</b> pueden modificar el calendario.
+          </p>
         </ng-template>
       </div>
     </div>
