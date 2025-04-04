@@ -62,22 +62,28 @@ export class CalendarioLaboralComponent implements OnInit {
   consultarCalendario() {
     if (!this.sedeSeleccionada || !this.anioSeleccionado) return;
 
+    const sede = this.sedes.find(s => s.id === this.sedeSeleccionada);
+    this.sedeSeleccionadaNombre = sede ? sede.nombre : '';
+
     this.calendarioService.obtenerPorSedeYAnio(this.sedeSeleccionada, this.anioSeleccionado).subscribe({
       next: (res: any) => {
         this.diasEspeciales = Array.isArray(res?.diasEspeciales)
           ? res.diasEspeciales.map((e: any) => ({
               ...e,
               fecha: new Date(e.fecha?.$date ?? e.fecha),
-              sedes: res.sedes // 👈 le "inyectamos" las sedes del calendario completo
+              sedes: res.sedes
             }))
           : [];
 
-        this.busquedaRealizada = true;
+        // ✅ Muy importante
+        this.busquedaRealizada = false;
+        setTimeout(() => this.busquedaRealizada = true, 10);
       },
       error: (err: any) => {
         console.error('Error al consultar calendario:', err);
         this.diasEspeciales = [];
-        this.busquedaRealizada = true;
+        this.busquedaRealizada = false;
+        setTimeout(() => this.busquedaRealizada = true, 10);
       }
     });
   }

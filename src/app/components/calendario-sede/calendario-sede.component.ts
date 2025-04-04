@@ -42,7 +42,7 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
-    this.mesActual = new Date(this.anio, 0, 1);
+    this.definirMesInicial();
     this.obtenerRol();
     this.generarDiasMes();
 
@@ -55,8 +55,21 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['eventos']) {
+    if (changes['anio'] || changes['sede']) {
+      this.definirMesInicial();
+    }
+
+    if (changes['eventos'] || changes['anio'] || changes['sede']) {
       this.generarDiasMes();
+    }
+  }
+
+  definirMesInicial(): void {
+    const hoy = new Date();
+    if (this.anio === hoy.getFullYear()) {
+      this.mesActual = hoy;
+    } else {
+      this.mesActual = new Date(this.anio, 0, 1);
     }
   }
 
@@ -153,19 +166,17 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
       descripcion: this.nuevoEvento.descripcion
     };
 
-    // Si se aplica a varias sedes
     if (this.aplicarAMasSedes && this.todasLasSedes) {
       const sedesSeleccionadas = this.todasLasSedes.filter(s => s.seleccionada);
       sedesSeleccionadas.forEach(sedeExtra => {
         this.eventoGuardado.emit({
           ...eventoBase,
           sede: sedeExtra.id,
-          editar: false // Siempre agregar para otras sedes
+          editar: false
         });
       });
     }
 
-    // Para la sede actual
     this.eventoGuardado.emit({
       ...eventoBase,
       sede: this.sede,

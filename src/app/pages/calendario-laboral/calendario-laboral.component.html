@@ -5,23 +5,22 @@
   <!-- 📌 Fondo para cerrar el sidebar en móviles -->
   <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
 
-<!-- 📌 Sidebar -->
-<div class="sidebar" [class.active]="sidebarAbierto">
-  <h3>Configuracion de Calendario General</h3>
-  <ul class="nav flex-column">
-    <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
-    <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
-    <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
-    <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
-    <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
-    <li class="nav-item" *ngIf="esAdmin()"><button class="btn-sidebar" routerLink="/usuarios">🧑‍💼 Ver Usuarios</button></li>
-  </ul>
-  <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
-</div>
+  <!-- 📌 Sidebar -->
+  <div class="sidebar" [class.active]="sidebarAbierto">
+    <h3>Configuración de Calendario General</h3>
+    <ul class="nav flex-column">
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
+      <li class="nav-item" *ngIf="esAdmin()"><button class="btn-sidebar" routerLink="/usuarios">🧑‍💼 Ver Usuarios</button></li>
+    </ul>
+    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+  </div>
 
-<!-- 📌 Fondo para cerrar el sidebar en móviles -->
-<div class="sidebar-overlay" [class.active]="sidebarAbierto" (click)="toggleSidebar()"></div>
-
+  <!-- 📌 Fondo para cerrar el sidebar en móviles -->
+  <div class="sidebar-overlay" [class.active]="sidebarAbierto" (click)="toggleSidebar()"></div>
 
   <!-- 📌 Contenido principal -->
   <div class="main-content">
@@ -30,40 +29,38 @@
       <h2 class="mat-title text-center" style="margin-bottom: 20px;">Configuración de Calendario Laboral</h2>
       <p class="text-center" style="margin-bottom: 30px;">Consulta y administra los días especiales por sede</p>
 
-      <!-- 📌 Filtros -->
-<!-- 📌 Formulario mejorado con botón -->
-<div class="formulario-busqueda mat-elevation-z2">
-  <div class="campos-filtros">
-    <mat-form-field appearance="outline" class="campo">
-      <mat-label><mat-icon>location_on</mat-icon> Sede</mat-label>
-      <mat-select [(value)]="sedeSeleccionada">
-        <mat-option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+      <!-- 📌 Filtros mejorados con botón -->
+      <div class="formulario-busqueda mat-elevation-z2">
+        <div class="campos-filtros">
+          <mat-form-field appearance="outline" class="campo">
+            <mat-label><mat-icon>location_on</mat-icon> Sede</mat-label>
+            <mat-select [(value)]="sedeSeleccionada">
+              <mat-option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</mat-option>
+            </mat-select>
+          </mat-form-field>
 
-    <mat-form-field appearance="outline" class="campo">
-      <mat-label><mat-icon>calendar_today</mat-icon> Año</mat-label>
-      <input matInput type="number" [(ngModel)]="anioSeleccionado" min="2023" max="2030" />
-    </mat-form-field>
+          <mat-form-field appearance="outline" class="campo">
+            <mat-label><mat-icon>calendar_today</mat-icon> Año</mat-label>
+            <input matInput type="number" [(ngModel)]="anioSeleccionado" min="2023" max="2030" />
+          </mat-form-field>
 
-    <button mat-flat-button color="primary" class="boton-buscar" (click)="consultarCalendario()">
-      <mat-icon>search</mat-icon> Buscar
-    </button>
-  </div>
-</div>
-
+          <button mat-flat-button color="primary" class="boton-buscar" (click)="consultarCalendario()">
+            <mat-icon>search</mat-icon> Buscar
+          </button>
+        </div>
+      </div>
 
       <!-- 📆 Calendario visual -->
       <app-calendario-sede
-      *ngIf="busquedaRealizada && sedeSeleccionada !== null && sedes.length"
-      [sede]="sedeSeleccionada!"
-      [sedeNombre]="sedeSeleccionadaNombre"
-      [anio]="anioSeleccionado"
-      [eventos]="diasEspeciales"
-      [todasLasSedes]="sedes"
-      (eventoGuardado)="onEventoGuardado($event)"
-      (eventoEliminado)="onEventoEliminado($event)"> <!-- ✅ Agregado aquí -->
-    </app-calendario-sede>
+        *ngIf="busquedaRealizada && sedeSeleccionada !== null && sedes.length"
+        [sede]="sedeSeleccionada!"
+        [sedeNombre]="sedeSeleccionadaNombre"
+        [anio]="anioSeleccionado"
+        [eventos]="diasEspeciales"
+        [todasLasSedes]="sedes"
+        (eventoGuardado)="onEventoGuardado($event)"
+        (eventoEliminado)="onEventoEliminado($event)">
+      </app-calendario-sede>
 
       <!-- 💬 Mensaje si no hay configuración -->
       <div *ngIf="busquedaRealizada && diasEspeciales.length === 0" class="mensaje-vacio">
