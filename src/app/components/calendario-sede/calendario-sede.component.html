@@ -87,11 +87,13 @@
           <!-- Acciones -->
           <div class="modal-acciones">
             <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>
-            <button mat-raised-button color="primary" (click)="guardarEvento()">Guardar</button>
+            <button mat-raised-button color="primary" (click)="guardarEvento()">
+              {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+            </button>
             <button mat-button color="warn"
                     *ngIf="nuevoEvento?.tipo"
                     (click)="eliminarEvento()">
-              Eliminar configuración de este día
+              Eliminar Dia
             </button>
           </div>
         </ng-container>

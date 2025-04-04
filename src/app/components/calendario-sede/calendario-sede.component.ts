@@ -36,6 +36,8 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
 
   aplicarAMasSedes: boolean = false;
   usuarioRol: string = '';
+  modoEdicion: boolean = false;
+  eventoExistente: any = null;
 
   constructor(private authService: AuthService) {}
 
@@ -93,9 +95,23 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     if (!dia.fecha) return;
 
     this.fechaSeleccionada = dia.fecha;
-    this.nuevoEvento = dia.evento
-      ? { ...dia.evento }
-      : { tipo: '', descripcion: '' };
+
+    const eventoExistente = this.eventos.find(e =>
+      e?.fecha && isSameDay(new Date(e.fecha), dia.fecha) && e.sedes.includes(this.sede)
+    );
+
+    if (eventoExistente) {
+      this.modoEdicion = true;
+      this.eventoExistente = eventoExistente;
+      this.nuevoEvento = {
+        tipo: eventoExistente.tipo,
+        descripcion: eventoExistente.descripcion
+      };
+    } else {
+      this.modoEdicion = false;
+      this.eventoExistente = null;
+      this.nuevoEvento = { tipo: '', descripcion: '' };
+    }
 
     if (this.todasLasSedes) {
       this.todasLasSedes = this.todasLasSedes.map(s => ({
@@ -134,14 +150,24 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
       descripcion: this.nuevoEvento.descripcion
     };
 
+    // Si se aplica a varias sedes
     if (this.aplicarAMasSedes && this.todasLasSedes) {
       const sedesSeleccionadas = this.todasLasSedes.filter(s => s.seleccionada);
       sedesSeleccionadas.forEach(sedeExtra => {
-        this.eventoGuardado.emit({ ...eventoBase, sede: sedeExtra.id });
+        this.eventoGuardado.emit({
+          ...eventoBase,
+          sede: sedeExtra.id,
+          editar: false // Siempre agregar para otras sedes
+        });
       });
     }
 
-    this.eventoGuardado.emit({ ...eventoBase, sede: this.sede });
+    // Para la sede actual
+    this.eventoGuardado.emit({
+      ...eventoBase,
+      sede: this.sede,
+      editar: this.modoEdicion
+    });
 
     this.cerrarModal();
     this.generarDiasMes();
@@ -177,18 +203,18 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
           contraseña: result.value
         };
 
-        console.log('🧪 Evento emitido para eliminar:', evento); // 👈 Agregado
-
         this.eventoEliminado.emit(evento);
         this.cerrarModal();
       }
     });
   }
 
-
   cerrarModal(): void {
     this.mostrarModal = false;
     this.aplicarAMasSedes = false;
+    this.modoEdicion = false;
+    this.eventoExistente = null;
+    this.nuevoEvento = { tipo: '', descripcion: '' };
   }
 
   trackBySede(index: number, sede: any): number {
