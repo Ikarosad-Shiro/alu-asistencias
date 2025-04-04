@@ -58,16 +58,18 @@ export class CalendarioService {
     return this.http.put<any>(`${this.baseUrl}/editar-dia`, payload);
   }
 
-  // ❌ Eliminar un día especial
+  // ❌ Eliminar un día especial (ahora con contraseña 💥)
   eliminarDia(data: {
     año: number;
     sede: number;
     fecha: Date | string;
+    contraseña?: string;
   }) {
     const payload = {
       año: data.año,
       sede: data.sede,
-      fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
+      fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString(),
+      contraseña: data.contraseña
     };
 
     return this.http.request<any>('delete', `${this.baseUrl}/eliminar-dia`, {

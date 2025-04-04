@@ -23,42 +23,33 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/auth/login`, credentials);
   }
 
-  // 📌 Método para verificar un usuario (Opcional, si quieres confirmar usuarios activos)
+  // 📌 Método para verificar un usuario
   verify(userId: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/auth/verify/${userId}`);
   }
 
   // 📌 Método para cerrar sesión
   logout(): void {
-    localStorage.removeItem('token'); // Eliminar el token del localStorage
-    this.router.navigate(['/login']); // Redirigir al login
+    localStorage.removeItem('token');
+    this.router.navigate(['/login']);
   }
 
   // 📌 Método para comprobar si el usuario está autenticado
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('token'); // Retorna true si hay un token guardado
+    return !!localStorage.getItem('token');
   }
 
-  // 📌 Método para obtener el rol del usuario
+  // 📌 Obtener el rol del usuario
   getUserRole(): string | null {
     const token = localStorage.getItem('token');
     if (token) {
-      const payload = JSON.parse(atob(token.split('.')[1])); // Decodificar token
+      const payload = JSON.parse(atob(token.split('.')[1]));
       return payload.rol || null;
     }
     return null;
   }
 
-  // 📌 Método para solicitar restablecimiento de contraseña
-  requestPasswordReset(email: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/forgot-password`, { email });
-  }
-
-  // 📌 Método para confirmar restablecimiento de contraseña
-  resetPasswordConfirm(token: string, password: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/reset-password/confirm`, { token, password });
-  }
-
+  // 📌 Obtener datos del token
   obtenerDatosDesdeToken(): { nombre: string; rol: string } | null {
     const token = localStorage.getItem('token');
     if (!token) return null;
@@ -75,4 +66,18 @@ export class AuthService {
     }
   }
 
+  // 📌 Solicitar restablecimiento de contraseña
+  requestPasswordReset(email: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/forgot-password`, { email });
+  }
+
+  // 📌 Confirmar restablecimiento de contraseña
+  resetPasswordConfirm(token: string, password: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/reset-password/confirm`, { token, password });
+  }
+
+  // 🔐 Verificar contraseña para acciones sensibles
+  verificarPassword(contraseña: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/usuarios/verificar-password`, { contraseña });
+  }
 }

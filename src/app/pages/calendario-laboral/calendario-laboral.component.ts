@@ -3,6 +3,7 @@ import { CalendarioService } from 'src/app/services/calendario.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { SedeService } from 'src/app/services/sede.service';
 import { Router } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-calendario-laboral',
@@ -43,7 +44,7 @@ export class CalendarioLaboralComponent implements OnInit {
       next: (res: any) => {
         this.sedes = res.map((s: any) => ({
           ...s,
-          seleccionada: false // importante para checkbox de sedes extra
+          seleccionada: false
         }));
       },
       error: (err: any) => {
@@ -66,7 +67,7 @@ export class CalendarioLaboralComponent implements OnInit {
         this.diasEspeciales = Array.isArray(res?.diasEspeciales)
           ? res.diasEspeciales.map((e: any) => ({
               ...e,
-              fecha: new Date(e.fecha?.$date ?? e.fecha) // 🧠 importante para evitar errores con fechas
+              fecha: new Date(e.fecha?.$date ?? e.fecha)
             }))
           : [];
 
@@ -86,14 +87,32 @@ export class CalendarioLaboralComponent implements OnInit {
       año: this.anioSeleccionado
     };
 
-    console.log('📤 Evento enviado al backend:', eventoCompleto); // ← agrega esto
-
     this.calendarioService.agregarDia(eventoCompleto).subscribe({
       next: () => {
         this.consultarCalendario();
       },
       error: (err: any) => {
         console.error('❌ Error al guardar día especial:', err.error?.message || err.message || err);
+      }
+    });
+  }
+
+  onEventoEliminado(evento: any) {
+    const { contraseña, ...datosEvento } = evento;
+
+    this.authService.verificarPassword(contraseña).subscribe({
+      next: (resp: any) => {
+        if (resp.valido) {
+          this.calendarioService.eliminarDia(datosEvento).subscribe({
+            next: () => this.consultarCalendario(),
+            error: (err) => {
+              Swal.fire('Error', err.error?.message || 'No se pudo eliminar el día', 'error');
+            }
+          });
+        }
+      },
+      error: (err) => {
+        Swal.fire('Contraseña incorrecta', 'Verifica tu contraseña', 'error');
       }
     });
   }
