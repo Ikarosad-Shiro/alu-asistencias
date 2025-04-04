@@ -5,6 +5,8 @@ import {
   addMonths, subMonths, startOfMonth, endOfMonth,
   eachDayOfInterval, isSameDay, isToday
 } from 'date-fns';
+import Swal from 'sweetalert2';
+import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-calendario-sede',
@@ -19,6 +21,7 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   @Input() todasLasSedes: { id: number, nombre: string, seleccionada?: boolean }[] = [];
 
   @Output() eventoGuardado = new EventEmitter<any>();
+  @Output() eventoEliminado = new EventEmitter<any>();
 
   mesActual = new Date();
   diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -32,9 +35,13 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   };
 
   aplicarAMasSedes: boolean = false;
+  usuarioRol: string = '';
+
+  constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
     this.mesActual = new Date(this.anio, 0, 1);
+    this.obtenerRol();
     this.generarDiasMes();
 
     if (this.todasLasSedes) {
@@ -49,6 +56,15 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     if (changes['eventos']) {
       this.generarDiasMes();
     }
+  }
+
+  obtenerRol() {
+    const usuario = this.authService.obtenerDatosDesdeToken();
+    this.usuarioRol = usuario?.rol || '';
+  }
+
+  get puedeEditar(): boolean {
+    return this.usuarioRol === 'Dios' || this.usuarioRol === 'Administrador';
   }
 
   generarDiasMes(): void {
@@ -129,6 +145,41 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
 
     this.cerrarModal();
     this.generarDiasMes();
+  }
+
+  eliminarEvento(): void {
+    Swal.fire({
+      title: '¿Eliminar configuración de este día?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      input: 'password',
+      inputLabel: 'Confirma tu contraseña',
+      inputPlaceholder: 'Ingresa tu contraseña',
+      inputAttributes: {
+        autocapitalize: 'off',
+        autocorrect: 'off'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: (password) => {
+        if (!password) {
+          Swal.showValidationMessage('Debes ingresar tu contraseña');
+        }
+        return password;
+      }
+    }).then(result => {
+      if (result.isConfirmed) {
+        const evento = {
+          sede: this.sede,
+          año: this.anio,
+          fecha: this.fechaSeleccionada,
+          password: result.value
+        };
+        this.eventoEliminado.emit(evento);
+        this.cerrarModal();
+      }
+    });
   }
 
   cerrarModal(): void {

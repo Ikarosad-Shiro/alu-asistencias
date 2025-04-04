@@ -1,3 +1,4 @@
+<!-- calendario-sede.component.html -->
 <ng-container *ngIf="todasLasSedes">
   <div class="calendario-sede-container">
     <!-- Header -->
@@ -30,7 +31,6 @@
            [class.capacitación]="dia.evento?.tipo === 'capacitación'"
            [class.evento]="dia.evento?.tipo === 'evento'"
            [class.suspensión]="dia.evento?.tipo === 'suspensión'"
-           [matTooltip]="dia.evento?.tipo | titlecase"
            (click)="seleccionarDia(dia)">
         <div class="numero-dia">{{ dia.fecha | date:'d' }}</div>
         <div *ngIf="dia.evento" class="indicador-evento"></div>
@@ -42,50 +42,55 @@
       <div class="modal-contenido">
         <h3>{{ fechaSeleccionada | date:'fullDate':'es' }}</h3>
 
-        <mat-form-field appearance="fill">
-          <mat-label>Tipo de día</mat-label>
-          <mat-select [(ngModel)]="nuevoEvento.tipo">
-            <mat-option value="festivo">Festivo</mat-option>
-            <mat-option value="puente">Puente</mat-option>
-            <mat-option value="descanso">Descanso</mat-option>
-            <mat-option value="media jornada">Media jornada</mat-option>
-            <mat-option value="capacitación">Capacitación</mat-option>
-            <mat-option value="evento">Evento</mat-option>
-            <mat-option value="suspensión">Suspensión</mat-option>
-          </mat-select>
-        </mat-form-field>
+        <ng-container *ngIf="puedeEditar; else soloLectura">
+          <mat-form-field appearance="fill">
+            <mat-label>Tipo de día</mat-label>
+            <mat-select [(ngModel)]="nuevoEvento.tipo">
+              <mat-option value="festivo">Festivo</mat-option>
+              <mat-option value="puente">Puente</mat-option>
+              <mat-option value="descanso">Descanso</mat-option>
+              <mat-option value="media jornada">Media jornada</mat-option>
+              <mat-option value="capacitación">Capacitación</mat-option>
+              <mat-option value="evento">Evento</mat-option>
+              <mat-option value="suspensión">Suspensión</mat-option>
+            </mat-select>
+          </mat-form-field>
 
-        <mat-form-field appearance="fill">
-          <mat-label>Descripción</mat-label>
-          <input matInput [(ngModel)]="nuevoEvento.descripcion">
-        </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Descripción</mat-label>
+            <input matInput [(ngModel)]="nuevoEvento.descripcion">
+          </mat-form-field>
 
-        <!-- Checkbox -->
-        <div class="form-group">
-          <mat-checkbox [(ngModel)]="aplicarAMasSedes" (change)="onToggleAplicarSedes()">
-            ¿Desea que esta configuración se aplique a más sedes?
-          </mat-checkbox>
-        </div>
+          <div class="form-group">
+            <mat-checkbox [(ngModel)]="aplicarAMasSedes" (change)="onToggleAplicarSedes()">
+              ¿Desea que esta configuración se aplique a más sedes?
+            </mat-checkbox>
+          </div>
 
-        <!-- Lista de sedes si se activa -->
-        <ng-container *ngIf="aplicarAMasSedes && todasLasSedes?.length">
-          <p>Selecciona las sedes adicionales:</p>
+          <ng-container *ngIf="aplicarAMasSedes && todasLasSedes?.length">
+            <p>Selecciona las sedes adicionales:</p>
 
-          <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
-            <ng-container *ngIf="sedeExtra && sedeExtra.id !== sede">
-              <mat-checkbox
-                [(ngModel)]="sedeExtra.seleccionada"
-                [ngModelOptions]="{ standalone: true }">
-                {{ sedeExtra.nombre }}
-              </mat-checkbox>
+            <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
+              <ng-container *ngIf="sedeExtra && sedeExtra.id !== sede">
+                <mat-checkbox
+                  [(ngModel)]="sedeExtra.seleccionada"
+                  [ngModelOptions]="{ standalone: true }">
+                  {{ sedeExtra.nombre }}
+                </mat-checkbox>
+              </ng-container>
             </ng-container>
           </ng-container>
+
+          <div class="modal-acciones">
+            <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>
+            <button mat-raised-button color="primary" (click)="guardarEvento()">Guardar</button>
+            <button mat-button color="warn" *ngIf="nuevoEvento?.tipo" (click)="eliminarEvento()">Eliminar configuración de este día</button>
+          </div>
         </ng-container>
 
-        <div class="modal-acciones">
-          <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>
-          <button mat-raised-button color="primary" (click)="guardarEvento()">Guardar</button>
-        </div>
+        <ng-template #soloLectura>
+          <p class="text-muted">Solo los usuarios con rol <b>Dios</b> o <b>Administrador</b> pueden modificar el calendario.</p>
+        </ng-template>
       </div>
     </div>
   </div>
