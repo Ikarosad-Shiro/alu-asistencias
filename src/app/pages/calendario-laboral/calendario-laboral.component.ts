@@ -67,7 +67,8 @@ export class CalendarioLaboralComponent implements OnInit {
         this.diasEspeciales = Array.isArray(res?.diasEspeciales)
           ? res.diasEspeciales.map((e: any) => ({
               ...e,
-              fecha: new Date(e.fecha?.$date ?? e.fecha)
+              fecha: new Date(e.fecha?.$date ?? e.fecha),
+              sedes: res.sedes // 👈 le "inyectamos" las sedes del calendario completo
             }))
           : [];
 

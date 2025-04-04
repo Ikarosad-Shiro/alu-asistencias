@@ -97,7 +97,10 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     this.fechaSeleccionada = dia.fecha;
 
     const eventoExistente = this.eventos.find(e =>
-      e?.fecha && isSameDay(new Date(e.fecha), dia.fecha) && e.sedes.includes(this.sede)
+      e?.fecha &&
+      isSameDay(new Date(e.fecha), dia.fecha) &&
+      Array.isArray(e.sedes) &&
+      e.sedes.includes(this.sede)
     );
 
     if (eventoExistente) {
