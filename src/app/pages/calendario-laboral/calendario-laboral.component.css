@@ -170,4 +170,33 @@ mat-form-field {
     margin-left: 250px;
     width: calc(100% - 250px);
   }
+
+  .formulario-busqueda {
+    background: rgba(255, 255, 255, 0.85);
+    padding: 25px;
+    border-radius: 12px;
+    max-width: 650px;
+    margin: 0 auto 30px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .campos-filtros {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .campo {
+    flex: 1;
+    min-width: 220px;
+  }
+
+  ::ng-deep .mat-form-field .mat-icon {
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+
 }
