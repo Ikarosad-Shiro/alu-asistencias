@@ -8,17 +8,20 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
+import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
-import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { TrabajadoresComponent } from './pages/trabajadores/trabajadores.component';
-import { CalendarioComponent } from './components/calendario/calendario.component';
 import { DetalleTrabajadorComponent } from './pages/detalle-trabajador/detalle-trabajador.component';
 import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
 import { CalendarioSedeComponent } from './components/calendario-sede/calendario-sede.component';
+import { CalendarioComponent } from './components/calendario/calendario.component';
 
 // Formularios y Material
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,14 +33,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSelectModule } from '@angular/material/select';
-import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { MatCheckboxModule } from '@angular/material/checkbox'; // 📌 importante
+import { MatDialogModule } from '@angular/material/dialog';
 
 // Angular Calendar
 import { CalendarModule, DateAdapter } from 'angular-calendar';
 import { CalendarMonthModule } from 'angular-calendar';
-import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { CalendarCommonModule } from 'angular-calendar';
+import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 
 // Servicios
 import { AuthService } from './services/auth.service';
@@ -52,10 +55,10 @@ import { AuthService } from './services/auth.service';
     DashboardComponent,
     AdminDashboardComponent,
     TrabajadoresComponent,
-    CalendarioComponent,
     DetalleTrabajadorComponent,
     CalendarioLaboralComponent,
-    CalendarioSedeComponent
+    CalendarioSedeComponent,
+    CalendarioComponent
   ],
   imports: [
     BrowserModule,
@@ -63,10 +66,13 @@ import { AuthService } from './services/auth.service';
     BrowserAnimationsModule,
     FormsModule,
     ReactiveFormsModule,
-    MatButtonModule,
+    HttpClientModule,
+    CommonModule,
+
+    // Angular Material Modules
     MatFormFieldModule,
     MatInputModule,
-    HttpClientModule,
+    MatButtonModule,
     MatSidenavModule,
     MatCardModule,
     MatToolbarModule,
@@ -75,9 +81,10 @@ import { AuthService } from './services/auth.service';
     MatTableModule,
     MatExpansionModule,
     MatSelectModule,
-    CommonModule,
+    MatCheckboxModule,
+    MatDialogModule,
 
-    // 🗓️ Angular Calendar
+    // Angular Calendar
     CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),
     CalendarCommonModule,
     CalendarMonthModule

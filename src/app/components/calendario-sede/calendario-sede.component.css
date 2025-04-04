@@ -45,8 +45,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   position: relative;
+  background-color: white;
 }
 
 .dia-calendario:hover {
@@ -56,6 +57,7 @@
 .dia-actual {
   background-color: #e3f2fd;
   font-weight: bold;
+  border: 2px solid #64b5f6;
 }
 
 .dia-seleccionado {
@@ -112,6 +114,7 @@
   border-radius: 8px;
   width: 400px;
   max-width: 90%;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
 .modal-acciones {
@@ -121,6 +124,7 @@
   margin-top: 20px;
 }
 
+/* Lista de sedes adicionales */
 .lista-sedes-extra {
   margin-top: 15px;
   padding: 10px;
@@ -129,4 +133,9 @@
   background: #fafafa;
   max-height: 150px;
   overflow-y: auto;
+}
+
+/* Formulario */
+.form-group {
+  margin-top: 15px;
 }

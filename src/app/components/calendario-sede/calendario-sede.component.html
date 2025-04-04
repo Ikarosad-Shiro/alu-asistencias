@@ -1,81 +1,82 @@
-<div class="calendario-sede-container">
-  <!-- Header -->
-  <div class="calendario-header">
-    <button mat-icon-button (click)="mesAnterior()">
-      <mat-icon>chevron_left</mat-icon>
-    </button>
-    <h2>{{ sedeNombre }} - {{ mesActual | date:'MMMM yyyy':'es' | titlecase }}</h2>
-    <button mat-icon-button (click)="mesSiguiente()">
-      <mat-icon>chevron_right</mat-icon>
-    </button>
-  </div>
-
-  <!-- Días de la semana -->
-  <div class="dias-semana">
-    <div *ngFor="let dia of diasSemana" class="dia-header">{{ dia }}</div>
-  </div>
-
-  <!-- Cuadrícula -->
-  <div class="cuadricula-mes">
-    <div *ngFor="let dia of diasMes"
-         class="dia-calendario"
-         [class.dia-actual]="esHoy(dia.fecha)"
-         [class.dia-seleccionado]="dia.seleccionado"
-         [class.dia-especial]="dia.evento"
-         [class.descanso]="dia.evento?.tipo === 'descanso'"
-         [class.festivo]="dia.evento?.tipo === 'festivo'"
-         (click)="seleccionarDia(dia)">
-      <div class="numero-dia">{{ dia.fecha | date:'d' }}</div>
-      <div *ngIf="dia.evento" class="indicador-evento"></div>
+<ng-container *ngIf="todasLasSedes">
+  <div class="calendario-sede-container">
+    <!-- Header -->
+    <div class="calendario-header">
+      <button mat-icon-button (click)="mesAnterior()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <h2>{{ sedeNombre }} - {{ mesActual | date:'MMMM yyyy':'es' | titlecase }}</h2>
+      <button mat-icon-button (click)="mesSiguiente()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
     </div>
-  </div>
 
-  <!-- Modal -->
-  <div class="modal" *ngIf="mostrarModal">
-    <div class="modal-contenido">
-      <h3>{{ fechaSeleccionada | date:'fullDate':'es' }}</h3>
+    <!-- Días de la semana -->
+    <div class="dias-semana">
+      <div *ngFor="let dia of diasSemana" class="dia-header">{{ dia }}</div>
+    </div>
 
-      <mat-form-field appearance="fill">
-        <mat-label>Tipo de día</mat-label>
-        <mat-select [(ngModel)]="nuevoEvento.tipo">
-          <mat-option value="festivo">Festivo</mat-option>
-          <mat-option value="descanso">Descanso</mat-option>
-          <mat-option value="otro">Otro</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill">
-        <mat-label>Descripción</mat-label>
-        <input matInput [(ngModel)]="nuevoEvento.descripcion">
-      </mat-form-field>
-
-      <!-- Checkbox -->
-      <div class="form-group">
-        <mat-checkbox [(ngModel)]="aplicarAMasSedes" (change)="onToggleAplicarSedes()">
-          ¿Desea que esta configuración se aplique a más sedes?
-        </mat-checkbox>
+    <!-- Cuadrícula -->
+    <div class="cuadricula-mes">
+      <div *ngFor="let dia of diasMes"
+           class="dia-calendario"
+           [class.dia-actual]="esHoy(dia.fecha)"
+           [class.dia-seleccionado]="dia.seleccionado"
+           [class.dia-especial]="dia.evento"
+           [class.descanso]="dia.evento?.tipo === 'descanso'"
+           [class.festivo]="dia.evento?.tipo === 'festivo'"
+           (click)="seleccionarDia(dia)">
+        <div class="numero-dia">{{ dia.fecha | date:'d' }}</div>
+        <div *ngIf="dia.evento" class="indicador-evento"></div>
       </div>
+    </div>
 
-      <!-- Lista de sedes si se activa -->
-      <ng-container *ngIf="aplicarAMasSedes && todasLasSedes?.length">
-        <p>Selecciona las sedes adicionales:</p>
+    <!-- Modal -->
+    <div class="modal" *ngIf="mostrarModal">
+      <div class="modal-contenido">
+        <h3>{{ fechaSeleccionada | date:'fullDate':'es' }}</h3>
 
-        <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
-          <ng-container *ngIf="sedeExtra && sedeExtra.id !== sede">
-            <mat-checkbox
-              [(ngModel)]="sedeExtra.seleccionada"
-              [ngModelOptions]="{ standalone: true }"
-              [name]="'sede-' + sedeExtra.id">
-              {{ sedeExtra.nombre }}
-            </mat-checkbox>
+        <mat-form-field appearance="fill">
+          <mat-label>Tipo de día</mat-label>
+          <mat-select [(ngModel)]="nuevoEvento.tipo">
+            <mat-option value="festivo">Festivo</mat-option>
+            <mat-option value="descanso">Descanso</mat-option>
+            <mat-option value="otro">Otro</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Descripción</mat-label>
+          <input matInput [(ngModel)]="nuevoEvento.descripcion">
+        </mat-form-field>
+
+        <!-- Checkbox -->
+        <div class="form-group">
+          <mat-checkbox [(ngModel)]="aplicarAMasSedes" (change)="onToggleAplicarSedes()">
+            ¿Desea que esta configuración se aplique a más sedes?
+          </mat-checkbox>
+        </div>
+
+        <!-- Lista de sedes si se activa -->
+        <ng-container *ngIf="aplicarAMasSedes && todasLasSedes?.length">
+          <p>Selecciona las sedes adicionales:</p>
+
+          <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
+            <ng-container *ngIf="sedeExtra && sedeExtra.id !== sede">
+              <mat-checkbox
+                [(ngModel)]="sedeExtra.seleccionada"
+                [ngModelOptions]="{ standalone: true }">
+                {{ sedeExtra.nombre }}
+              </mat-checkbox>
+            </ng-container>
           </ng-container>
         </ng-container>
-      </ng-container>
 
-      <div class="modal-acciones">
-        <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>
-        <button mat-raised-button color="primary" (click)="guardarEvento()">Guardar</button>
+        <div class="modal-acciones">
+          <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>
+          <button mat-raised-button color="primary" (click)="guardarEvento()">Guardar</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
+</ng-container>
