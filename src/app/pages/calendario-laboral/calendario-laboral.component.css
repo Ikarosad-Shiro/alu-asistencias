@@ -175,7 +175,7 @@ mat-form-field {
     background: rgba(255, 255, 255, 0.85);
     padding: 25px;
     border-radius: 12px;
-    max-width: 650px;
+    max-width: 700px;
     margin: 0 auto 30px;
     display: flex;
     justify-content: center;
@@ -187,6 +187,7 @@ mat-form-field {
     flex-wrap: wrap;
     width: 100%;
     justify-content: center;
+    align-items: center;
   }
 
   .campo {
@@ -194,9 +195,14 @@ mat-form-field {
     min-width: 220px;
   }
 
+  .boton-buscar {
+    height: 56px;
+    margin-top: 5px;
+    min-width: 120px;
+  }
+
   ::ng-deep .mat-form-field .mat-icon {
     vertical-align: middle;
     margin-right: 4px;
   }
-
 }

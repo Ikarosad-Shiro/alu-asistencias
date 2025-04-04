@@ -31,12 +31,12 @@
       <p class="text-center" style="margin-bottom: 30px;">Consulta y administra los días especiales por sede</p>
 
       <!-- 📌 Filtros -->
-<!-- 📌 Formulario mejorado -->
+<!-- 📌 Formulario mejorado con botón -->
 <div class="formulario-busqueda mat-elevation-z2">
   <div class="campos-filtros">
     <mat-form-field appearance="outline" class="campo">
       <mat-label><mat-icon>location_on</mat-icon> Sede</mat-label>
-      <mat-select [(value)]="sedeSeleccionada" (selectionChange)="onSedeChange()">
+      <mat-select [(value)]="sedeSeleccionada">
         <mat-option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</mat-option>
       </mat-select>
     </mat-form-field>
@@ -45,6 +45,10 @@
       <mat-label><mat-icon>calendar_today</mat-icon> Año</mat-label>
       <input matInput type="number" [(ngModel)]="anioSeleccionado" min="2023" max="2030" />
     </mat-form-field>
+
+    <button mat-flat-button color="primary" class="boton-buscar" (click)="consultarCalendario()">
+      <mat-icon>search</mat-icon> Buscar
+    </button>
   </div>
 </div>
 
