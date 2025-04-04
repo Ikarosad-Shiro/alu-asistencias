@@ -98,23 +98,31 @@ export class CalendarioLaboralComponent implements OnInit {
   }
 
   onEventoEliminado(evento: any) {
+    console.log('📥 Evento recibido para eliminar:', evento);
+
     const { contraseña, ...datosEvento } = evento;
 
     this.authService.verificarPassword(contraseña).subscribe({
       next: (resp: any) => {
         if (resp.valido) {
+          console.log('🔐 Contraseña verificada, eliminando...');
+
           this.calendarioService.eliminarDia(datosEvento).subscribe({
             next: () => {
               Swal.fire('✅ Eliminado', 'El día fue eliminado correctamente.', 'success');
               this.consultarCalendario();
             },
             error: (err) => {
+              console.error('❌ Error al eliminar día:', err);
               Swal.fire('Error', err.error?.message || 'No se pudo eliminar el día', 'error');
             }
           });
+        } else {
+          Swal.fire('Contraseña incorrecta', 'Verifica tu contraseña', 'error');
         }
       },
       error: (err) => {
+        console.error('❌ Error verificando contraseña:', err);
         Swal.fire('Contraseña incorrecta', 'Verifica tu contraseña', 'error');
       }
     });

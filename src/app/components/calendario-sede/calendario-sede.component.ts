@@ -176,11 +176,15 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
           fecha: this.fechaSeleccionada,
           contraseña: result.value
         };
+
+        console.log('🧪 Evento emitido para eliminar:', evento); // 👈 Agregado
+
         this.eventoEliminado.emit(evento);
         this.cerrarModal();
       }
     });
   }
+
 
   cerrarModal(): void {
     this.mostrarModal = false;
