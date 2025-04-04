@@ -57,21 +57,20 @@
       </div>
 
       <!-- Lista de sedes si se activa -->
-      <div class="lista-sedes-extra" *ngIf="aplicarAMasSedes && todasLasSedes?.length">
+      <ng-container *ngIf="aplicarAMasSedes && todasLasSedes?.length">
         <p>Selecciona las sedes adicionales:</p>
 
-        <ng-container *ngIf="todasLasSedes">
-          <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
+        <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
+          <ng-container *ngIf="sedeExtra && sedeExtra.id !== sede">
             <mat-checkbox
-              *ngIf="sedeExtra"
               [(ngModel)]="sedeExtra.seleccionada"
               [ngModelOptions]="{ standalone: true }"
-              [name]="'sede-' + sedeExtra.id"
-              [disabled]="sedeExtra.id === sede">
+              [name]="'sede-' + sedeExtra.id">
               {{ sedeExtra.nombre }}
             </mat-checkbox>
           </ng-container>
         </ng-container>
+      </ng-container>
 
       <div class="modal-acciones">
         <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>

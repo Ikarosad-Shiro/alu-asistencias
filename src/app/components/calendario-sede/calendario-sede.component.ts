@@ -82,6 +82,14 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
       ? { ...dia.evento }
       : { tipo: '', descripcion: '' };
 
+    // 🛡️ Asegurar que todasLasSedes estén listas y tengan `seleccionada`
+    if (this.todasLasSedes) {
+      this.todasLasSedes = this.todasLasSedes.map(s => ({
+        ...s,
+        seleccionada: s.seleccionada ?? false
+      }));
+    }
+
     this.mostrarModal = true;
   }
 
