@@ -2,13 +2,18 @@
   <!-- 📌 Botón de menú para dispositivos móviles -->
   <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
 
-  <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+  <!-- 📌 Fondo semitransparente al abrir el sidebar -->
+  <div class="sidebar-overlay" [class.active]="sidebarAbierto" (click)="toggleSidebar()"></div>
+
   <!-- 📌 Barra lateral (Sidebar) -->
-  <div class="sidebar">
-    <h3>Dashboard</h3>
+  <div class="sidebar" [class.active]="sidebarAbierto">
+    <h3>Gestión de Sedes</h3>
     <ul class="nav flex-column">
       <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/sedes">🏢 Sedes</button>
+        <button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button>
+      </li>
+      <li class="nav-item">
+        <button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button>
       </li>
       <li class="nav-item">
         <button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button>
@@ -20,7 +25,7 @@
         <button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button>
       </li>
       <li class="nav-item" *ngIf="esAdmin()">
-        <button class="btn-sidebar" routerLink="/admin-dashboard">📋 Ver Usuarios</button>
+        <button class="btn-sidebar" routerLink="/admin-dashboard">🧑‍💼 Ver Usuarios</button>
       </li>
     </ul>
     <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
@@ -35,7 +40,7 @@
         <p>Consulta, agrega y administra todas las sedes del sistema.</p>
       </div>
 
-      <!-- 📌 Aquí irá la tabla de sedes -->
+      <!-- 📌 Tarjetas de contenido -->
       <div class="stats-container">
         <div class="card">
           <h3>📋 Lista de sedes</h3>
