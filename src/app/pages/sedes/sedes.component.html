@@ -1,0 +1,45 @@
+<div class="dashboard-container">
+  <!-- 📌 Botón de menú para móviles -->
+  <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
+
+  <!-- 📌 Fondo semitransparente para cerrar sidebar -->
+  <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+
+  <!-- 📌 Sidebar -->
+  <div class="sidebar">
+    <h3>Configuración de Sedes</h3>
+    <ul class="nav flex-column">
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/calendario-laboral">📅 Calendario Laboral</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
+      <li class="nav-item" *ngIf="esAdmin()"><button class="btn-sidebar" routerLink="/admin-dashboard">🧑‍💼 Ver Usuarios</button></li>
+    </ul>
+    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+  </div>
+
+  <!-- 📌 Contenido principal -->
+  <div class="main-content">
+    <div class="content-container">
+      <!-- 📌 Bienvenida -->
+      <div class="welcome-card">
+        <h2>Gestión de Sedes 📍</h2>
+        <p>Consulta, agrega y administra todas las sedes del sistema.</p>
+      </div>
+
+      <!-- 📌 Aquí irá la tabla de sedes -->
+      <div class="stats-container">
+        <div class="card">
+          <h3>📋 Lista de sedes</h3>
+          <p>Aquí se mostrará la tabla con todas las sedes.</p>
+        </div>
+
+        <div class="card">
+          <h3>➕ Nueva sede</h3>
+          <p>Aquí se mostrará el formulario para agregar una nueva sede.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

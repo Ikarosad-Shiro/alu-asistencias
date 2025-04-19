@@ -6,12 +6,11 @@ import { ResetPasswordComponent } from './pages/reset-password/reset-password.co
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
+import { SedesComponent } from './pages/sedes/sedes.component';
 import { TrabajadoresComponent } from './pages/trabajadores/trabajadores.component';
 import { DetalleTrabajadorComponent } from './pages/detalle-trabajador/detalle-trabajador.component';
 import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
 import { AuthGuard } from './guards/auth.guard';
-
-
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' }, // 🔥 Redirige a login
@@ -19,6 +18,7 @@ const routes: Routes = [
   { path: 'register', component: RegisterComponent},
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard]},
   { path: 'admin-dashboard', component: AdminDashboardComponent, canActivate: [AuthGuard] },
+  { path: 'sedes', component: SedesComponent, canActivate: [AuthGuard] },
   { path: 'trabajadores', component: TrabajadoresComponent, canActivate: [AuthGuard]},
   { path: 'trabajadores/:id', component: DetalleTrabajadorComponent, canActivate: [AuthGuard] },
   { path: 'calendario-laboral', component: CalendarioLaboralComponent, canActivate: [AuthGuard] },
