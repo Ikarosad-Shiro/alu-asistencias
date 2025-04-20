@@ -113,7 +113,7 @@
   }
 }
 
-/* 📌 Fondo semitransparente del overlay */
+/* 📌 Fondo semitransparente */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -133,10 +133,10 @@
 .main-content {
   flex-grow: 1;
   margin-left: 250px;
-  padding: 20px;
+  padding: 20px 40px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
   width: calc(100% - 250px);
   overflow-y: auto;
@@ -151,8 +151,7 @@
 
 /* 📌 Tarjeta de bienvenida */
 .welcome-card {
-  width: 90%;
-  max-width: 1150px;
+  width: 100%;
   background: rgba(255, 255, 255, 0.9);
   padding: 20px;
   border-radius: 8px;
@@ -161,17 +160,17 @@
   margin-bottom: 20px;
 }
 
-/* 📋 Contenedor de las tarjetas */
-.stats-container {
-  display: grid;
+/* 📋 Contenedor de tarjetas (vertical stack) */
+.content-container {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  width: 90%;
-  max-width: 1150px;
+  width: 100%;
 }
 
-/* 📦 Tarjetas individuales */
+/* 📦 Tarjetas */
 .card {
+  width: 100%;
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 10px;
   padding: 20px;
@@ -200,15 +199,4 @@
 .tabla-sedes th {
   background-color: #f5f5f5;
   font-weight: bold;
-}
-
-/* 📌 Tarjeta de lista en ancho completo */
-.card.full-width {
-  grid-column: 1 / -1;
-}
-
-@media (max-width: 1024px) {
-  .card.full-width {
-    grid-column: span 1;
-  }
 }
