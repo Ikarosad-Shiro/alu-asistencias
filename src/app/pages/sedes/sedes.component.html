@@ -9,18 +9,10 @@
   <div class="sidebar" [class.active]="sidebarAbierto">
     <h3>Gestión de Sedes</h3>
     <ul class="nav flex-column">
-      <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button>
-      </li>
-      <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button>
-      </li>
-      <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/calendario-laboral">📅 Calendario Laboral</button>
-      </li>
-      <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button>
-      </li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/calendario-laboral">📅 Calendario Laboral</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
       <li class="nav-item" *ngIf="esAdmin()">
         <button class="btn-sidebar" routerLink="/admin-dashboard">🧑‍💼 Ver Usuarios</button>
       </li>
@@ -31,14 +23,14 @@
   <!-- 📌 Contenido principal -->
   <div class="main-content">
     <div class="content-container">
-      <!-- 📌 Bienvenida -->
+      <!-- 🏁 Bienvenida -->
       <div class="welcome-card">
         <h2>Gestión de Sedes 📍</h2>
         <p>Consulta, agrega y administra todas las sedes del sistema.</p>
       </div>
 
-      <!-- 📌 Tarjetas de contenido -->
-      <div class="card lista-sedes">
+      <!-- 📋 Lista de sedes en ancho completo -->
+      <div class="card lista-sedes full-width">
         <h3>📋 Lista de sedes</h3>
 
         <div *ngIf="sedes.length > 0; else noSedes">
@@ -55,8 +47,12 @@
                 <td>{{ sede.id }}</td>
                 <td>{{ sede.nombre }}</td>
                 <td>
-                  <button mat-icon-button color="primary" matTooltip="Editar"><mat-icon>edit</mat-icon></button>
-                  <button mat-icon-button color="warn" matTooltip="Eliminar"><mat-icon>delete</mat-icon></button>
+                  <button mat-icon-button color="primary" matTooltip="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" matTooltip="Eliminar">
+                    <mat-icon>delete</mat-icon>
+                  </button>
                   <button mat-icon-button color="accent" matTooltip="Ver calendario">
                     <mat-icon>calendar_month</mat-icon>
                   </button>
@@ -71,10 +67,11 @@
         </ng-template>
       </div>
 
-        <div class="card">
-          <h3>➕ Nueva sede</h3>
-          <p>Aquí se mostrará el formulario para agregar una nueva sede.</p>
-        </div>
+      <!-- ➕ Nueva sede -->
+      <div class="card">
+        <h3>➕ Nueva sede</h3>
+        <p>Aquí se mostrará el formulario para agregar una nueva sede.</p>
       </div>
     </div>
   </div>
+</div>
