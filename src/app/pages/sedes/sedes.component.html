@@ -38,11 +38,38 @@
       </div>
 
       <!-- 📌 Tarjetas de contenido -->
-      <div class="stats-container">
-        <div class="card">
-          <h3>📋 Lista de sedes</h3>
-          <p>Aquí se mostrará la tabla con todas las sedes.</p>
+      <div class="card lista-sedes">
+        <h3>📋 Lista de sedes</h3>
+
+        <div *ngIf="sedes.length > 0; else noSedes">
+          <table class="tabla-sedes">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let sede of sedes">
+                <td>{{ sede.id }}</td>
+                <td>{{ sede.nombre }}</td>
+                <td>
+                  <button mat-icon-button color="primary" matTooltip="Editar"><mat-icon>edit</mat-icon></button>
+                  <button mat-icon-button color="warn" matTooltip="Eliminar"><mat-icon>delete</mat-icon></button>
+                  <button mat-icon-button color="accent" matTooltip="Ver calendario">
+                    <mat-icon>calendar_month</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+
+        <ng-template #noSedes>
+          <p>No hay sedes registradas por el momento.</p>
+        </ng-template>
+      </div>
 
         <div class="card">
           <h3>➕ Nueva sede</h3>
@@ -51,4 +78,3 @@
       </div>
     </div>
   </div>
-</div>

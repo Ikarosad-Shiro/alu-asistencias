@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { SedeService } from 'src/app/services/sede.service';
 
 @Component({
   selector: 'app-sedes',
@@ -11,7 +12,13 @@ export class SedesComponent implements OnInit {
   usuarioRol: string = '';
   sidebarAbierto: boolean = false;
 
-  constructor(private router: Router) {
+  // 📌 Lista de sedes
+  sedes: { id: number; nombre: string }[] = [];
+
+  constructor(
+    private router: Router,
+    private sedeService: SedeService
+  ) {
     console.log('📌 Constructor de Sedes ejecutado');
     this.obtenerUsuario();
 
@@ -26,6 +33,7 @@ export class SedesComponent implements OnInit {
     console.log('📌 ngOnInit ejecutado en Sedes');
     setTimeout(() => {
       this.obtenerUsuario();
+      this.cargarSedes(); // ✅ Cargamos sedes
     }, 300);
   }
 
@@ -60,5 +68,18 @@ export class SedesComponent implements OnInit {
   cerrarSesion(): void {
     localStorage.clear();
     this.router.navigate(['/login']);
+  }
+
+  // 📌 Cargar sedes desde el backend
+  cargarSedes(): void {
+    this.sedeService.obtenerSedes().subscribe({
+      next: (res) => {
+        console.log('📥 Sedes cargadas:', res);
+        this.sedes = res;
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener sedes:', err);
+      }
+    });
   }
 }
