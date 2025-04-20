@@ -7,111 +7,35 @@
   background-size: cover;
 }
 
-/* 📌 Sidebar (menú lateral) */
+/* 📌 Sidebar (por defecto visible) */
 .sidebar {
   background-color: #343a40;
   color: white;
   padding: 15px;
   width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   height: 100vh;
   position: fixed;
-  left: -260px;
+  left: 0;
   top: 0;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   transition: left 0.3s ease-in-out;
   z-index: 1000;
 }
 
-.sidebar.active {
-  left: 0;
-}
-
-.sidebar h3 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #fff;
-}
-
-/* 📌 Botones del sidebar */
-.nav {
-  width: 100%;
-}
-
-.nav-item {
-  width: 100%;
-  margin-bottom: 15px;
-}
-
-.btn-sidebar {
-  width: 100%;
-  color: white;
-  text-align: left;
-  padding: 12px 15px;
-  background-color: #495057;
-  border: none;
-  border-radius: 5px;
-  font-size: 1rem;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-.btn-sidebar:hover {
-  background-color: #007bff;
-  color: white;
-}
-
-/* 📌 Botón cerrar sesión */
-.btn-logout {
-  background-color: #dc3545;
-  width: 100%;
-  padding: 12px;
-  border-radius: 5px;
-  margin-top: 20px;
-  font-size: 1rem;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-logout:hover {
-  background-color: #c82333;
-}
-
-/* 📌 Sidebar móvil */
+/* 📌 Sidebar oculto en móviles */
 @media (max-width: 1024px) {
   .sidebar {
-    left: -250px;
-    width: 70%;
-    max-width: 280px;
+    left: -260px;
   }
-
   .sidebar.active {
     left: 0;
   }
-
-  .sidebar-overlay {
-    display: block;
-  }
 }
 
-/* 📌 Overlay fondo oscuro al activar sidebar en móviles */
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-}
-
-.sidebar-overlay.active {
-  display: block;
-}
-
-/* 📌 Botón de menú para móviles */
+/* 📌 Botón de menú (solo en móviles) */
 .menu-toggle {
   display: none;
   position: fixed;
@@ -137,7 +61,40 @@
   }
 }
 
-/* 📌 Contenido principal */
+/* 📌 Fondo oscuro al abrir menú en móviles */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
+/* 📌 Botón logout */
+.btn-logout {
+  background-color: #dc3545;
+  width: 100%;
+  padding: 12px;
+  border-radius: 5px;
+  margin-top: 20px;
+  font-size: 1rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-logout:hover {
+  background-color: #c82333;
+}
+
+/* 📌 Estilo del contenido principal */
 .main-content {
   flex-grow: 1;
   margin-left: 250px;
@@ -147,7 +104,6 @@
   align-items: center;
   justify-content: flex-start;
   width: calc(100% - 250px);
-  border-radius: 10px;
   overflow-y: auto;
 }
 
@@ -158,16 +114,16 @@
   }
 }
 
-/* 📌 Tarjeta de bienvenida */
+/* 📌 Contenedor de bienvenida */
 .welcome-card {
   width: 90%;
-  max-width: 900px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 25px;
+  max-width: 800px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   text-align: left;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 /* 📌 Contenedor de tarjetas */
@@ -179,11 +135,50 @@
   max-width: 1000px;
 }
 
-/* 📌 Tarjetas */
 .card {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(255, 255, 255, 0.9);
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   text-align: left;
+}
+
+.card h3 {
+  margin-bottom: 10px;
+}
+
+/* 📌 Título del sidebar */
+.sidebar h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* 📌 Navegación lateral */
+.nav {
+  width: 100%;
+}
+
+.nav-item {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.btn-sidebar {
+  width: 100%;
+  color: white;
+  text-align: left;
+  padding: 12px 15px;
+  background-color: #495057;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-sidebar:hover {
+  background-color: #007bff;
+  color: white;
 }
