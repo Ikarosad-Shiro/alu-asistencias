@@ -149,9 +149,9 @@
   }
 }
 
-/* 📌 Bienvenida */
+/* 📌 Tarjeta de bienvenida */
 .welcome-card {
-  width: 100%;
+  width: 90%;
   max-width: 1150px;
   background: rgba(255, 255, 255, 0.9);
   padding: 20px;
@@ -161,16 +161,16 @@
   margin-bottom: 20px;
 }
 
-/* 📌 Contenedor tarjetas */
+/* 📋 Contenedor de las tarjetas */
 .stats-container {
   display: grid;
   gap: 20px;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  width: 100%;
+  width: 90%;
   max-width: 1150px;
 }
 
-/* 📌 Tarjetas */
+/* 📦 Tarjetas individuales */
 .card {
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 10px;
@@ -183,7 +183,7 @@
   margin-bottom: 10px;
 }
 
-/* 📌 Tabla de sedes */
+/* 📊 Tabla de sedes */
 .tabla-sedes {
   width: 100%;
   border-collapse: collapse;
@@ -203,12 +203,12 @@
 }
 
 /* 📌 Tarjeta de lista en ancho completo */
-.full-width {
-  grid-column: span 2;
+.card.full-width {
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 1024px) {
-  .full-width {
+  .card.full-width {
     grid-column: span 1;
   }
 }

@@ -1,18 +1,26 @@
 <div class="dashboard-container">
-  <!-- 📌 Botón de menú para dispositivos móviles -->
+  <!-- 📌 Botón de menú para móviles -->
   <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
 
-  <!-- 📌 Fondo semitransparente al abrir el sidebar -->
+  <!-- 📌 Fondo oscuro al abrir menú en móviles -->
   <div class="sidebar-overlay" [class.active]="sidebarAbierto" (click)="toggleSidebar()"></div>
 
-  <!-- 📌 Barra lateral (Sidebar) -->
+  <!-- 📌 Sidebar -->
   <div class="sidebar" [class.active]="sidebarAbierto">
     <h3>Gestión de Sedes</h3>
     <ul class="nav flex-column">
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/calendario-laboral">📅 Calendario Laboral</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
+      <li class="nav-item">
+        <button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button>
+      </li>
+      <li class="nav-item">
+        <button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button>
+      </li>
+      <li class="nav-item">
+        <button class="btn-sidebar" routerLink="/calendario-laboral">📅 Calendario Laboral</button>
+      </li>
+      <li class="nav-item">
+        <button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button>
+      </li>
       <li class="nav-item" *ngIf="esAdmin()">
         <button class="btn-sidebar" routerLink="/admin-dashboard">🧑‍💼 Ver Usuarios</button>
       </li>
@@ -23,14 +31,14 @@
   <!-- 📌 Contenido principal -->
   <div class="main-content">
     <div class="content-container">
-      <!-- 🏁 Bienvenida -->
+      <!-- 📌 Bienvenida -->
       <div class="welcome-card">
         <h2>Gestión de Sedes 📍</h2>
         <p>Consulta, agrega y administra todas las sedes del sistema.</p>
       </div>
 
-      <!-- 📋 Lista de sedes en ancho completo -->
-      <div class="card lista-sedes full-width">
+      <!-- 📋 Lista de sedes -->
+      <div class="card full-width">
         <h3>📋 Lista de sedes</h3>
 
         <div *ngIf="sedes.length > 0; else noSedes">
