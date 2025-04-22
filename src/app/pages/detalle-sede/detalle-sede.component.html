@@ -1,0 +1,106 @@
+<div class="dashboard-container">
+  <!-- 📌 Botón de menú para dispositivos móviles -->
+  <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
+
+  <!-- 📌 Fondo semitransparente al abrir el sidebar -->
+  <div class="sidebar-overlay" [class.active]="sidebarAbierto" (click)="toggleSidebar()"></div>
+
+  <!-- 📌 Sidebar -->
+  <div class="sidebar" [class.active]="sidebarAbierto">
+    <h3>Detalle de Sede</h3>
+    <ul class="nav flex-column">
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/calendario-laboral">📅 Calendario Laboral</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
+      <li class="nav-item" *ngIf="esAdmin()">
+        <button class="btn-sidebar" routerLink="/admin-dashboard">🧑‍💼 Ver Usuarios</button>
+      </li>
+    </ul>
+    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+  </div>
+
+  <!-- 📌 Contenido principal -->
+  <div class="main-content">
+    <div class="welcome-card">
+      <h2>{{ sede?.nombre }} (ID: {{ sede?.id }})</h2>
+      <p>Administración de datos de la sede.</p>
+    </div>
+
+    <div class="card">
+      <h3>📍 Información de la sede</h3>
+      <form class="form-sede">
+        <div class="form-group">
+          <label>ID:</label>
+          <input type="text" [value]="sede?.id" disabled />
+        </div>
+        <div class="form-group">
+          <label>Nombre:</label>
+          <input type="text" [value]="sede?.nombre" disabled />
+        </div>
+        <div class="form-group">
+          <label>Dirección:</label>
+          <input [(ngModel)]="sede.direccion" name="direccion" />
+        </div>
+        <div class="form-group">
+          <label>Zona:</label>
+          <input [(ngModel)]="sede.zona" name="zona" />
+        </div>
+        <div class="form-group">
+          <label>Responsable:</label>
+          <input [(ngModel)]="sede.responsable" name="responsable" />
+        </div>
+        <button class="btn-update" (click)="guardarCambios()">
+          <i class="bi bi-save"></i> Guardar Cambios
+        </button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>👥 Trabajadores de esta sede</h3>
+      <div class="search-container">
+        <label class="search-label">🔍 Buscar por nombre o apellido:</label>
+        <mat-form-field appearance="fill">
+          <mat-label>Buscar trabajador</mat-label>
+          <input matInput [(ngModel)]="busquedaTrabajador" placeholder="Nombre o apellido">
+        </mat-form-field>
+      </div>
+
+      <table class="tabla-sedes">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let trabajador of trabajadoresFiltrados()">
+            <td>{{ trabajador.id_checador }}</td>
+            <td>{{ trabajador.nombre }}</td>
+            <td>
+              <button class="btn-view" (click)="verDetalleTrabajador(trabajador._id)">Ver</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>📅 Calendario laboral de la sede</h3>
+      <app-calendario-sede
+      [sede]="sede.id"
+      [sedeNombre]="sede.nombre"
+      [anio]="anioActual"
+      [eventos]="eventos"
+      [todasLasSedes]="todasLasSedes"
+      (eventoGuardado)="guardarEventoDesdeCalendario($event)"
+      (eventoEliminado)="eliminarEventoDesdeCalendario($event)">
+    </app-calendario-sede>
+      <button class="btn-update" routerLink="/calendario-laboral">
+        <i class="bi bi-calendar-plus"></i> Modificar en Calendario Laboral
+      </button>
+    </div>
+  </div>
+</div>

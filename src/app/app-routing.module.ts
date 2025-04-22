@@ -7,6 +7,7 @@ import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { SedesComponent } from './pages/sedes/sedes.component';
+import { DetalleSedeComponent } from './pages/detalle-sede/detalle-sede.component';
 import { TrabajadoresComponent } from './pages/trabajadores/trabajadores.component';
 import { DetalleTrabajadorComponent } from './pages/detalle-trabajador/detalle-trabajador.component';
 import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
@@ -19,6 +20,7 @@ const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard]},
   { path: 'admin-dashboard', component: AdminDashboardComponent, canActivate: [AuthGuard] },
   { path: 'sedes', component: SedesComponent, canActivate: [AuthGuard] },
+  { path: 'sedes/:id', component: DetalleSedeComponent, canActivate: [AuthGuard]},
   { path: 'trabajadores', component: TrabajadoresComponent, canActivate: [AuthGuard]},
   { path: 'trabajadores/:id', component: DetalleTrabajadorComponent, canActivate: [AuthGuard] },
   { path: 'calendario-laboral', component: CalendarioLaboralComponent, canActivate: [AuthGuard] },

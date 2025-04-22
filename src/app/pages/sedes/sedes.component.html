@@ -55,14 +55,8 @@
                 <td>{{ sede.id }}</td>
                 <td>{{ sede.nombre }}</td>
                 <td>
-                  <button mat-icon-button color="primary" matTooltip="Editar">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                  <button mat-icon-button color="warn" matTooltip="Eliminar">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                  <button mat-icon-button color="accent" matTooltip="Ver calendario">
-                    <mat-icon>calendar_month</mat-icon>
+                  <button class="btn-ver-detalle" (click)="verDetalleSede(sede.id)">
+                    <mat-icon>visibility</mat-icon> Ver Detalles
                   </button>
                 </td>
               </tr>

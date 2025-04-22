@@ -17,7 +17,19 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   @Input() sede!: number;
   @Input() sedeNombre: string = '';
   @Input() anio!: number;
-  @Input() eventos: any[] = [];
+
+  private _eventos: any[] = [];
+
+  @Input()
+  set eventos(value: any[]) {
+    this._eventos = value || [];
+    this.generarDiasMes(); // ✅ Forzamos regeneración al recibir eventos
+  }
+
+  get eventos(): any[] {
+    return this._eventos;
+  }
+
   @Input() todasLasSedes: { id: number, nombre: string, seleccionada?: boolean }[] = [];
 
   @Output() eventoGuardado = new EventEmitter<any>();
@@ -58,10 +70,6 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     if (changes['anio'] || changes['sede']) {
       this.definirMesInicial();
     }
-
-    if (changes['eventos'] || changes['anio'] || changes['sede']) {
-      this.generarDiasMes();
-    }
   }
 
   definirMesInicial(): void {
@@ -73,7 +81,7 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     }
   }
 
-  obtenerRol() {
+  obtenerRol(): void {
     const usuario = this.authService.obtenerDatosDesdeToken();
     this.usuarioRol = usuario?.rol || '';
   }
@@ -95,11 +103,16 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
 
     this.diasMes = [
       ...diasVaciosAntes,
-      ...dias.map(dia => ({
-        fecha: dia,
-        seleccionado: false,
-        evento: this.eventos.find(e => e?.fecha && isSameDay(new Date(e.fecha), dia))
-      })),
+      ...dias.map(dia => {
+        const evento = this._eventos.find(e =>
+          e?.fecha && isSameDay(new Date(e.fecha), dia)
+        );
+        return {
+          fecha: dia,
+          seleccionado: false,
+          evento: evento || null
+        };
+      }),
       ...diasVaciosDespues
     ];
   }
@@ -109,11 +122,8 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
 
     this.fechaSeleccionada = dia.fecha;
 
-    const eventoExistente = this.eventos.find(e =>
-      e?.fecha &&
-      isSameDay(new Date(e.fecha), dia.fecha) &&
-      Array.isArray(e.sedes) &&
-      e.sedes.includes(this.sede)
+    const eventoExistente = this._eventos.find(e =>
+      e?.fecha && isSameDay(new Date(e.fecha), dia.fecha)
     );
 
     if (eventoExistente) {

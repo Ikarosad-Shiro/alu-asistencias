@@ -82,4 +82,9 @@ export class SedesComponent implements OnInit {
       }
     });
   }
+
+  // 📌 Redireccionar a detalle de la sede
+  verDetalleSede(id: number): void {
+    this.router.navigate(['/sedes', id]);
+  }
 }

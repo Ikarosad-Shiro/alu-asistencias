@@ -78,7 +78,6 @@
 }
 
 /* 🎨 Estilos por tipo de evento */
-
 .festivo {
   background-color: #FFF8E1;
 }
@@ -181,3 +180,44 @@
   font-weight: bold;
   margin-left: 10px;
 }
+
+/* 🧭 Simbología visual */
+.simbologia-calendario {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.simbologia-calendario h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #444;
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.color-box {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-right: 4px;
+  border: 1px solid #ccc;
+}
+
+/* 🎨 Colores en simbología */
+.color-box.descanso { background-color: #FFEBEE; }
+.color-box.festivo { background-color: #FFF8E1; }
+.color-box.puente { background-color: #E8F5E9; }
+.color-box.media-jornada { background-color: #F3E5F5; }
+.color-box.capacitación { background-color: #E1F5FE; }
+.color-box.evento { background-color: #FFF3E0; }
+.color-box.suspensión { background-color: #FBE9E7; }

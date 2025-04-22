@@ -58,7 +58,7 @@ export class CalendarioService {
     return this.http.put<any>(`${this.baseUrl}/editar-dia`, payload);
   }
 
-  // ❌ Eliminar un día especial (ahora con contraseña 💥)
+  // ❌ Eliminar un día especial (con contraseña)
   eliminarDia(data: {
     año: number;
     sede: number;
@@ -75,6 +75,29 @@ export class CalendarioService {
     return this.http.request<any>('delete', `${this.baseUrl}/eliminar-dia`, {
       body: payload
     });
+  }
+
+  // 🆕 Alias para compatibilidad con detalle-sede
+  guardarDiaEspecial(data: {
+    año: number;
+    sede: number;
+    fecha: Date | string;
+    tipo: string;
+    descripcion: string;
+    editar?: boolean;
+  }) {
+    return data.editar
+      ? this.editarDia(data)
+      : this.agregarDia(data);
+  }
+
+  eliminarDiaEspecial(data: {
+    año: number;
+    sede: number;
+    fecha: Date | string;
+    contraseña?: string;
+  }) {
+    return this.eliminarDia(data);
   }
 
   // 🩺 Verifica que la ruta esté viva

@@ -1,7 +1,6 @@
-<!-- calendario-sede.component.html -->
 <ng-container *ngIf="todasLasSedes">
   <div class="calendario-sede-container">
-    <!-- Header -->
+    <!-- 📅 Header -->
     <div class="calendario-header">
       <button mat-icon-button (click)="mesAnterior()">
         <mat-icon>chevron_left</mat-icon>
@@ -19,19 +18,23 @@
 
     <!-- Cuadrícula -->
     <div class="cuadricula-mes">
-      <div *ngFor="let dia of diasMes"
-           class="dia-calendario"
-           [class.dia-actual]="esHoy(dia.fecha)"
-           [class.dia-seleccionado]="dia.seleccionado"
-           [class.dia-especial]="dia.evento"
-           [class.descanso]="dia.evento?.tipo === 'descanso'"
-           [class.festivo]="dia.evento?.tipo === 'festivo'"
-           [class.puente]="dia.evento?.tipo === 'puente'"
-           [class.media-jornada]="dia.evento?.tipo === 'media jornada'"
-           [class.capacitación]="dia.evento?.tipo === 'capacitación'"
-           [class.evento]="dia.evento?.tipo === 'evento'"
-           [class.suspensión]="dia.evento?.tipo === 'suspensión'"
-           (click)="seleccionarDia(dia)">
+      <div
+        *ngFor="let dia of diasMes"
+        class="dia-calendario"
+        [matTooltip]="dia.evento ? (dia.evento.tipo | titlecase) + (dia.evento.descripcion ? ': ' + dia.evento.descripcion : '') : ''"
+        matTooltipPosition="above"
+        [class.dia-actual]="esHoy(dia.fecha)"
+        [class.dia-seleccionado]="dia.seleccionado"
+        [class.dia-especial]="dia.evento"
+        [class.descanso]="dia.evento?.tipo === 'descanso'"
+        [class.festivo]="dia.evento?.tipo === 'festivo'"
+        [class.puente]="dia.evento?.tipo === 'puente'"
+        [class.media-jornada]="dia.evento?.tipo === 'media jornada'"
+        [class.capacitación]="dia.evento?.tipo === 'capacitación'"
+        [class.evento]="dia.evento?.tipo === 'evento'"
+        [class.suspensión]="dia.evento?.tipo === 'suspensión'"
+        (click)="seleccionarDia(dia)"
+      >
         <div class="numero-dia">{{ dia.fecha | date:'d' }}</div>
         <div *ngIf="dia.evento" class="indicador-evento"></div>
       </div>
@@ -43,7 +46,7 @@
         <h3>{{ fechaSeleccionada | date:'fullDate':'es' }}</h3>
 
         <ng-container *ngIf="puedeEditar; else soloLectura">
-          <!-- Selector de tipo de día -->
+          <!-- Tipo -->
           <mat-form-field appearance="fill">
             <mat-label>Tipo de día</mat-label>
             <mat-select [(ngModel)]="nuevoEvento.tipo">
@@ -63,14 +66,14 @@
             <input matInput [(ngModel)]="nuevoEvento.descripcion">
           </mat-form-field>
 
-          <!-- Aplicar a más sedes -->
+          <!-- Más sedes -->
           <div class="form-group">
             <mat-checkbox [(ngModel)]="aplicarAMasSedes" (change)="onToggleAplicarSedes()">
               ¿Desea que esta configuración se aplique a más sedes?
             </mat-checkbox>
           </div>
 
-          <!-- Lista de sedes adicionales -->
+          <!-- Lista adicional -->
           <ng-container *ngIf="aplicarAMasSedes && todasLasSedes?.length">
             <p>Selecciona las sedes adicionales:</p>
             <ng-container *ngFor="let sedeExtra of todasLasSedes; trackBy: trackBySede">
@@ -84,7 +87,7 @@
             </ng-container>
           </ng-container>
 
-          <!-- Acciones -->
+          <!-- Botones -->
           <div class="modal-acciones">
             <button mat-stroked-button (click)="cerrarModal()">Cancelar</button>
             <button mat-raised-button color="primary" (click)="guardarEvento()">
@@ -93,17 +96,30 @@
             <button mat-button color="warn"
                     *ngIf="nuevoEvento?.tipo"
                     (click)="eliminarEvento()">
-              Eliminar Dia
+              Eliminar Día
             </button>
           </div>
         </ng-container>
 
-        <!-- Solo lectura para Revisores -->
         <ng-template #soloLectura>
           <p class="text-muted">
             Solo los usuarios con rol <b>Dios</b> o <b>Administrador</b> pueden modificar el calendario.
           </p>
         </ng-template>
+      </div>
+    </div>
+
+    <!-- 📌 Simbología -->
+    <div class="simbologia-calendario">
+      <h4>🔍 Simbología:</h4>
+      <div class="leyenda">
+        <div class="color-box descanso"></div> <span>Descanso</span>
+        <div class="color-box festivo"></div> <span>Festivo</span>
+        <div class="color-box puente"></div> <span>Puente</span>
+        <div class="color-box media-jornada"></div> <span>Media Jornada</span>
+        <div class="color-box capacitación"></div> <span>Capacitación</span>
+        <div class="color-box evento"></div> <span>Evento</span>
+        <div class="color-box suspensión"></div> <span>Suspensión</span>
       </div>
     </div>
   </div>

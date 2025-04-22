@@ -48,6 +48,7 @@ import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { AuthService } from './services/auth.service';
 import { AuthInterceptor } from './services/auth.interceptor';
 import { SedesComponent } from './pages/sedes/sedes.component';
+import { DetalleSedeComponent } from './pages/detalle-sede/detalle-sede.component';
 
 @NgModule({
   declarations: [
@@ -63,7 +64,8 @@ import { SedesComponent } from './pages/sedes/sedes.component';
     CalendarioLaboralComponent,
     CalendarioSedeComponent,
     CalendarioComponent,
-    SedesComponent
+    SedesComponent,
+    DetalleSedeComponent
   ],
   imports: [
     BrowserModule,
