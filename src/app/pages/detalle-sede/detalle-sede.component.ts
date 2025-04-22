@@ -39,7 +39,6 @@ export class DetalleSedeComponent implements OnInit {
     }
   }
 
-  // 📌 Obtener información de la sede
   obtenerSede(id: number): void {
     this.sedeService.obtenerSedePorId(id).subscribe({
       next: (res) => this.sede = res,
@@ -47,7 +46,6 @@ export class DetalleSedeComponent implements OnInit {
     });
   }
 
-  // 📌 Obtener todas las sedes
   obtenerTodasLasSedes(): void {
     this.sedeService.obtenerSedes().subscribe({
       next: (data) => this.todasLasSedes = data,
@@ -55,7 +53,6 @@ export class DetalleSedeComponent implements OnInit {
     });
   }
 
-  // 📌 Obtener trabajadores de esta sede
   obtenerTrabajadores(idSede: number): void {
     this.trabajadoresService.obtenerTrabajadores().subscribe({
       next: (data) => {
@@ -65,7 +62,6 @@ export class DetalleSedeComponent implements OnInit {
     });
   }
 
-  // 📌 Obtener eventos del calendario de la sede
   obtenerEventos(idSede: number, anio: number): void {
     this.calendarioService.obtenerPorSedeYAnio(idSede, anio).subscribe({
       next: (res) => this.eventos = res?.diasEspeciales || [],
@@ -73,8 +69,9 @@ export class DetalleSedeComponent implements OnInit {
     });
   }
 
-  // ✅ Guardar evento desde calendario-sede
   guardarEventoDesdeCalendario(evento: any): void {
+    if (this.esSoloRevisor()) return;
+
     const data = {
       año: this.anioActual,
       sede: evento.sede,
@@ -93,23 +90,30 @@ export class DetalleSedeComponent implements OnInit {
     });
   }
 
-  // ✅ Eliminar evento desde calendario-sede
   eliminarEventoDesdeCalendario(evento: any): void {
+    if (this.esSoloRevisor()) return;
+
     const data = {
       año: this.anioActual,
       sede: evento.sede,
-      fecha: evento.fecha,
-      contraseña: evento.contraseña
+      fecha: evento.fecha
     };
 
     this.calendarioService.eliminarDia(data).subscribe({
-      next: () => this.obtenerEventos(this.sede.id, this.anioActual),
-      error: (err) => console.error('❌ Error al eliminar evento desde detalle-sede:', err)
+      next: () => {
+        Swal.fire('✅ Eliminado', 'El día fue eliminado correctamente', 'success');
+        this.obtenerEventos(this.sede.id, this.anioActual);
+      },
+      error: (err) => {
+        console.error('❌ Error al eliminar evento desde detalle-sede:', err);
+        Swal.fire('Error', 'No se pudo eliminar el día', 'error');
+      }
     });
   }
 
-  // 📌 Guardar cambios de dirección, zona, responsable
   guardarCambios(): void {
+    if (this.esSoloRevisor()) return;
+
     this.sedeService.actualizarSede(this.sede.id, {
       direccion: this.sede.direccion,
       zona: this.sede.zona,
@@ -136,12 +140,10 @@ export class DetalleSedeComponent implements OnInit {
     );
   }
 
-  // 📌 Redirigir al detalle del trabajador
   verDetalleTrabajador(id: string): void {
     this.router.navigate(['/trabajadores', id]);
   }
 
-  // 📌 Sidebar
   toggleSidebar(): void {
     this.sidebarAbierto = !this.sidebarAbierto;
   }
@@ -151,8 +153,21 @@ export class DetalleSedeComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  esAdmin(): boolean {
+  // 🎖️ Roles
+  get rolUsuario(): string {
     const usuario = this.authService.obtenerDatosDesdeToken();
-    return usuario?.rol === 'Administrador' || usuario?.rol === 'Dios';
+    return usuario?.rol || '';
+  }
+
+  esDios(): boolean {
+    return this.rolUsuario === 'Dios';
+  }
+
+  esAdmin(): boolean {
+    return this.rolUsuario === 'Administrador';
+  }
+
+  esSoloRevisor(): boolean {
+    return this.rolUsuario === 'Revisor';
   }
 }

@@ -27,7 +27,6 @@
       <h2>{{ sede?.nombre }} (ID: {{ sede?.id }})</h2>
       <p>Administración de datos de la sede.</p>
     </div>
-
     <div class="card">
       <h3>📍 Información de la sede</h3>
       <form class="form-sede">
@@ -41,17 +40,17 @@
         </div>
         <div class="form-group">
           <label>Dirección:</label>
-          <input [(ngModel)]="sede.direccion" name="direccion" />
+          <input [(ngModel)]="sede.direccion" name="direccion" [disabled]="esSoloRevisor()" [ngClass]="{'input-disabled': esSoloRevisor()}" />
         </div>
         <div class="form-group">
           <label>Zona:</label>
-          <input [(ngModel)]="sede.zona" name="zona" />
+          <input [(ngModel)]="sede.zona" name="zona" [disabled]="esSoloRevisor()" [ngClass]="{'input-disabled': esSoloRevisor()}" />
         </div>
         <div class="form-group">
           <label>Responsable:</label>
-          <input [(ngModel)]="sede.responsable" name="responsable" />
+          <input [(ngModel)]="sede.responsable" name="responsable" [disabled]="esSoloRevisor()" [ngClass]="{'input-disabled': esSoloRevisor()}" />
         </div>
-        <button class="btn-update" (click)="guardarCambios()">
+        <button class="btn-update" (click)="guardarCambios()" *ngIf="!esSoloRevisor()">
           <i class="bi bi-save"></i> Guardar Cambios
         </button>
       </form>
@@ -90,15 +89,16 @@
     <div class="card">
       <h3>📅 Calendario laboral de la sede</h3>
       <app-calendario-sede
-      [sede]="sede.id"
-      [sedeNombre]="sede.nombre"
-      [anio]="anioActual"
-      [eventos]="eventos"
-      [todasLasSedes]="todasLasSedes"
-      (eventoGuardado)="guardarEventoDesdeCalendario($event)"
-      (eventoEliminado)="eliminarEventoDesdeCalendario($event)">
-    </app-calendario-sede>
-      <button class="btn-update" routerLink="/calendario-laboral">
+        [sede]="sede.id"
+        [sedeNombre]="sede.nombre"
+        [anio]="anioActual"
+        [eventos]="eventos"
+        [todasLasSedes]="todasLasSedes"
+        (eventoGuardado)="guardarEventoDesdeCalendario($event)"
+        (eventoEliminado)="eliminarEventoDesdeCalendario($event)">
+      </app-calendario-sede>
+
+      <button class="btn-update" routerLink="/calendario-laboral" *ngIf="!esSoloRevisor()">
         <i class="bi bi-calendar-plus"></i> Modificar en Calendario Laboral
       </button>
     </div>

@@ -122,6 +122,19 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
 
     this.fechaSeleccionada = dia.fecha;
 
+    // ❌ Si no puede editar (es Revisor), muestra alerta y se sale
+    if (!this.puedeEditar) {
+      Swal.fire({
+        title: this.fechaSeleccionada.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        text: 'Solo los usuarios con rol Dios o Administrador pueden modificar el calendario.',
+        icon: 'info',
+        confirmButtonText: 'Entendido',
+        timer: 4000,
+        timerProgressBar: true
+      });
+      return;
+    }
+
     const eventoExistente = this._eventos.find(e =>
       e?.fecha && isSameDay(new Date(e.fecha), dia.fecha)
     );

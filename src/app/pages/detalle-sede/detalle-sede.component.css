@@ -245,3 +245,15 @@
 .search-field {
   width: 100%;
 }
+
+.input-disabled {
+  background-color: #f5f5f5;
+  color: #777;
+  cursor: not-allowed;
+}
+
+input[disabled] {
+  background-color: #eee !important;
+  color: #888;
+  cursor: not-allowed;
+}
