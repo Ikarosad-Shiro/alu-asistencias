@@ -1,10 +1,8 @@
 <div class="admin-dashboard-container">
-  <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
-  <!-- 📌 Botón para abrir el sidebar en móviles -->
+  <!-- 📌 Botón y fondo para el sidebar en móviles -->
   <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
-
-<!-- 📌 Fondo para cerrar el sidebar en móviles -->
   <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+
   <!-- 📌 Sidebar -->
   <div class="sidebar">
     <h3>Panel de Trabajadores</h3>
@@ -21,37 +19,36 @@
   <!-- 📌 Contenido principal -->
   <div class="main-content">
     <div class="content-container">
+      <!-- 📝 Encabezado -->
       <div class="welcome-card">
         <h2>Lista de Trabajadores 👷</h2>
         <p>Gestiona los trabajadores registrados en el sistema.</p>
       </div>
 
-      <!-- 📌 Barra de búsqueda y filtrado -->
+      <!-- 📌 Motor de búsqueda -->
       <div class="search-container">
-        <input type="text" placeholder="Buscar por nombre..." [(ngModel)]="filtroNombre">
         <select [(ngModel)]="filtroSede">
           <option value="">Todas las sedes</option>
-          <option *ngFor="let sede of sedeKeys" [value]="sede">
-            {{ sedeNombres[+sede] }}
-          </option>
+          <option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</option>
         </select>
+        <input type="text" [(ngModel)]="filtroNombre" placeholder="Buscar por nombre..." />
         <button class="btn-buscar" (click)="filtrarTrabajadores()">🔍 Buscar</button>
       </div>
 
-      <!-- 📌 Formulario para agregar trabajadores -->
+      <!-- 📌 Formulario para agregar trabajador -->
       <div class="add-worker-form" *ngIf="rolUsuario !== 'Revisor'">
-        <input type="text" placeholder="Nombre del trabajador" #nombre>
-        <select #sede class="custom-select">
-          <option *ngFor="let key of sedeKeys" [value]="key">
-            {{ sedeNombres[+key] }}
-          </option>
+        <input type="text" placeholder="Nombre del trabajador" #nombre />
+        <select #sede>
+          <option *ngFor="let sedeItem of sedes" [value]="sedeItem.id">{{ sedeItem.nombre }}</option>
         </select>
         <button class="btn-agregar" (click)="abrirModalAgregar(nombre.value, sede.value)">➕ Agregar</button>
       </div>
 
-      <!-- 📌 Botón para actualizar la tabla -->
-      <div class="update-table-container">
-        <button class="btn-update" (click)="actualizarTabla()">🔄 Actualizar Tabla</button>
+      <!-- 📌 Mat-card transparente para botón actualizar -->
+      <div class="search-container transparente" style="justify-content: flex-end;">
+        <div class="update-table-container">
+          <button class="btn-update" (click)="actualizarTabla()">🔄 Actualizar Tabla</button>
+        </div>
       </div>
 
       <!-- 📌 Tabla de trabajadores -->
@@ -68,9 +65,9 @@
           <tbody>
             <tr *ngFor="let trabajador of trabajadoresFiltrados">
               <td>{{ trabajador.nombre }}</td>
-              <td>{{ sedeNombres[trabajador.sede] || 'Desconocida' }}</td>
+              <td>{{ obtenerNombreSede(trabajador.sede) }}</td>
               <td>
-                <span [ngClass]="{'activo': trabajador.sincronizado, 'pendiente': !trabajador.sincronizado}">
+                <span [ngClass]="{ 'activo': trabajador.sincronizado, 'pendiente': !trabajador.sincronizado }">
                   {{ trabajador.sincronizado ? '✅ Sincronizado' : '⏳ Pendiente' }}
                 </span>
               </td>
@@ -78,14 +75,10 @@
                 <button class="btn-view" (click)="verTrabajador(trabajador._id!)">
                   <i class="fas fa-eye"></i> Ver
                 </button>
-                <button
-                class="btn-delete"
-                *ngIf="rolUsuario !== 'Revisor'"
-                (click)="abrirModalEliminar(trabajador._id!)"
-                title="Eliminar Trabajador">
-                <i class="fas fa-trash-alt"></i>
-              </button>
               </td>
+            </tr>
+            <tr *ngIf="trabajadoresFiltrados.length === 0">
+              <td colspan="4">😢 No se encontraron trabajadores con esos criterios.</td>
             </tr>
           </tbody>
         </table>
@@ -93,11 +86,11 @@
     </div>
   </div>
 
-  <!-- Modal para ingresar la contraseña -->
+  <!-- 📌 Modal contraseña agregar -->
   <div class="modal" *ngIf="mostrarModalContrasena">
     <div class="modal-content">
       <h3>🔒 Ingresa tu contraseña</h3>
-      <input type="password" placeholder="Contraseña" [(ngModel)]="contrasena" class="input-contraseña" />
+      <input type="password" [(ngModel)]="contrasena" placeholder="Contraseña" class="input-contraseña" />
       <div class="modal-buttons">
         <button class="btn-confirmar" (click)="confirmarAgregarTrabajador()">Confirmar</button>
         <button class="btn-cancelar" (click)="cerrarModalContrasena()">Cancelar</button>
@@ -105,20 +98,7 @@
     </div>
   </div>
 
-  <!-- Modal para confirmar eliminación -->
-  <div class="modal" *ngIf="mostrarModalEliminar">
-    <div class="modal-content">
-      <h3>🗑️ Confirmar Eliminación</h3>
-      <p>¿Estás seguro de que deseas eliminar este trabajador?</p>
-      <input type="password" placeholder="Contraseña" [(ngModel)]="contrasena" class="input-contraseña" />
-      <div class="modal-buttons">
-        <button class="btn-confirmar" (click)="confirmarEliminarTrabajador()">Eliminar</button>
-        <button class="btn-cancelar" (click)="cerrarModalEliminar()">Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal para mensajes personalizados -->
+  <!-- 📌 Modal de mensajes -->
   <div class="modal" *ngIf="mostrarModalMensaje">
     <div class="modal-content" [ngClass]="{
       'modal-exito': tipoMensajeModal === 'exito',
@@ -132,5 +112,4 @@
       <button class="btn-cerrar" (click)="cerrarModalMensaje()">Aceptar</button>
     </div>
   </div>
-
 </div>

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { TrabajadoresService } from 'src/app/services/trabajadores.service';
+import { SedeService } from 'src/app/services/sede.service';
 
 interface Trabajador {
   _id?: string;
@@ -15,68 +16,54 @@ interface Trabajador {
   styleUrls: ['./trabajadores.component.css']
 })
 export class TrabajadoresComponent implements OnInit {
-
-  displayedColumns: string[] = ['nombre', 'sede', 'sincronizado', 'acciones'];
   trabajadores: Trabajador[] = [];
   trabajadoresFiltrados: Trabajador[] = [];
+  sedes: { id: number, nombre: string }[] = [];
+
   filtroNombre: string = '';
   filtroSede: string = '';
-  sedeKeys: (string | number)[] = [];
   rolUsuario: string = '';
 
-  toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-
-    if (sidebar && overlay) {
-      sidebar.classList.toggle('active'); // 🔥 Abre/cierra el sidebar
-      overlay.classList.toggle('active'); // 🔥 Muestra/oculta el fondo oscuro
-    }
-  }
-
-  // 📌 Modales y mensajes personalizados
+  // 📌 Modales
   mostrarModalContrasena: boolean = false;
-  mostrarModalEliminar: boolean = false;
   mostrarModalMensaje: boolean = false;
   contrasena: string = '';
   nombreTrabajador: string = '';
   sedeTrabajador: string = '';
-  trabajadorAEliminar: string = '';
   mensajeModal: string = '';
   tipoMensajeModal: 'exito' | 'error' | 'advertencia' = 'exito';
 
-  sedeNombres: { [key: number]: string } = {
-    1: "Administración V.C",
-    2: "Chalco",
-    3: "Ixtapaluca",
-    4: "Los Reyes",
-    5: "Ecatepec",
-    6: "Cedis",
-    7: "Puebla",
-    8: "Tlaxcala",
-    9: "Atlixco",
-    10: "Yautepec"
-  };
-
   constructor(
     private router: Router,
-    private trabajadoresService: TrabajadoresService
+    private trabajadoresService: TrabajadoresService,
+    private sedeService: SedeService
   ) {}
 
   ngOnInit() {
-    this.sedeKeys = Object.keys(this.sedeNombres).map(Number);
+    this.obtenerSedes();
     this.obtenerTrabajadores();
     this.rolUsuario = localStorage.getItem('rol') || '';
   }
 
-  mostrarMensaje(mensaje: string, tipo: 'exito' | 'error' | 'advertencia') {
-    this.mensajeModal = mensaje;
-    this.tipoMensajeModal = tipo;
-    this.mostrarModalMensaje = true;
+  toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar && overlay) {
+      sidebar.classList.toggle('active');
+      overlay.classList.toggle('active');
+    }
   }
 
-  cerrarModalMensaje() {
-    this.mostrarModalMensaje = false;
+  obtenerSedes() {
+    this.sedeService.obtenerSedes().subscribe({
+      next: (res) => this.sedes = res,
+      error: (err) => console.error('❌ Error al obtener sedes:', err)
+    });
+  }
+
+  obtenerNombreSede(id: number): string {
+    const sede = this.sedes.find(s => s.id === id);
+    return sede ? sede.nombre : 'Desconocida';
   }
 
   obtenerTrabajadores() {
@@ -97,7 +84,7 @@ export class TrabajadoresComponent implements OnInit {
         ? trabajador.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase())
         : true;
       const coincideSede = this.filtroSede
-        ? trabajador.sede.toString() === this.filtroSede
+        ? trabajador.sede === Number(this.filtroSede)
         : true;
       return coincideNombre && coincideSede;
     });
@@ -156,47 +143,6 @@ export class TrabajadoresComponent implements OnInit {
     );
   }
 
-  abrirModalEliminar(id: string) {
-    this.trabajadorAEliminar = id;
-    this.mostrarModalEliminar = true;
-  }
-
-  confirmarEliminarTrabajador() {
-    if (!this.contrasena) {
-      this.mostrarMensaje('Debes ingresar una contraseña.', 'advertencia');
-      return;
-    }
-
-    this.trabajadoresService.verificarContraseña(this.contrasena).subscribe(
-      (valido) => {
-        if (valido) {
-          this.trabajadoresService.eliminarTrabajador(this.trabajadorAEliminar).subscribe(
-            () => {
-              this.mostrarMensaje('Trabajador eliminado correctamente.', 'exito');
-              this.cerrarModalEliminar();
-              this.obtenerTrabajadores();
-            },
-            (error) => {
-              console.error('Error al eliminar trabajador', error);
-              this.mostrarMensaje('❌ Error al eliminar el trabajador.', 'error');
-            }
-          );
-        } else {
-          this.mostrarMensaje('⚠️ Contraseña incorrecta. Inténtalo de nuevo.', 'error');
-        }
-      },
-      (error) => {
-        console.error('Error al verificar contraseña', error);
-        this.mostrarMensaje('❌ Hubo un error al verificar la contraseña.', 'error');
-      }
-    );
-  }
-
-  cerrarModalEliminar() {
-    this.mostrarModalEliminar = false;
-    this.contrasena = '';
-  }
-
   verTrabajador(trabajadorId: string) {
     this.router.navigate(['/trabajadores', trabajadorId]);
   }
@@ -208,5 +154,15 @@ export class TrabajadoresComponent implements OnInit {
   cerrarSesion() {
     localStorage.clear();
     this.router.navigate(['/login']);
+  }
+
+  cerrarModalMensaje() {
+    this.mostrarModalMensaje = false;
+  }
+
+  mostrarMensaje(mensaje: string, tipo: 'exito' | 'error' | 'advertencia') {
+    this.mensajeModal = mensaje;
+    this.tipoMensajeModal = tipo;
+    this.mostrarModalMensaje = true;
   }
 }
