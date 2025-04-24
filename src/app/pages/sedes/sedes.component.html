@@ -9,18 +9,10 @@
   <div class="sidebar" [class.active]="sidebarAbierto">
     <h3>Gestión de Sedes</h3>
     <ul class="nav flex-column">
-      <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button>
-      </li>
-      <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button>
-      </li>
-      <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/calendario-laboral">📅 Calendario Laboral</button>
-      </li>
-      <li class="nav-item">
-        <button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button>
-      </li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/calendario-laboral">📅 Calendario Laboral</button></li>
+      <li class="nav-item"><button class="btn-sidebar" routerLink="/acerca-de">ℹ️ Acerca de</button></li>
       <li class="nav-item" *ngIf="esAdmin()">
         <button class="btn-sidebar" routerLink="/admin-dashboard">🧑‍💼 Ver Usuarios</button>
       </li>
@@ -37,6 +29,27 @@
         <p>Consulta, agrega y administra todas las sedes del sistema.</p>
       </div>
 
+      <!-- ➕ Nueva sede (solo Dios puede ver) -->
+      <div class="card" *ngIf="usuarioRol === 'Dios'">
+        <h3>➕ Nueva sede</h3>
+        <form (ngSubmit)="agregarSede()" #formNuevaSede="ngForm">
+          <div class="form-group">
+            <label for="id">ID de la sede:
+              (Que no se repita con las registradas, en la parte de abajo tendras el listado de las Ids que las sedes ocupan)</label>
+            <input type="number" id="id" name="id" required [(ngModel)]="nuevaSede.id" />
+          </div>
+
+          <div class="form-group">
+            <label for="nombre">Nombre de la sede:</label>
+            <input type="text" id="nombre" name="nombre" required [(ngModel)]="nuevaSede.nombre" />
+          </div>
+
+          <button type="submit" class="btn-accion" [disabled]="formNuevaSede.invalid">
+            <mat-icon>add</mat-icon> Agregar Sede
+          </button>
+        </form>
+      </div>
+
       <!-- 📋 Lista de sedes -->
       <div class="card full-width">
         <h3>📋 Lista de sedes</h3>
@@ -47,6 +60,7 @@
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
+                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -55,7 +69,11 @@
                 <td>{{ sede.id }}</td>
                 <td>{{ sede.nombre }}</td>
                 <td>
-                  <button class="btn-ver-detalle" (click)="verDetalleSede(sede.id)">
+                  <span *ngIf="sede.estado === 'eliminacion_pendiente'" class="estado-pendiente">🕒 En proceso</span>
+                  <span *ngIf="sede.estado !== 'eliminacion_pendiente'" class="estado-activa">✅ Activa</span>
+                </td>
+                <td>
+                  <button class="btn-ver-detalle" [routerLink]="['/sedes', sede.id]">
                     <mat-icon>visibility</mat-icon> Ver Detalles
                   </button>
                 </td>
@@ -67,12 +85,6 @@
         <ng-template #noSedes>
           <p>No hay sedes registradas por el momento.</p>
         </ng-template>
-      </div>
-
-      <!-- ➕ Nueva sede -->
-      <div class="card">
-        <h3>➕ Nueva sede</h3>
-        <p>Aquí se mostrará el formulario para agregar una nueva sede.</p>
       </div>
     </div>
   </div>

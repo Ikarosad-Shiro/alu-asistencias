@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { SedeService } from 'src/app/services/sede.service';
+import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-sedes',
@@ -13,11 +14,12 @@ export class SedesComponent implements OnInit {
   sidebarAbierto: boolean = false;
 
   // 📌 Lista de sedes
-  sedes: { id: number; nombre: string }[] = [];
+  sedes: any[] = [];
 
   constructor(
     private router: Router,
-    private sedeService: SedeService
+    private sedeService: SedeService,
+    private authService: AuthService
   ) {
     console.log('📌 Constructor de Sedes ejecutado');
     this.obtenerUsuario();
@@ -37,9 +39,9 @@ export class SedesComponent implements OnInit {
     }, 300);
   }
 
-  // 📌 Obtener nombre y rol del usuario
+  // 📌 Obtener nombre y rol del usuario desde el token
   obtenerUsuario(): void {
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const usuario = this.authService.obtenerDatosDesdeToken();
 
     if (usuario?.nombre) this.usuarioNombre = usuario.nombre;
     if (usuario?.rol) this.usuarioRol = usuario.rol;
@@ -64,6 +66,10 @@ export class SedesComponent implements OnInit {
     return this.usuarioRol === 'Administrador' || this.usuarioRol === 'Dios';
   }
 
+  esDios(): boolean {
+    return this.usuarioRol === 'Dios';
+  }
+
   // 📌 Cerrar sesión
   cerrarSesion(): void {
     localStorage.clear();
@@ -79,6 +85,31 @@ export class SedesComponent implements OnInit {
       },
       error: (err) => {
         console.error('❌ Error al obtener sedes:', err);
+      }
+    });
+  }
+
+  nuevaSede = {
+    id: 0,
+    nombre: ''
+  };
+
+  agregarSede(): void {
+    if (!this.nuevaSede.id || !this.nuevaSede.nombre.trim()) {
+      return;
+    }
+
+    this.sedeService.agregarSede({
+      id: this.nuevaSede.id,
+      nombre: this.nuevaSede.nombre.trim()
+    }).subscribe({
+      next: (res) => {
+        console.log('✅ Sede agregada:', res);
+        this.sedes.push(res.sede); // agregar a la lista local si quieres evitar reload
+        this.nuevaSede = { id: 0, nombre: '' }; // limpiar form
+      },
+      error: (err) => {
+        console.error('❌ Error al agregar sede:', err);
       }
     });
   }

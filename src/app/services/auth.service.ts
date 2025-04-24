@@ -50,7 +50,7 @@ export class AuthService {
   }
 
   // 📌 Obtener datos del token
-  obtenerDatosDesdeToken(): { nombre: string; rol: string } | null {
+  obtenerDatosDesdeToken(): { nombre: string; rol: string; email: string } | null {
     const token = localStorage.getItem('token');
     if (!token) return null;
 
@@ -58,7 +58,8 @@ export class AuthService {
       const payload = JSON.parse(atob(token.split('.')[1]));
       return {
         nombre: payload.nombre,
-        rol: payload.rol
+        rol: payload.rol,
+        email: payload.email
       };
     } catch (error) {
       console.error('❌ Error al decodificar el token:', error);
@@ -80,4 +81,10 @@ export class AuthService {
   verificarPassword(contraseña: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/usuarios/verificar-password`, { contraseña });
   }
+
+// auth.service.ts
+enviarCodigoEliminacionSede(email: string, codigo: string): Observable<any> {
+  return this.http.post(`${this.apiUrl}/auth/enviar-codigo`, { email, codigo });
+}
+
 }

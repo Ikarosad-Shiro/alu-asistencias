@@ -284,3 +284,37 @@
 .btn-ver-detalle:active {
   transform: scale(0.95);
 }
+
+.estado-pendiente {
+  color: orange;
+  font-weight: bold;
+}
+
+.estado-activa {
+  color: green;
+  font-weight: bold;
+}
+
+.estado-en-proceso {
+  color: #ff9800;
+  font-weight: bold;
+  font-style: italic;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}

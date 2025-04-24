@@ -23,10 +23,15 @@
 
   <!-- 📌 Contenido principal -->
   <div class="main-content">
+        <!-- 🚨 Alerta de sede en proceso de eliminación -->
+    <div *ngIf="sede?.estado === 'eliminacion_pendiente'" class="alerta-pendiente">
+      ⚠️ Esta sede está en proceso de eliminación. Tienes 15 días para cancelarlo antes de que se elimine automáticamente.
+    </div>
     <div class="welcome-card">
       <h2>{{ sede?.nombre }} (ID: {{ sede?.id }})</h2>
       <p>Administración de datos de la sede.</p>
     </div>
+
     <div class="card">
       <h3>📍 Información de la sede</h3>
       <form class="form-sede">
@@ -100,6 +105,31 @@
 
       <button class="btn-update" routerLink="/calendario-laboral" *ngIf="!esSoloRevisor()">
         <i class="bi bi-calendar-plus"></i> Modificar en Calendario Laboral
+      </button>
+    </div>
+
+    <!-- 🔥 Eliminación o cancelación de sede (solo Dios) -->
+    <div class="card" *ngIf="esDios()">
+      <h3 style="color: red;">⚠️ Acción peligrosa</h3>
+      <p *ngIf="sede.estado === 'activa'">
+        Este botón eliminará la sede y todos sus trabajadores. Asegúrate de tener respaldo antes de continuar.
+      </p>
+      <p *ngIf="sede.estado === 'eliminacion_pendiente'">
+        Esta sede está en proceso de eliminación. Tienes 15 días para revertirlo antes de que se elimine permanentemente.
+      </p>
+
+      <button
+        class="btn-danger"
+        *ngIf="sede.estado === 'activa'"
+        (click)="eliminarSede()">
+        <i class="bi bi-trash-fill"></i> Eliminar Sede
+      </button>
+
+      <button
+        class="btn-warning"
+        *ngIf="sede.estado === 'eliminacion_pendiente'"
+        (click)="cancelarEliminacionSede()">
+        <i class="bi bi-arrow-counterclockwise"></i> Cancelar Eliminación
       </button>
     </div>
   </div>

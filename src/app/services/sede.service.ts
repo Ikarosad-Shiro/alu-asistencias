@@ -34,21 +34,20 @@ export class SedeService {
     return this.http.post(`${this.apiUrl}/sedes/agregar`, sede, this.getAuthHeaders());
   }
 
-  // ❌ Eliminar sede (opcional)
+  // ❌ Eliminar sede (solo para uso especial)
   eliminarSede(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/sedes/${id}`, this.getAuthHeaders());
   }
 
-  // ✏️ Editar nombre u otros datos básicos (ya no se usará si se maneja en detalle)
+  // ✏️ Editar nombre u otros datos básicos
   editarSede(id: number, cambios: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/sedes/${id}`, cambios, this.getAuthHeaders());
   }
 
   // 🔍 Obtener sede por ID
   obtenerSedePorId(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/sedes/${id}`); // ✅ correcto
+    return this.http.get(`${this.apiUrl}/sedes/${id}`);
   }
-
 
   // 💾 Actualizar datos editables de una sede
   actualizarSede(id: number, datos: any): Observable<any> {
@@ -58,5 +57,15 @@ export class SedeService {
   // 📅 Obtener calendario de sede
   obtenerEventosCalendario(sedeId: number, anio: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/sedes/calendario/${sedeId}/${anio}`, this.getAuthHeaders());
+  }
+
+  // 🔥 Marcar sede como en proceso de eliminación
+  marcarEliminacionSede(id: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/sedes/marcar-eliminacion/${id}`, {}, this.getAuthHeaders());
+  }
+
+  // 🔄 Cancelar eliminación de sede
+  cancelarEliminacionSede(id: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/sedes/cancelar-eliminacion/${id}`, {}, this.getAuthHeaders());
   }
 }
