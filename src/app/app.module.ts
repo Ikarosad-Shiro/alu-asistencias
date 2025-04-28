@@ -49,6 +49,8 @@ import { AuthService } from './services/auth.service';
 import { AuthInterceptor } from './services/auth.interceptor';
 import { SedesComponent } from './pages/sedes/sedes.component';
 import { DetalleSedeComponent } from './pages/detalle-sede/detalle-sede.component';
+import { CalendarioTrabajadorComponent } from './components/calendario-trabajador/calendario-trabajador.component';
+import { CalendarioTrabajadorVisualComponent } from './components/calendario-trabajador-visual/calendario-trabajador-visual.component';
 
 @NgModule({
   declarations: [
@@ -65,7 +67,9 @@ import { DetalleSedeComponent } from './pages/detalle-sede/detalle-sede.componen
     CalendarioSedeComponent,
     CalendarioComponent,
     SedesComponent,
-    DetalleSedeComponent
+    DetalleSedeComponent,
+    CalendarioTrabajadorComponent,
+    CalendarioTrabajadorVisualComponent
   ],
   imports: [
     BrowserModule,
