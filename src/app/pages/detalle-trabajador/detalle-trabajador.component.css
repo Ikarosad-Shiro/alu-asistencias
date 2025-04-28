@@ -1,16 +1,17 @@
-/* 📌 Contenedor principal con fondo y estilo del dashboard */
+/* 📌 Contenedor principal */
 .detalle-trabajador-container {
   display: flex;
   height: 100vh;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: url('../../../assets/dashboard.webp') no-repeat center center fixed;
   background-size: cover;
-  overflow-x: hidden; /* 🔥 Evitar scroll horizontal */
+  overflow-x: hidden;
+  backdrop-filter: blur(4px); /* Efecto glass suave */
 }
 
 /* 📌 Sidebar (Menú lateral) */
 .sidebar {
-  background-color: #343a40;
+  background-color: rgba(52, 58, 64, 0.95);
   color: white;
   padding: 15px;
   width: 250px;
@@ -21,159 +22,277 @@
   position: fixed;
   left: 0;
   top: 0;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  transition: left 0.3s; /* 🔥 Transición para menú móvil */
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  transition: left 0.3s;
+  z-index: 1000;
 }
 
 .sidebar h3 {
   text-align: center;
   margin-bottom: 20px;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: bold;
-  color: #fff;
 }
 
-/* 📌 Estilos para los botones del sidebar */
+/* 📌 Botones del sidebar */
 .btn-sidebar {
   width: 100%;
   color: white;
   text-align: left;
-  padding: 12px 50px;
+  padding: 12px 20px;
   background-color: #495057;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   margin-top: 10px;
-  font-size: 1rem;
-  transition: background-color 0.3s, color 0.3s;
+  font-size: 1.1rem;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 .btn-sidebar:hover {
-  background-color: #007bff;
-  color: white;
+  background-color: #0d6efd;
+  transform: scale(1.03);
 }
 
 .btn-logout {
   background-color: #dc3545;
   width: 100%;
   padding: 12px;
-  border-radius: 5px;
+  border-radius: 8px;
   margin-top: 20px;
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: white;
   border: none;
   cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 .btn-logout:hover {
   background-color: #c82333;
+  transform: scale(1.03);
 }
 
 /* 📌 Contenido principal */
 .main-content {
   flex-grow: 1;
   margin-left: 250px;
-  padding: 20px;
+  padding: 30px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   width: calc(100% - 250px);
-  border-radius: 10px;
   overflow-y: auto;
 }
 
-/* 📌 Contenedor de la información del trabajador */
+/* 📌 Contenedor del contenido */
 .content-container {
   width: 90%;
-  max-width: 800px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  max-width: 900px;
+  background: rgba(255, 255, 255, 0);
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0);
+  backdrop-filter: blur(6px);
 }
 
-/* 📌 Títulos y etiquetas */
-.info-trabajador h2 {
-  text-align: center;
+/* 📌 Botón Regresar */
+.btn-regresar {
+  display: flex;
+  align-items: center;
+  background-color: #6a1275;
+  color: #fff;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  font-size: 1rem;
   margin-bottom: 20px;
+}
+
+.btn-regresar:hover {
+  background-color: #90409b;
+  transform: scale(1.05);
+}
+
+.btn-regresar:active {
+  transform: scale(0.95);
+}
+
+/* 📌 Nombre del Trabajador */
+.titulo-nombre {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 0.7rem 1.5rem;
+  border-radius: 15px;
+  width: fit-content;
+}
+
+/* 📌 Subtítulo de la sede */
+.subtitulo-sede {
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  font-style: normal;
+  margin-top: -0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 5px 12px;
+  border-radius: 12px;
+  font-size: 1rem;
+  width: fit-content;
+}
+
+/* 📌 Panel colapsable */
+.panel-transparente {
+  background: rgba(255, 255, 255, 0.384);
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.863);
+  overflow: hidden;
+}
+
+/* 📌 Header transparente del panel */
+.panel-transparente .mat-expansion-panel-header {
+  background: transparent;
+}
+
+/* 📌 Tarjetas */
+.seccion-card {
+  margin-top: 30px;
+  background: rgba(255, 255, 255, 0.678);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  padding: 25px;
+}
+
+/* 📌 Títulos en las tarjetas */
+mat-card-title {
+  font-size: 1.4rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 15px;
+  display: block;
   color: #333;
+}
+
+/* 📌 Información del trabajador */
+.info-trabajador {
+  width: 100%;
+}
+
+.info-campos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .info-campos label {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-weight: bold;
+  font-weight: 600;
   color: #333;
+  display: flex;
+  flex-direction: column;
 }
 
-.info-campos input {
-  width: 70%;
-  padding: 5px;
+/* 📌 Inputs */
+.info-campos input,
+.info-campos select {
+  width: 100%;
+  padding: 6px 10px;
+  margin-top: 5px;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  height: 38px;
+  transition: border-color 0.3s;
 }
 
-/* 📌 Botones */
+.info-campos input:focus,
+.info-campos select:focus {
+  outline: none;
+  border-color: #6a1275;
+}
+
+/* 📌 Botones de acción */
 .botones {
   display: flex;
   justify-content: center;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
+}
+
+.editar,
+.actualizar,
+.cancelar {
+  font-weight: bold;
+  border: none;
+  padding: 0.7rem 2rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 .editar {
   background-color: #f57c00;
   color: white;
-  font-weight: bold;
-  border: none;
-  padding: 0.6rem 1.4rem;
-  border-radius: 8px;
-  cursor: pointer;
+}
+
+.editar:hover {
+  background-color: #fb8c00;
+  transform: scale(1.05);
 }
 
 .actualizar {
-  background-color: #1ab331;
+  background-color: #28a745;
   color: white;
-  font-weight: bold;
-  border: none;
-  padding: 0.6rem 1.4rem;
-  border-radius: 8px;
-  cursor: pointer;
+}
+
+.actualizar:hover {
+  background-color: #34d058;
+  transform: scale(1.05);
 }
 
 .cancelar {
   background-color: #d32f2f;
   color: white;
-  font-weight: bold;
-  border: none;
-  padding: 0.6rem 1.4rem;
-  border-radius: 8px;
-  cursor: pointer;
 }
 
+.cancelar:hover {
+  background-color: #e53935;
+  transform: scale(1.05);
+}
 
-/* 📌 Calendario */
+/* 📌 Calendario de asistencias */
 .calendario-container {
-  margin-top: 20px;
+  margin-top: 25px;
   background: rgba(255, 255, 255, 0.9);
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 .calendario-container h3 {
   text-align: center;
   color: #333;
+  font-weight: bold;
 }
 
-/* 📌 Responsividad con Media Queries */
+/* 📌 Fade suave para expansión de paneles */
+mat-expansion-panel {
+  transition: all 0.4s ease;
+}
+
+mat-expansion-panel-header.mat-expanded {
+  background-color: rgba(106, 18, 117, 0.1);
+}
+
+/* 📌 Responsive */
 @media (max-width: 768px) {
   .sidebar {
     width: 200px;
-    position: fixed;
     left: -200px;
-    z-index: 10;
   }
 
   .sidebar.active {
@@ -183,26 +302,11 @@
   .main-content {
     margin-left: 0;
     width: 100%;
-    padding: 10px;
+    padding: 20px;
   }
 
   .content-container {
-    width: 100%;
-    padding: 15px;
-  }
-
-  .info-campos label {
-    display: block;
-    margin-bottom: 15px;
-  }
-
-  .info-campos input {
-    width: 100%;
-    margin-top: 5px;
-  }
-
-  .botones {
-    flex-direction: column;
+    width: 95%;
   }
 }
 
@@ -217,60 +321,10 @@
   }
 
   .btn-sidebar {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 
   .main-content {
-    padding: 5px;
-  }
-
-  .content-container {
     padding: 10px;
   }
-
-  .info-campos input {
-    padding: 3px;
-  }
-}
-
-/* 🔥 Botón "Regresar" estilizado */
-.btn-regresar {
-  display: flex;
-  align-items: center;
-  background-color: #6a1275;
-  color: #fff;
-  padding: 5px 15px;
-  border: none;
-  border-radius: 15px;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-  font-size: 0.9rem;
-  margin-bottom: 15px;
-}
-
-.btn-regresar:hover {
-  background-color: #90409b;
-  transform: scale(1.05);
-}
-
-.btn-regresar:active {
-  transform: scale(0.95);
-}
-
-.titulo-nombre {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #ffffff;
-  margin-bottom: 1rem;
-  background-color: rgba(0, 0, 0, 0.4);
-  padding: 0.5rem 1rem;
-  border-radius: 12px;
-  width: fit-content;
-}
-
-.subtitulo-sede {
-  color: #bbb;
-  font-style: italic;
-  margin-top: -0.8rem;
-  margin-bottom: 1rem;
 }
