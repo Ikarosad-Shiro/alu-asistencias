@@ -1,1 +1,83 @@
-<p>calendario-trabajador-visual works!</p>
+<div class="calendario-visual-trabajador">
+  <!-- 📌 Controles de mes -->
+  <div class="controles">
+    <button (click)="mesAnterior()">⬅️</button>
+    <span>{{ anioActual }} - {{ obtenerNombreMes(mesActual) }}</span>
+    <button (click)="mesSiguiente()">➡️</button>
+  </div>
+
+  <!-- 📌 Formulario para agregar días especiales -->
+  <div class="formulario-dia">
+    <div class="fila-superior">
+      <label for="tipo">Tipo:</label>
+      <select id="tipo" [(ngModel)]="seleccionTipo">
+        <option value="Permiso">Permiso</option>
+        <option value="Vacaciones">Vacaciones</option>
+        <option value="Vacaciones Pagadas">Vacaciones Pagadas</option>
+        <option value="Falta">Falta</option>
+        <option value="Incapacidad">Incapacidad</option>
+        <option value="Permiso con Goce de Sueldo">Permiso con Goce de Sueldo</option>
+      </select>
+
+      <label class="rango-check">
+        <input type="checkbox" [(ngModel)]="esRango" /> Es un periodo
+      </label>
+    </div>
+
+    <!-- Fecha única -->
+    <div *ngIf="!esRango" class="fecha-simple">
+      <label for="fechaInicio">Fecha:</label>
+      <input id="fechaInicio" type="date" [(ngModel)]="fechaInicio">
+    </div>
+
+    <!-- Rango de fechas -->
+    <div *ngIf="esRango" class="fecha-rango">
+      <label for="fechaInicio">Inicio:</label>
+      <input id="fechaInicio" type="date" [(ngModel)]="fechaInicio">
+
+      <label for="fechaFin">Fin:</label>
+      <input id="fechaFin" type="date" [(ngModel)]="fechaFin">
+    </div>
+
+    <button class="btn-agregar" (click)="agregarDiaEspecial()">➕ Agregar Día(s)</button>
+  </div>
+
+  <!-- 📌 Calendario visual -->
+  <div class="calendario-grid">
+    <div class="dia-header" *ngFor="let dia of ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']">
+      {{ dia }}
+    </div>
+
+    <ng-container *ngFor="let dia of diasDelMes">
+      <div
+        *ngIf="dia; else vacio"
+        [ngClass]="{
+          'especial': esDiaEspecial(dia),
+          'vacaciones': esDiaEspecial(dia)?.tipo === 'Vacaciones',
+          'vacaciones-pagadas': esDiaEspecial(dia)?.tipo === 'Vacaciones Pagadas',
+          'permiso': esDiaEspecial(dia)?.tipo === 'Permiso',
+          'permiso-goce': esDiaEspecial(dia)?.tipo === 'Permiso con Goce de Sueldo',
+          'incapacidad': esDiaEspecial(dia)?.tipo === 'Incapacidad',
+          'falta': esDiaEspecial(dia)?.tipo === 'Falta'
+        }"
+        class="dia"
+        [matTooltip]="esDiaEspecial(dia)?.tipo || ''"
+        matTooltipPosition="above">
+        {{ dia.getDate() }}
+      </div>
+      <ng-template #vacio>
+        <div class="dia vacio"></div>
+      </ng-template>
+    </ng-container>
+  </div>
+
+  <!-- 📌 Leyenda visual -->
+  <div class="leyenda-calendario">
+    <div><span class="color-box vacaciones"></span> Vacaciones</div>
+    <div><span class="color-box vacaciones-pagadas"></span> Vacaciones Pagadas</div>
+    <div><span class="color-box permiso"></span> Permiso</div>
+    <div><span class="color-box permiso-goce"></span> Permiso con Goce</div>
+    <div><span class="color-box incapacidad"></span> Incapacidad</div>
+    <div><span class="color-box falta"></span> Falta</div>
+  </div>
+</div>

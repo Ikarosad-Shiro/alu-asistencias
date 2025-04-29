@@ -90,11 +90,12 @@
       <mat-card class="seccion-card">
         <mat-card-title>🗓 Configuración de Calendario del Trabajador</mat-card-title>
         <mat-card-content>
-          <app-calendario-trabajador
-            [trabajador]="trabajador"
-            (eventoGuardado)="onEventoGuardado($event)"
-            (eventoEliminado)="onEventoEliminado($event)">
-          </app-calendario-trabajador>
+
+          <!-- 📌 Visualización de calendario -->
+          <app-calendario-trabajador-visual
+            *ngIf="trabajador && trabajador._id"
+            [trabajadorId]="trabajador._id">
+          </app-calendario-trabajador-visual>
         </mat-card-content>
       </mat-card>
 
