@@ -51,6 +51,7 @@ import { SedesComponent } from './pages/sedes/sedes.component';
 import { DetalleSedeComponent } from './pages/detalle-sede/detalle-sede.component';
 import { CalendarioTrabajadorComponent } from './components/calendario-trabajador/calendario-trabajador.component';
 import { CalendarioTrabajadorVisualComponent } from './components/calendario-trabajador-visual/calendario-trabajador-visual.component';
+import { ModalDiaEspecialComponent } from './components/modal-dia-especial/modal-dia-especial.component';
 
 @NgModule({
   declarations: [
@@ -69,7 +70,8 @@ import { CalendarioTrabajadorVisualComponent } from './components/calendario-tra
     SedesComponent,
     DetalleSedeComponent,
     CalendarioTrabajadorComponent,
-    CalendarioTrabajadorVisualComponent
+    CalendarioTrabajadorVisualComponent,
+    ModalDiaEspecialComponent
   ],
   imports: [
     BrowserModule,

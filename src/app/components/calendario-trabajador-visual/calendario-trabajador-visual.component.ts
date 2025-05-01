@@ -1,9 +1,14 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CalendarioTrabajadorService } from 'src/app/services/calendario-trabajador.service';
+import { MatDialog } from '@angular/material/dialog';
+import { ModalDiaEspecialComponent } from '../modal-dia-especial/modal-dia-especial.component';
+import Swal from 'sweetalert2';
 
 interface DiaEspecial {
   fecha: string;
   tipo: string;
+  horaEntrada?: string;
+  horaSalida?: string;
 }
 
 @Component({
@@ -14,6 +19,7 @@ interface DiaEspecial {
 export class CalendarioTrabajadorVisualComponent implements OnInit {
   @Input() trabajadorId!: string; // 🔥 Necesario para saber de qué trabajador guardar
   @Input() diasEspeciales: DiaEspecial[] = [];
+  @Input() rolUsuario: string = 'Revisor'; // 👀 Por defecto como Revisor para prevenir errores
 
   anioActual: number = new Date().getFullYear();
   mesActual: number = new Date().getMonth();
@@ -23,10 +29,16 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
   esRango: boolean = false;
   fechaInicio!: string;
   fechaFin!: string;
+
   nuevosDias: string[] = [];
+  horaEntrada: string = '';
+  horaSalida: string = '';
 
 
-  constructor(private calendarioTrabajadorService: CalendarioTrabajadorService) {}
+  constructor(
+    private calendarioTrabajadorService: CalendarioTrabajadorService,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
     if (!this.trabajadorId) {
@@ -37,7 +49,6 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
     this.cargarDiasEspecialesDesdeMongo();
     this.generarDiasDelMes();
   }
-
 
   generarDiasDelMes() {
     this.diasDelMes = [];
@@ -91,36 +102,107 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
   }
 
   agregarDiaEspecial() {
-    // ⚡ Aquí guardamos la lista de nuevos días
-    this.nuevosDias = [];
+
+    if (this.rolUsuario === 'Revisor') {
+      Swal.fire({
+        icon: 'info',
+        title: 'Acción no permitida',
+        text: 'No tienes permiso para agregar días. Solo puedes visualizar el calendario.',
+        confirmButtonColor: '#6a1275'
+      });
+      return;
+    }
 
     if (!this.fechaInicio) {
-      alert('⚠️ Por favor selecciona una fecha válida.');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Fecha no válida',
+        text: 'Por favor selecciona una fecha válida.',
+        confirmButtonColor: '#f0ad4e'
+      });
       return;
     }
 
     const nuevosDias: DiaEspecial[] = [];
 
-    if (this.esRango && this.fechaFin) {
-      const inicio = new Date(this.fechaInicio);
-      const fin = new Date(this.fechaFin);
-
-      if (inicio > fin) {
-        alert('⚠️ La fecha de inicio no puede ser después de la fecha de fin.');
+    if (this.esRango) {
+      if (!this.fechaFin) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Rango incompleto',
+          text: 'Selecciona una fecha de fin para el rango.',
+          confirmButtonColor: '#f0ad4e'
+        });
         return;
       }
 
-      let actual = new Date(inicio);
-      while (actual <= fin) {
-        const fechaISO = actual.toISOString();
-        nuevosDias.push({ fecha: fechaISO, tipo: this.seleccionTipo });
-        this.nuevosDias.push(fechaISO);
-        actual.setDate(actual.getDate() + 1);
+      if (this.seleccionTipo === 'Asistencia') {
+        Swal.fire({
+          icon: 'warning',
+          title: 'No permitido',
+          text: 'La asistencia no puede aplicarse como rango. Usa días individuales.',
+          confirmButtonColor: '#f0ad4e'
+        });
+        return;
       }
+
+      const inicio = new Date(this.fechaInicio);
+      const fin = new Date(this.fechaFin);
+
+      for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
+        const fechaISO = new Date(d).toISOString().split('T')[0];
+
+        const yaExiste = this.diasEspeciales.some(e => e.fecha.startsWith(fechaISO));
+        if (yaExiste) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Día duplicado',
+            text: `Ya existe un evento especial el ${fechaISO}. Por favor edítalo o elimínalo primero.`,
+            confirmButtonColor: '#d33'
+          });
+          return;
+        }
+
+        nuevosDias.push({
+          fecha: new Date(fechaISO).toISOString(),
+          tipo: this.seleccionTipo
+        });
+      }
+
     } else {
-      const fechaISO = new Date(this.fechaInicio).toISOString();
-      nuevosDias.push({ fecha: fechaISO, tipo: this.seleccionTipo });
-      this.nuevosDias.push(fechaISO);
+      const fechaISO = new Date(this.fechaInicio).toISOString().split('T')[0];
+
+      const yaExiste = this.diasEspeciales.some(e => e.fecha.startsWith(fechaISO));
+      if (yaExiste) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Día duplicado',
+          text: 'Ya existe un evento especial en esta fecha. Por favor edita o elimina el existente.',
+          confirmButtonColor: '#d33'
+        });
+        return;
+      }
+
+      const nuevoDia: DiaEspecial = {
+        fecha: new Date(this.fechaInicio).toISOString(),
+        tipo: this.seleccionTipo
+      };
+
+      if (this.seleccionTipo === 'Asistencia') {
+        if (!this.horaEntrada || !this.horaSalida) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Faltan horarios',
+            text: 'Por favor ingresa hora de entrada y salida.',
+            confirmButtonColor: '#f0ad4e'
+          });
+          return;
+        }
+        nuevoDia.horaEntrada = this.horaEntrada;
+        nuevoDia.horaSalida = this.horaSalida;
+      }
+
+      nuevosDias.push(nuevoDia);
     }
 
     const todosLosDias = [...this.diasEspeciales, ...nuevosDias];
@@ -131,21 +213,33 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
       diasEspeciales: todosLosDias
     };
 
-    this.calendarioTrabajadorService.guardarCalendarioTrabajador(payload)
-      .subscribe({
-        next: () => {
-          this.diasEspeciales = todosLosDias;
-          this.generarDiasDelMes();
-          alert('✅ Día(s) guardado(s) correctamente en MongoDB.');
-        },
-        error: (err) => {
-          console.error('❌ Error al guardar día especial:', err);
-          alert('❌ Error al guardar en la base de datos.');
-        }
-      });
+    this.calendarioTrabajadorService.guardarCalendarioTrabajador(payload).subscribe({
+      next: () => {
+        this.diasEspeciales = todosLosDias;
+        this.generarDiasDelMes();
+        this.horaEntrada = '';
+        this.horaSalida = '';
+        this.fechaInicio = '';
+        this.fechaFin = '';
+        Swal.fire({
+          icon: 'success',
+          title: '¡Día(s) guardado(s)!',
+          text: 'Los días se han registrado correctamente.',
+          confirmButtonColor: '#6a1275'
+        });
+      },
+      error: (err) => {
+        console.error('❌ Error al guardar día(s):', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al guardar',
+          text: 'Ocurrió un problema al guardar. Intenta de nuevo.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
   }
 
-  // ✅ Función para saber si el día debe animarse
   esDiaNuevo(dia: Date | null): boolean {
     if (!dia) return false;
     const diaISO = dia.toISOString().split('T')[0];
@@ -164,6 +258,72 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
           console.error('❌ Error al cargar calendario del trabajador:', err);
         }
       });
+  }
+
+  getTooltip(dia: Date | null): string {
+    if (!dia) return '';
+    const diaISO = dia.toISOString().split('T')[0];
+    const evento = this.diasEspeciales.find(e => e.fecha.startsWith(diaISO));
+    if (!evento) return '';
+
+    if (evento.tipo === 'Asistencia' && evento.horaEntrada && evento.horaSalida) {
+      return `Asistencia: ${evento.horaEntrada} - ${evento.horaSalida}`;
+    }
+
+    return evento.tipo;
+  }
+
+  abrirModalEditar(dia: Date) {
+    if (this.rolUsuario === 'Revisor') return; // 🔐 Bloquea clicks si es revisor
+
+    const evento = this.esDiaEspecial(dia);
+    if (!evento) return;
+
+    const dialogRef = this.dialog.open(ModalDiaEspecialComponent, {
+      width: '400px',
+      data: {
+        fecha: evento.fecha,
+        tipo: evento.tipo,
+        horaEntrada: evento.horaEntrada || '',
+        horaSalida: evento.horaSalida || ''
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((resultado) => {
+      if (!resultado) return;
+
+      const diaISO = new Date(evento.fecha).toISOString().split('T')[0];
+
+      if (resultado.accion === 'eliminar') {
+        this.diasEspeciales = this.diasEspeciales.filter(d => !d.fecha.startsWith(diaISO));
+      }
+
+      if (resultado.accion === 'guardar') {
+        const index = this.diasEspeciales.findIndex(d => d.fecha.startsWith(diaISO));
+        if (index !== -1) {
+          this.diasEspeciales[index] = resultado.data;
+        }
+      }
+
+      const payload = {
+        trabajador: this.trabajadorId,
+        anio: this.anioActual,
+        diasEspeciales: this.diasEspeciales
+      };
+
+      this.calendarioTrabajadorService.guardarCalendarioTrabajador(payload).subscribe({
+        next: () => this.generarDiasDelMes(),
+        error: (err) => {
+          console.error('❌ Error al actualizar desde el modal:', err);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo actualizar el calendario.',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    });
   }
 
 }

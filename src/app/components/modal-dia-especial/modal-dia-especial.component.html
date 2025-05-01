@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>🗓 Editar Día Especial</h2>
+
+<mat-dialog-content class="contenido-modal">
+  <p><strong>Fecha:</strong> {{ data.fecha | date:'fullDate' }}</p>
+
+  <mat-form-field appearance="outline" class="campo">
+    <mat-label>Tipo de Día</mat-label>
+    <mat-select [(ngModel)]="data.tipo">
+      <mat-option *ngFor="let tipo of tiposDisponibles" [value]="tipo">
+        {{ tipo }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div *ngIf="data.tipo === 'Asistencia'" class="horarios">
+    <mat-form-field appearance="outline" class="campo">
+      <mat-label>Hora de Entrada</mat-label>
+      <input matInput type="time" [(ngModel)]="data.horaEntrada">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="campo">
+      <mat-label>Hora de Salida</mat-label>
+      <input matInput type="time" [(ngModel)]="data.horaSalida">
+    </mat-form-field>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button mat-raised-button color="warn" (click)="eliminar()">Eliminar</button>
+  <button mat-raised-button color="primary" (click)="guardar()">Guardar</button>
+</mat-dialog-actions>

@@ -6,8 +6,8 @@
     <button (click)="mesSiguiente()">➡️</button>
   </div>
 
-  <!-- 📌 Formulario para agregar días especiales -->
-  <div class="formulario-dia">
+  <!-- 📌 Formulario solo visible si NO es Revisor -->
+  <div class="formulario-dia" *ngIf="rolUsuario !== 'Revisor'">
     <div class="fila-superior">
       <label for="tipo">Tipo:</label>
       <select id="tipo" [(ngModel)]="seleccionTipo">
@@ -17,6 +17,7 @@
         <option value="Falta">Falta</option>
         <option value="Incapacidad">Incapacidad</option>
         <option value="Permiso con Goce de Sueldo">Permiso con Goce de Sueldo</option>
+        <option value="Asistencia">Asistencia</option>
       </select>
 
       <label class="rango-check">
@@ -24,19 +25,25 @@
       </label>
     </div>
 
-    <!-- Fecha única -->
     <div *ngIf="!esRango" class="fecha-simple">
       <label for="fechaInicio">Fecha:</label>
       <input id="fechaInicio" type="date" [(ngModel)]="fechaInicio">
     </div>
 
-    <!-- Rango de fechas -->
     <div *ngIf="esRango" class="fecha-rango">
       <label for="fechaInicio">Inicio:</label>
       <input id="fechaInicio" type="date" [(ngModel)]="fechaInicio">
 
       <label for="fechaFin">Fin:</label>
       <input id="fechaFin" type="date" [(ngModel)]="fechaFin">
+    </div>
+
+    <div *ngIf="seleccionTipo === 'Asistencia'" class="formulario-horario">
+      <label for="horaEntrada">Hora de Entrada:</label>
+      <input id="horaEntrada" type="time" [(ngModel)]="horaEntrada">
+
+      <label for="horaSalida">Hora de Salida:</label>
+      <input id="horaSalida" type="time" [(ngModel)]="horaSalida">
     </div>
 
     <button class="btn-agregar" (click)="agregarDiaEspecial()">➕ Agregar Día(s)</button>
@@ -52,19 +59,21 @@
       <div
         *ngIf="dia; else vacio"
         [ngClass]="{
-          'especial': esDiaEspecial(dia),
           'vacaciones': esDiaEspecial(dia)?.tipo === 'Vacaciones',
           'vacaciones-pagadas': esDiaEspecial(dia)?.tipo === 'Vacaciones Pagadas',
           'permiso': esDiaEspecial(dia)?.tipo === 'Permiso',
           'permiso-goce': esDiaEspecial(dia)?.tipo === 'Permiso con Goce de Sueldo',
           'incapacidad': esDiaEspecial(dia)?.tipo === 'Incapacidad',
-          'falta': esDiaEspecial(dia)?.tipo === 'Falta'
+          'falta': esDiaEspecial(dia)?.tipo === 'Falta',
+          'asistencia': esDiaEspecial(dia)?.tipo === 'Asistencia'
         }"
         class="dia"
-        [matTooltip]="esDiaEspecial(dia)?.tipo || ''"
-        matTooltipPosition="above">
+        [matTooltip]="getTooltip(dia)"
+        matTooltipPosition="above"
+        (click)="rolUsuario !== 'Revisor' && abrirModalEditar(dia)">
         {{ dia.getDate() }}
       </div>
+
       <ng-template #vacio>
         <div class="dia vacio"></div>
       </ng-template>
@@ -79,5 +88,6 @@
     <div><span class="color-box permiso-goce"></span> Permiso con Goce</div>
     <div><span class="color-box incapacidad"></span> Incapacidad</div>
     <div><span class="color-box falta"></span> Falta</div>
+    <div><span class="color-box asistencia"></span> Asistencia</div>
   </div>
 </div>

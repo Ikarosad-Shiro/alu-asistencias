@@ -40,7 +40,7 @@
   color: #333;
 }
 
-/* 📌 Formulario para agregar días especiales */
+/* 📌 Formulario */
 .formulario-dia {
   width: 100%;
   max-width: 600px;
@@ -62,7 +62,8 @@
 }
 
 .formulario-dia select,
-.formulario-dia input[type="date"] {
+.formulario-dia input[type="date"],
+.formulario-horario input[type="time"] {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -88,6 +89,14 @@
 .formulario-dia button:hover {
   background-color: #28c745;
   transform: scale(1.05);
+}
+
+/* 📌 Horario */
+.formulario-horario {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 /* 📌 Calendario visual */
@@ -124,51 +133,57 @@
   transform: scale(1.08);
 }
 
-/* 📌 Colores por tipo de día especial */
+/* 📌 Colores por tipo */
 .dia.vacaciones {
-  background-color: #4CAF50 !important; /* Verde fuerte */
+  background-color: #4CAF50 !important;
   color: white;
   font-weight: bold;
 }
 
 .dia.vacaciones-pagadas {
-  background-color: #BA68C8 !important; /* Morado pastel */
+  background-color: #BA68C8 !important;
   color: white;
   font-weight: bold;
 }
 
 .dia.permiso {
-  background-color: #FFA000 !important; /* Ámbar */
+  background-color: #FFA000 !important;
   color: white;
   font-weight: bold;
 }
 
 .dia.permiso-goce {
-  background-color: #FF7043 !important; /* Coral */
+  background-color: #FF7043 !important;
   color: white;
   font-weight: bold;
 }
 
 .dia.incapacidad {
-  background-color: #1976D2 !important; /* Azul fuerte */
+  background-color: #1976D2 !important;
   color: white;
   font-weight: bold;
 }
 
 .dia.falta {
-  background-color: #D32F2F !important; /* Rojo intenso */
+  background-color: #D32F2F !important;
   color: white;
   font-weight: bold;
 }
 
-/* 📌 Días vacíos */
+.dia.asistencia {
+  background-color: #00BCD4 !important; /* 💙 Azul cian real */
+  color: white;
+  font-weight: bold;
+}
+
+/* Días vacíos */
 .dia.vacio {
   background: transparent;
   box-shadow: none;
   cursor: default;
 }
 
-/* 📌 Responsive */
+/* Responsive */
 @media (max-width: 600px) {
   .calendario-grid {
     gap: 6px;
@@ -180,7 +195,7 @@
   }
 }
 
-/* 📌 Animación para días al cargar */
+/* Animación */
 @keyframes fadeInDia {
   0% {
     opacity: 0;
@@ -192,7 +207,7 @@
   }
 }
 
-/* 📌 Leyenda visual */
+/* Leyenda */
 .leyenda-calendario {
   display: flex;
   flex-wrap: wrap;
@@ -221,23 +236,15 @@
 .color-box.permiso-goce { background-color: #FF7043; }
 .color-box.incapacidad { background-color: #1976D2; }
 .color-box.falta { background-color: #D32F2F; }
+.color-box.asistencia { background-color: #00BCD4; }
 
+/* Animación para días recién agregados */
 @keyframes burbuja {
-  0% {
-    transform: scale(1);
-    background-color: #ffffff;
-  }
-  50% {
-    transform: scale(1.2);
-    background-color: #ffeb3b;
-  }
-  100% {
-    transform: scale(1);
-    background-color: inherit;
-  }
+  0% { transform: scale(1); background-color: #ffffff; }
+  50% { transform: scale(1.2); background-color: #ffeb3b; }
+  100% { transform: scale(1); background-color: inherit; }
 }
 
 .nuevo-dia {
   animation: burbuja 0.8s ease;
 }
-

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TrabajadoresService } from 'src/app/services/trabajadores.service';
 import { SedeService } from 'src/app/services/sede.service';
 import { Location } from '@angular/common';
+import { AuthService } from 'src/app/services/auth.service'; // asegúrate de importar
 
 @Component({
   selector: 'app-detalle-trabajador',
@@ -21,11 +22,14 @@ export class DetalleTrabajadorComponent implements OnInit {
     private router: Router,
     private trabajadoresService: TrabajadoresService,
     private sedeService: SedeService,
-    private location: Location
+    private location: Location,
+    private authService: AuthService // 👉 inyectar aquí
   ) {}
 
   ngOnInit(): void {
-    this.rolUsuario = localStorage.getItem('rol') || '';
+    const datosUsuario = this.authService.obtenerDatosDesdeToken();
+    this.rolUsuario = datosUsuario?.rol || '';
+    console.log('🎯 Rol cargado correctamente desde el token:', this.rolUsuario);
 
     // 🔥 Cargar sedes dinámicamente
     this.sedeService.obtenerSedes().subscribe(
@@ -57,6 +61,9 @@ export class DetalleTrabajadorComponent implements OnInit {
   }
 
   activarEdicion() {
+    if (this.rolUsuario === 'Revisor') {
+      return; // No permitir activar edición
+    }
     this.modoEdicion = true;
   }
 
@@ -67,7 +74,11 @@ export class DetalleTrabajadorComponent implements OnInit {
 
   actualizarTrabajador() {
     if (this.rolUsuario === 'Revisor') {
-      alert('No tienes permiso para editar esta información.');
+      alert('⛔ No tienes permiso para editar esta información.');
+      this.modoEdicion = false;
+
+      // ✅ Revertimos los cambios por si modificó algo visualmente antes
+      this.trabajador = JSON.parse(JSON.stringify(this.trabajadorOriginal));
       return;
     }
 
@@ -86,6 +97,7 @@ export class DetalleTrabajadorComponent implements OnInit {
       }
     );
   }
+
 
   mostrarMensaje(mensaje: string, tipo: 'exito' | 'error' | 'advertencia') {
     alert(mensaje);
