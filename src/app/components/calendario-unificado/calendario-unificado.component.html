@@ -24,8 +24,10 @@
   </div>
 
   <!-- 🧾 Leyenda de estados -->
-  <div class="leyenda">
-    <h4>🧾 Leyenda:</h4>
+<!-- 🧾 Leyenda de estados en 4 columnas -->
+<div class="leyenda-grid">
+  <h4>🧾 Leyenda:</h4>
+  <div class="leyenda-columnas">
     <div class="item"><span class="color asistencia-completa"></span> Asistencia Completa</div>
     <div class="item"><span class="color salida-automatica"></span> Salida Automática</div>
     <div class="item"><span class="color pendiente"></span> Pendiente</div>
@@ -41,17 +43,9 @@
     <div class="item"><span class="color evento"></span> Evento</div>
     <div class="item"><span class="color suspensión"></span> Suspensión</div>
   </div>
-
-  <div *ngFor="let dia of diasDelMes" class="dia"
-  [ngClass]="dia.fecha ? getClaseEstado(dia.estado) : 'vacio'"
-  [title]="dia.fecha ? getDescripcionEstado(dia.estado) : ''">
-<div *ngIf="dia.fecha; else diaVacio">
- <div class="numero">{{ dia.fecha | date: 'd' }}</div>
- <div class="icono">{{ getIconoEstado(dia.estado) }}</div>
- <div class="estado">{{ dia.estado }}</div>
 </div>
+
 <ng-template #diaVacio>
  <div class="numero">&nbsp;</div>
 </ng-template>
-</div>
 </div>

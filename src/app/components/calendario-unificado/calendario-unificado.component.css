@@ -132,6 +132,35 @@
   animation: fadeInUp 0.3s ease-in-out forwards;
 }
 
+/* 🧾 Leyenda en 4 columnas */
+.leyenda-grid {
+  margin-top: 20px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leyenda-grid h4 {
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.leyenda-columnas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.leyenda-columnas .item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  padding: 4px 0;
+}
+
 /* Cada día tendrá su propio delay */
 .grid-dias .dia:nth-child(1)  { animation-delay: 0s; }
 .grid-dias .dia:nth-child(2)  { animation-delay: 0.05s; }
@@ -174,4 +203,5 @@
     opacity: 1;
     transform: translateY(0);
   }
+
 }

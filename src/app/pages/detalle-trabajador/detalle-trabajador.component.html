@@ -23,66 +23,78 @@
       <h2 class="titulo-nombre">👤 {{ trabajador.nombre }}</h2>
       <p class="subtitulo-sede">🏢 {{ obtenerNombreSede(trabajador.sede) }}</p>
 
-      <!-- 🛠 Información del Trabajador -->
-<!-- 📌 Información del Trabajador en un panel colapsable -->
- <mat-accordion>
-  <mat-expansion-panel [expanded]="false" class="panel-transparente">
-    <mat-expansion-panel-header>
-      <mat-panel-title>
-        🛠 Información del Trabajador
-      </mat-panel-title>
-    </mat-expansion-panel-header>
 
-    <mat-card class="seccion-card">
-      <mat-card-content>
-        <div class="info-trabajador">
-          <div class="info-campos">
+            <!-- 📅 Calendario del Trabajador -->
+            <div class="calendario-container">
+              <h3>📅 Calendario del Trabajador</h3>
+              <app-calendario-unificado
+                *ngIf="trabajador.asistencias"
+                [asistencias]="trabajador.asistencias"
+                [eventosSede]="eventosSede"
+                [eventosTrabajador]="eventosTrabajador">
+              </app-calendario-unificado>
+            </div>
+          <p></p>
+    <!-- 🛠 Información del Trabajador -->
+    <!-- 📌 Información del Trabajador en un panel colapsable -->
+    <mat-accordion>
+      <mat-expansion-panel [expanded]="false" class="panel-transparente">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            🛠 Información del Trabajador
+          </mat-panel-title>
+        </mat-expansion-panel-header>
 
-            <label>Nombre:
-              <input type="text" [(ngModel)]="trabajador.nombre" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
-            </label>
+        <mat-card class="seccion-card">
+          <mat-card-content>
+            <div class="info-trabajador">
+              <div class="info-campos">
 
-            <label>Correo:
-              <input type="email" [(ngModel)]="trabajador.correo" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
-            </label>
+                <label>Nombre:
+                  <input type="text" [(ngModel)]="trabajador.nombre" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
+                </label>
 
-            <label>Teléfono:
-              <input type="text" [(ngModel)]="trabajador.telefono" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
-            </label>
+                <label>Correo:
+                  <input type="email" [(ngModel)]="trabajador.correo" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
+                </label>
 
-            <label>Teléfono de Emergencia:
-              <input type="text" [(ngModel)]="trabajador.telefonoEmergencia" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
-            </label>
+                <label>Teléfono:
+                  <input type="text" [(ngModel)]="trabajador.telefono" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
+                </label>
 
-            <label>Dirección:
-              <input type="text" [(ngModel)]="trabajador.direccion" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
-            </label>
+                <label>Teléfono de Emergencia:
+                  <input type="text" [(ngModel)]="trabajador.telefonoEmergencia" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
+                </label>
 
-            <label>Puesto:
-              <input type="text" [(ngModel)]="trabajador.puesto" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
-            </label>
+                <label>Dirección:
+                  <input type="text" [(ngModel)]="trabajador.direccion" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
+                </label>
 
-          </div>
-          <!-- 🎯 Botones visibles solo si NO es revisor -->
-          <div class="botones" *ngIf="rolUsuario !== 'Revisor'">
-            <button (click)="activarEdicion()" *ngIf="!modoEdicion" class="editar">
-              <i class="bi bi-pencil-fill"></i> Editar
-            </button>
-            <button (click)="actualizarTrabajador()" *ngIf="modoEdicion" class="actualizar">
-              <i class="bi bi-save-fill"></i> Actualizar
-            </button>
-            <button (click)="cancelarEdicion()" *ngIf="modoEdicion" class="cancelar">
-              <i class="bi bi-x-circle-fill"></i> Cancelar
-            </button>
-          </div>
+                <label>Puesto:
+                  <input type="text" [(ngModel)]="trabajador.puesto" [disabled]="rolUsuario === 'Revisor' || !modoEdicion">
+                </label>
 
-        </div>
-      </mat-card-content>
-    </mat-card>
-  </mat-expansion-panel>
-</mat-accordion>
+              </div>
+              <!-- 🎯 Botones visibles solo si NO es revisor -->
+              <div class="botones" *ngIf="rolUsuario !== 'Revisor'">
+                <button (click)="activarEdicion()" *ngIf="!modoEdicion" class="editar">
+                  <i class="bi bi-pencil-fill"></i> Editar
+                </button>
+                <button (click)="actualizarTrabajador()" *ngIf="modoEdicion" class="actualizar">
+                  <i class="bi bi-save-fill"></i> Actualizar
+                </button>
+                <button (click)="cancelarEdicion()" *ngIf="modoEdicion" class="cancelar">
+                  <i class="bi bi-x-circle-fill"></i> Cancelar
+                </button>
+              </div>
 
-<p></p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </mat-expansion-panel>
+    </mat-accordion>
+
+    <p></p>
       <!-- 🗓 Configuración de Calendario del Trabajador -->
       <mat-accordion>
         <mat-expansion-panel [expanded]="false" class="panel-transparente">
@@ -106,16 +118,6 @@
       <!-- 🔒 Mensaje para Revisor -->
       <div class="mensaje-revisor" *ngIf="rolUsuario === 'Revisor'">
         🔒 Solo puedes visualizar los detalles del trabajador.
-      </div>
-      <!-- 📅 Calendario del Trabajador -->
-      <div class="calendario-container">
-        <h3>📅 Calendario del Trabajador</h3>
-        <app-calendario-unificado
-          *ngIf="trabajador.asistencias"
-          [asistencias]="trabajador.asistencias"
-          [eventosSede]="eventosSede"
-          [eventosTrabajador]="eventosTrabajador">
-        </app-calendario-unificado>
       </div>
     </div>
   </div>
