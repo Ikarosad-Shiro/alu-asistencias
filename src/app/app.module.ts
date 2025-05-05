@@ -15,7 +15,10 @@ import { TrabajadoresComponent } from './pages/trabajadores/trabajadores.compone
 import { DetalleTrabajadorComponent } from './pages/detalle-trabajador/detalle-trabajador.component';
 import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
 import { CalendarioSedeComponent } from './components/calendario-sede/calendario-sede.component';
-import { CalendarioComponent } from './components/calendario/calendario.component';
+import { SedesComponent } from './pages/sedes/sedes.component';
+import { DetalleSedeComponent } from './pages/detalle-sede/detalle-sede.component';
+import { CalendarioTrabajadorVisualComponent } from './components/calendario-trabajador-visual/calendario-trabajador-visual.component';
+import { ModalDiaEspecialComponent } from './components/modal-dia-especial/modal-dia-especial.component';
 
 // Formularios y Material
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -47,11 +50,7 @@ import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 // Servicios
 import { AuthService } from './services/auth.service';
 import { AuthInterceptor } from './services/auth.interceptor';
-import { SedesComponent } from './pages/sedes/sedes.component';
-import { DetalleSedeComponent } from './pages/detalle-sede/detalle-sede.component';
-import { CalendarioTrabajadorComponent } from './components/calendario-trabajador/calendario-trabajador.component';
-import { CalendarioTrabajadorVisualComponent } from './components/calendario-trabajador-visual/calendario-trabajador-visual.component';
-import { ModalDiaEspecialComponent } from './components/modal-dia-especial/modal-dia-especial.component';
+import { CalendarioUnificadoComponent } from './components/calendario-unificado/calendario-unificado.component';
 
 @NgModule({
   declarations: [
@@ -66,12 +65,11 @@ import { ModalDiaEspecialComponent } from './components/modal-dia-especial/modal
     DetalleTrabajadorComponent,
     CalendarioLaboralComponent,
     CalendarioSedeComponent,
-    CalendarioComponent,
     SedesComponent,
     DetalleSedeComponent,
-    CalendarioTrabajadorComponent,
     CalendarioTrabajadorVisualComponent,
-    ModalDiaEspecialComponent
+    ModalDiaEspecialComponent,
+    CalendarioUnificadoComponent
   ],
   imports: [
     BrowserModule,

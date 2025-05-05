@@ -70,4 +70,10 @@ obtenerAsistencias(trabajadorId: string): Observable<any[]> {
   actualizarTrabajador(id: string, trabajador: any) {
     return this.http.put(`${this.apiUrl}/${id}`, trabajador, { headers: this.getAuthHeaders() });
   }
+
+  obtenerEventosCalendarioTrabajador(trabajadorId: string, anio: number): Observable<any> {
+    const url = `${environment.apiUrl}/calendario-trabajador/${trabajadorId}/${anio}`;
+    return this.http.get<any>(url, { headers: this.getAuthHeaders() });
+  }
+
 }

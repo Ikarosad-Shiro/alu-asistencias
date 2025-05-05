@@ -56,7 +56,7 @@ export class SedeService {
 
   // 📅 Obtener calendario de sede
   obtenerEventosCalendario(sedeId: number, anio: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/sedes/calendario/${sedeId}/${anio}`, this.getAuthHeaders());
+    return this.http.get<any[]>(`${this.apiUrl}/calendario/sede/${sedeId}/anio/${anio}`, this.getAuthHeaders());
   }
 
   // 🔥 Marcar sede como en proceso de eliminación

@@ -3,7 +3,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TrabajadoresService } from 'src/app/services/trabajadores.service';
 import { SedeService } from 'src/app/services/sede.service';
 import { Location } from '@angular/common';
-import { AuthService } from 'src/app/services/auth.service'; // asegúrate de importar
+import { AuthService } from 'src/app/services/auth.service';
+
+import { Asistencia, EventoEspecial } from 'src/app/models/asistencia.model';
 
 @Component({
   selector: 'app-detalle-trabajador',
@@ -17,13 +19,17 @@ export class DetalleTrabajadorComponent implements OnInit {
   rolUsuario: string = '';
   sedes: any[] = [];
 
+  // 📌 Calendario unificado
+  eventosSede: EventoEspecial[] = [];
+  eventosTrabajador: EventoEspecial[] = [];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private trabajadoresService: TrabajadoresService,
     private sedeService: SedeService,
     private location: Location,
-    private authService: AuthService // 👉 inyectar aquí
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -31,7 +37,7 @@ export class DetalleTrabajadorComponent implements OnInit {
     this.rolUsuario = datosUsuario?.rol || '';
     console.log('🎯 Rol cargado correctamente desde el token:', this.rolUsuario);
 
-    // 🔥 Cargar sedes dinámicamente
+    // 🔥 Obtener lista de sedes
     this.sedeService.obtenerSedes().subscribe(
       (sedes: any[]) => {
         this.sedes = sedes;
@@ -39,20 +45,56 @@ export class DetalleTrabajadorComponent implements OnInit {
       (error: any) => console.error('❌ Error al obtener sedes:', error)
     );
 
-    // 🔥 Cargar trabajador
+    // 🔥 Obtener datos del trabajador
     const trabajadorId = this.route.snapshot.paramMap.get('id');
     if (trabajadorId) {
       this.trabajadoresService.obtenerTrabajador(trabajadorId).subscribe(
         (data: any) => {
           this.trabajador = data;
-          this.trabajadorOriginal = JSON.parse(JSON.stringify(data)); // Clonamos datos originales
+          this.trabajadorOriginal = JSON.parse(JSON.stringify(data));
 
           // 🔥 Obtener asistencias
           this.trabajadoresService.obtenerAsistencias(trabajadorId).subscribe(
-            (asistencias: any[]) => {
-              this.trabajador.asistencias = asistencias;
+            (asistencias: Asistencia[]) => {
+              // Normalizamos fechas a string YYYY-MM-DD
+              this.trabajador.asistencias = asistencias.map(a => ({
+                ...a,
+                fecha: new Date(a.fecha).toISOString().split('T')[0],
+                detalle: a.detalle?.map((d: any) => ({
+                  ...d,
+                  fechaHora: d.fechaHora
+                }))
+              }));
             },
             (error: any) => console.error('❌ Error al obtener asistencias:', error)
+          );
+
+          // 🔥 Obtener calendario de sede
+          this.sedeService.obtenerEventosCalendario(this.trabajador.sede, new Date().getFullYear()).subscribe(
+            (calendario: any) => {
+              this.eventosSede = (calendario?.diasEspeciales || []).map((e: any) => ({
+                ...e,
+                fecha: new Date(e.fecha).toISOString().split('T')[0]
+              }));
+            },
+            (error: any) => {
+              console.error('❌ Error al obtener calendario de sede:', error);
+              this.eventosSede = [];
+            }
+          );
+
+          // 🔥 Obtener calendario del trabajador
+          this.trabajadoresService.obtenerEventosCalendarioTrabajador(trabajadorId, new Date().getFullYear()).subscribe(
+            (calendario: any) => {
+              this.eventosTrabajador = (calendario?.diasEspeciales || []).map((e: any) => ({
+                ...e,
+                fecha: new Date(e.fecha).toISOString().split('T')[0]
+              }));
+            },
+            (error: any) => {
+              console.error('❌ Error al obtener eventos del trabajador:', error);
+              this.eventosTrabajador = [];
+            }
           );
         },
         (error: any) => console.error('❌ Error al obtener trabajador:', error)
@@ -61,9 +103,7 @@ export class DetalleTrabajadorComponent implements OnInit {
   }
 
   activarEdicion() {
-    if (this.rolUsuario === 'Revisor') {
-      return; // No permitir activar edición
-    }
+    if (this.rolUsuario === 'Revisor') return;
     this.modoEdicion = true;
   }
 
@@ -75,10 +115,7 @@ export class DetalleTrabajadorComponent implements OnInit {
   actualizarTrabajador() {
     if (this.rolUsuario === 'Revisor') {
       alert('⛔ No tienes permiso para editar esta información.');
-      this.modoEdicion = false;
-
-      // ✅ Revertimos los cambios por si modificó algo visualmente antes
-      this.trabajador = JSON.parse(JSON.stringify(this.trabajadorOriginal));
+      this.cancelarEdicion();
       return;
     }
 
@@ -97,7 +134,6 @@ export class DetalleTrabajadorComponent implements OnInit {
       }
     );
   }
-
 
   mostrarMensaje(mensaje: string, tipo: 'exito' | 'error' | 'advertencia') {
     alert(mensaje);
@@ -121,10 +157,39 @@ export class DetalleTrabajadorComponent implements OnInit {
   }
 
   onEventoGuardado(evento: any) {
-    console.log('Evento guardado:', evento);
+    console.log('✅ Evento guardado:', evento);
+    this.refrescarEventosTrabajador();
   }
 
   onEventoEliminado(evento: any) {
-    console.log('Evento eliminado:', evento);
+    console.log('🗑️ Evento eliminado:', evento);
+    this.refrescarEventosTrabajador();
   }
+
+  refrescarEventosTrabajador(): void {
+    if (this.trabajador?._id) {
+      this.trabajadoresService
+        .obtenerEventosCalendarioTrabajador(this.trabajador._id, new Date().getFullYear())
+        .subscribe(
+          (calendario: any) => {
+            this.eventosTrabajador = (calendario?.diasEspeciales || []).map((e: any) => ({
+              ...e,
+              fecha: new Date(e.fecha).toISOString().split('T')[0]
+            }));
+          },
+          (error: any) => {
+            console.error('❌ Error al refrescar eventos del trabajador:', error);
+            this.eventosTrabajador = [];
+          }
+        );
+    }
+  }
+
+  actualizarEventosTrabajadorDesdeVisual(nuevosEventos: EventoEspecial[]) {
+    this.eventosTrabajador = nuevosEventos.map(e => ({
+      ...e,
+      fecha: new Date(e.fecha).toISOString().split('T')[0]
+    }));
+  }
+
 }

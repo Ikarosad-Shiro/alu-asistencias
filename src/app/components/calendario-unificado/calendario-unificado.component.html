@@ -1,0 +1,57 @@
+<div class="calendario-visual-trabajador">
+  <h3>📅 Calendario de Asistencias</h3>
+
+  <!-- 📆 Controles para cambiar de mes -->
+  <div class="controles">
+    <button (click)="mesAnterior()">⬅️</button>
+    <span>{{ fechaActual | date: 'MMMM yyyy' }}</span>
+    <button (click)="mesSiguiente()">➡️</button>
+  </div>
+
+  <!-- 🗓️ Días de la semana -->
+  <div class="dias-semana">
+    <div *ngFor="let dia of ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']">
+      <strong>{{ dia }}</strong>
+    </div>
+  </div>
+
+  <!-- 📅 Días del mes -->
+  <div class="grid-dias">
+    <div *ngFor="let dia of diasDelMes" class="dia" [ngClass]="getClaseEstado(dia.estado)">
+      <div class="numero">{{ dia.fecha | date: 'd' }}</div>
+      <div class="estado">{{ dia.estado }}</div>
+    </div>
+  </div>
+
+  <!-- 🧾 Leyenda de estados -->
+  <div class="leyenda">
+    <h4>🧾 Leyenda:</h4>
+    <div class="item"><span class="color asistencia-completa"></span> Asistencia Completa</div>
+    <div class="item"><span class="color salida-automatica"></span> Salida Automática</div>
+    <div class="item"><span class="color pendiente"></span> Pendiente</div>
+    <div class="item"><span class="color falta"></span> Falta</div>
+    <div class="item"><span class="color vacaciones"></span> Vacaciones</div>
+    <div class="item"><span class="color permiso"></span> Permiso</div>
+    <div class="item"><span class="color incapacidad"></span> Incapacidad</div>
+    <div class="item"><span class="color descanso"></span> Descanso</div>
+    <div class="item"><span class="color festivo"></span> Festivo</div>
+    <div class="item"><span class="color puente"></span> Puente</div>
+    <div class="item"><span class="color media-jornada"></span> Media Jornada</div>
+    <div class="item"><span class="color capacitación"></span> Capacitación</div>
+    <div class="item"><span class="color evento"></span> Evento</div>
+    <div class="item"><span class="color suspensión"></span> Suspensión</div>
+  </div>
+
+  <div *ngFor="let dia of diasDelMes" class="dia"
+  [ngClass]="dia.fecha ? getClaseEstado(dia.estado) : 'vacio'"
+  [title]="dia.fecha ? getDescripcionEstado(dia.estado) : ''">
+<div *ngIf="dia.fecha; else diaVacio">
+ <div class="numero">{{ dia.fecha | date: 'd' }}</div>
+ <div class="icono">{{ getIconoEstado(dia.estado) }}</div>
+ <div class="estado">{{ dia.estado }}</div>
+</div>
+<ng-template #diaVacio>
+ <div class="numero">&nbsp;</div>
+</ng-template>
+</div>
+</div>

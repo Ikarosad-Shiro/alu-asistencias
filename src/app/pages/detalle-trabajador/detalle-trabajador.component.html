@@ -93,10 +93,11 @@
           <mat-card class="seccion-card">
             <mat-card-content>
               <app-calendario-trabajador-visual
-                *ngIf="trabajador && trabajador._id"
-                [trabajadorId]="trabajador._id"
-                [rolUsuario]="rolUsuario">
-              </app-calendario-trabajador-visual>
+              *ngIf="trabajador && trabajador._id"
+              [trabajadorId]="trabajador._id"
+              [rolUsuario]="rolUsuario"
+              (eventosActualizados)="actualizarEventosTrabajadorDesdeVisual($event)">
+            </app-calendario-trabajador-visual>
             </mat-card-content>
           </mat-card>
         </mat-expansion-panel>
@@ -106,13 +107,16 @@
       <div class="mensaje-revisor" *ngIf="rolUsuario === 'Revisor'">
         🔒 Solo puedes visualizar los detalles del trabajador.
       </div>
-
-      <!-- 📆 Calendario de Asistencias -->
+      <!-- 📅 Calendario del Trabajador -->
       <div class="calendario-container">
-        <h3>📅 Calendario de Asistencias</h3>
-        <app-calendario [asistencias]="trabajador.asistencias"></app-calendario>
+        <h3>📅 Calendario del Trabajador</h3>
+        <app-calendario-unificado
+          *ngIf="trabajador.asistencias"
+          [asistencias]="trabajador.asistencias"
+          [eventosSede]="eventosSede"
+          [eventosTrabajador]="eventosTrabajador">
+        </app-calendario-unificado>
       </div>
-
     </div>
   </div>
 </div>

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { CalendarioTrabajadorService } from 'src/app/services/calendario-trabajador.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ModalDiaEspecialComponent } from '../modal-dia-especial/modal-dia-especial.component';
@@ -20,6 +20,7 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
   @Input() trabajadorId!: string; // 🔥 Necesario para saber de qué trabajador guardar
   @Input() diasEspeciales: DiaEspecial[] = [];
   @Input() rolUsuario: string = 'Revisor'; // 👀 Por defecto como Revisor para prevenir errores
+  @Output() eventosActualizados = new EventEmitter<DiaEspecial[]>();
 
   anioActual: number = new Date().getFullYear();
   mesActual: number = new Date().getMonth();
@@ -102,7 +103,6 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
   }
 
   agregarDiaEspecial() {
-
     if (this.rolUsuario === 'Revisor') {
       Swal.fire({
         icon: 'info',
@@ -151,7 +151,6 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
 
       for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
         const fechaISO = new Date(d).toISOString().split('T')[0];
-
         const yaExiste = this.diasEspeciales.some(e => e.fecha.startsWith(fechaISO));
         if (yaExiste) {
           Swal.fire({
@@ -216,6 +215,7 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
     this.calendarioTrabajadorService.guardarCalendarioTrabajador(payload).subscribe({
       next: () => {
         this.diasEspeciales = todosLosDias;
+        this.eventosActualizados.emit(this.diasEspeciales); // ✅ Emitimos los nuevos eventos
         this.generarDiasDelMes();
         this.horaEntrada = '';
         this.horaSalida = '';
@@ -274,7 +274,7 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
   }
 
   abrirModalEditar(dia: Date) {
-    if (this.rolUsuario === 'Revisor') return; // 🔐 Bloquea clicks si es revisor
+    if (this.rolUsuario === 'Revisor') return;
 
     const evento = this.esDiaEspecial(dia);
     if (!evento) return;
@@ -312,7 +312,10 @@ export class CalendarioTrabajadorVisualComponent implements OnInit {
       };
 
       this.calendarioTrabajadorService.guardarCalendarioTrabajador(payload).subscribe({
-        next: () => this.generarDiasDelMes(),
+        next: () => {
+          this.generarDiasDelMes();
+          this.eventosActualizados.emit(this.diasEspeciales); // ✅ Emitimos también al editar/eliminar
+        },
         error: (err) => {
           console.error('❌ Error al actualizar desde el modal:', err);
           Swal.fire({
