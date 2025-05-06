@@ -23,7 +23,9 @@
       <h2 class="titulo-nombre">👤 {{ trabajador.nombre }}</h2>
       <p class="subtitulo-sede">🏢 {{ obtenerNombreSede(trabajador.sede) }}</p>
 
-
+      <button mat-raised-button color="primary" (click)="abrirSelectorDeFechas()">
+        🧾 Generar PDF
+      </button>
             <!-- 📅 Calendario del Trabajador -->
             <div class="calendario-container">
               <h3>📅 Calendario del Trabajador</h3>

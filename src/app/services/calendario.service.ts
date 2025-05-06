@@ -1,6 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -103,5 +105,14 @@ export class CalendarioService {
   // 🩺 Verifica que la ruta esté viva
   ping() {
     return this.http.get(`${this.baseUrl}/ping`);
+  }
+
+  // ✅ CORREGIDOS: devolviendo solo el array de eventos
+  obtenerEventosDeTrabajador(idTrabajador: string): Observable<{ diasEspeciales: any[] }> {
+    return this.http.get<{ diasEspeciales: any[] }>(`${this.baseUrl}/trabajador/${idTrabajador}`);
+  }
+
+  obtenerEventosDeSede(idSede: string, anio: number): Observable<{ diasEspeciales: any[] }> {
+    return this.http.get<{ diasEspeciales: any[] }>(`${this.baseUrl}/sede/${idSede}/anio/${anio}`);
   }
 }
