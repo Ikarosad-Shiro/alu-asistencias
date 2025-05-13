@@ -108,11 +108,37 @@ export class CalendarioService {
   }
 
   // ✅ CORREGIDOS: devolviendo solo el array de eventos
+// En calendario.service.ts
   obtenerEventosDeTrabajador(idTrabajador: string): Observable<{ diasEspeciales: any[] }> {
-    return this.http.get<{ diasEspeciales: any[] }>(`${this.baseUrl}/trabajador/${idTrabajador}`);
+    return this.http.get<{ diasEspeciales: any[] }>(
+      `${this.baseUrl}/trabajador/${idTrabajador}`
+    ).pipe(
+      map(response => {
+        // Normalizar fechas
+        if (response?.diasEspeciales) {
+          response.diasEspeciales = response.diasEspeciales.map(e => ({
+            ...e,
+            fecha: e.fecha ? new Date(e.fecha).toISOString().split('T')[0] : null
+          }));
+        }
+        return response;
+      })
+    );
   }
 
   obtenerEventosDeSede(idSede: string, anio: number): Observable<{ diasEspeciales: any[] }> {
-    return this.http.get<{ diasEspeciales: any[] }>(`${this.baseUrl}/sede/${idSede}/anio/${anio}`);
+    return this.http.get<{ diasEspeciales: any[] }>(
+      `${this.baseUrl}/sede/${idSede}/anio/${anio}`
+    ).pipe(
+      map(response => {
+        if (response?.diasEspeciales) {
+          response.diasEspeciales = response.diasEspeciales.map(e => ({
+            ...e,
+            fecha: e.fecha ? new Date(e.fecha).toISOString().split('T')[0] : null
+          }));
+        }
+        return response;
+      })
+    );
   }
 }
