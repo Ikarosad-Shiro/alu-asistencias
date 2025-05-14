@@ -37,13 +37,23 @@
   background-color: #fff;
   text-align: center;
   position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.dia:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+}
+.dia.vacio {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .numero {
   font-size: 1.1rem;
   font-weight: bold;
 }
-
 .estado {
   font-size: 0.75rem;
   margin-top: 6px;
@@ -51,35 +61,34 @@
 }
 
 /* 🎨 Colores por tipo de estado */
-.asistencia-completa { background-color: #b0f2b6; }
-.salida-automatica   { background-color: #d4e2ff; }
-.pendiente           { background-color: #fff3cd; }
-.falta               { background-color: #f8d7da; }
-.vacaciones          { background-color: #cce5ff; }
-.permiso             { background-color: #e2d5f6; }
-.incapacidad         { background-color: #ffecd6; }
-.descanso            { background-color: #e6ffe6; }
-.festivo             { background-color: #ffe6f0; }
-.puente              { background-color: #e0f7fa; }
-.media-jornada       { background-color: #ffe0b2; }
-.capacitación        { background-color: #dcedc8; }
-.evento              { background-color: #f3e5f5; }
-.suspensión          { background-color: #ffcdd2; }
+.asistencia-completa { background-color: #b0f2b6; color: #1B5E20; font-weight: bold; }
+.asistencia           { background-color: #80DEEA; color: #006064; font-weight: bold; }
+.salida-automatica   { background-color: #d4e2ff; color: #0D47A1; font-weight: bold; }
+.pendiente           { background-color: #fff3cd; color: #F57F17; font-weight: bold; }
+.falta               { background-color: #f8d7da; color: #B71C1C; font-weight: bold; }
+.vacaciones          { background-color: #cce5ff; color: #0D47A1; font-weight: bold; }
+.permiso             { background-color: #e2d5f6; color: #4A148C; font-weight: bold; }
+.incapacidad         { background-color: #ffecd6; color: #BF360C; font-weight: bold; }
+.descanso            { background-color: #e6ffe6; color: #2E7D32; font-weight: bold; }
+.festivo             { background-color: #ffe6f0; color: #C2185B; font-weight: bold; }
+.puente              { background-color: #e0f7fa; color: #006064; font-weight: bold; }
+.media-jornada       { background-color: #ffe0b2; color: #E65100; font-weight: bold; }
+.capacitación        { background-color: #dcedc8; color: #558B2F; font-weight: bold; }
+.evento              { background-color: #f3e5f5; color: #6A1B9A; font-weight: bold; }
+.suspensión          { background-color: #ffcdd2; color: #C62828; font-weight: bold; }
 
-/* 🧾 Leyenda visual */
+/* Leyenda */
 .leyenda {
   margin-top: 20px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
-
 .item {
   display: flex;
   align-items: center;
   margin: 4px 0;
 }
-
 .color {
   width: 16px;
   height: 16px;
@@ -88,8 +97,9 @@
   border-radius: 4px;
 }
 
-/* Colores de leyenda */
+/* Leyenda colores */
 .color.asistencia-completa { background-color: #b0f2b6; }
+.color.asistencia           { background-color: #80DEEA; }
 .color.salida-automatica   { background-color: #d4e2ff; }
 .color.pendiente           { background-color: #fff3cd; }
 .color.falta               { background-color: #f8d7da; }
@@ -109,27 +119,15 @@
   margin-top: 4px;
 }
 
-/* ✨ Animación al hacer hover en cada día */
-.dia {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.dia:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 2;
-}
-
-.dia.vacio {
-  background-color: transparent;
-  border: none;
-  box-shadow: none;
-}
-
+/* ✨ Animación */
 .grid-dias .dia {
   opacity: 0;
   transform: translateY(10px);
   animation: fadeInUp 0.3s ease-in-out forwards;
+}
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 /* 🧾 Leyenda en 4 columnas */
@@ -141,18 +139,15 @@
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-
 .leyenda-grid h4 {
   margin-bottom: 10px;
   font-weight: bold;
 }
-
 .leyenda-columnas {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
-
 .leyenda-columnas .item {
   display: flex;
   align-items: center;
@@ -161,7 +156,7 @@
   padding: 4px 0;
 }
 
-/* Cada día tendrá su propio delay */
+/* Animación de aparición escalonada */
 .grid-dias .dia:nth-child(1)  { animation-delay: 0s; }
 .grid-dias .dia:nth-child(2)  { animation-delay: 0.05s; }
 .grid-dias .dia:nth-child(3)  { animation-delay: 0.1s; }
@@ -172,36 +167,5 @@
 .grid-dias .dia:nth-child(8)  { animation-delay: 0.35s; }
 .grid-dias .dia:nth-child(9)  { animation-delay: 0.4s; }
 .grid-dias .dia:nth-child(10) { animation-delay: 0.45s; }
-.grid-dias .dia:nth-child(11) { animation-delay: 0.5s; }
-.grid-dias .dia:nth-child(12) { animation-delay: 0.55s; }
-.grid-dias .dia:nth-child(13) { animation-delay: 0.6s; }
-.grid-dias .dia:nth-child(14) { animation-delay: 0.65s; }
-.grid-dias .dia:nth-child(15) { animation-delay: 0.7s; }
-.grid-dias .dia:nth-child(16) { animation-delay: 0.75s; }
-.grid-dias .dia:nth-child(17) { animation-delay: 0.8s; }
-.grid-dias .dia:nth-child(18) { animation-delay: 0.85s; }
-.grid-dias .dia:nth-child(19) { animation-delay: 0.9s; }
-.grid-dias .dia:nth-child(20) { animation-delay: 0.95s; }
-.grid-dias .dia:nth-child(21) { animation-delay: 1s; }
-.grid-dias .dia:nth-child(22) { animation-delay: 1.05s; }
-.grid-dias .dia:nth-child(23) { animation-delay: 1.1s; }
-.grid-dias .dia:nth-child(24) { animation-delay: 1.15s; }
-.grid-dias .dia:nth-child(25) { animation-delay: 1.2s; }
-.grid-dias .dia:nth-child(26) { animation-delay: 1.25s; }
-.grid-dias .dia:nth-child(27) { animation-delay: 1.3s; }
-.grid-dias .dia:nth-child(28) { animation-delay: 1.35s; }
-.grid-dias .dia:nth-child(29) { animation-delay: 1.4s; }
-.grid-dias .dia:nth-child(30) { animation-delay: 1.45s; }
-.grid-dias .dia:nth-child(31) { animation-delay: 1.5s; }
+/* Puedes continuar hasta 31 según necesites */
 
-@keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-}

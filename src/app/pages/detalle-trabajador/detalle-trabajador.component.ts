@@ -37,6 +37,8 @@ interface Asistencia extends Omit<AsistenciaModel, 'detalle'> {
 // Por esta:
 interface EventoEspecial extends EventoEspecialModel { // ✅ Usa el modelo directamente
   descripcion?: string;
+  horaEntrada?: string; // ⏰ Añadir este campo
+  horaSalida?: string;  // ⏰ Y este también
 }
 
 interface DiaProcesado {
@@ -213,6 +215,17 @@ export class DetalleTrabajadorComponent implements OnInit {
     localStorage.clear();
     this.router.navigate(['/login']);
   }
+
+  refrescarVista(): void {
+    // 🔁 Básicamente volvemos a ejecutar todo el ciclo de inicio
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+        this.router.navigate(['/trabajadores', id]);
+      });
+    }
+  }
+
 
   obtenerNombreSede(idSede: any): string {
     let sede = this.sedes.find(s => s.id === Number(idSede));
@@ -400,6 +413,7 @@ export class DetalleTrabajadorComponent implements OnInit {
       entrada: d.entrada,
       salida: d.salida
     })));
+
     const docDefinition = {
       content: [
         { text: 'Reporte de Asistencias', style: 'header', alignment: 'center' },
@@ -414,15 +428,66 @@ export class DetalleTrabajadorComponent implements OnInit {
             headerRows: 1,
             widths: ['auto', 'auto', '*', '*', 'auto', '*'],
             body: [
-              ['Día', 'Fecha', 'Entrada', 'Salida', 'Estado', 'Observación'],
-              ...dias.map(d => [
-                d.diaSemana,
-                d.fecha,
-                d.entrada || '-',
-                d.salida || '-',
-                d.estado,
-                d.observacion || '-'
-              ])
+              [
+                { text: 'Día', bold: true },
+                { text: 'Fecha', bold: true },
+                { text: 'Entrada', bold: true },
+                { text: 'Salida', bold: true },
+                { text: 'Estado', bold: true },
+                { text: 'Observación', bold: true }
+              ],
+              ...dias.map(d => {
+                let fillColor = null;
+                const obs = d.observacion?.toLowerCase() || '';
+                const estado = d.estado?.toLowerCase() || '';
+
+                if (obs.includes('media jornada')) {
+                  fillColor = '#fff3cd';
+                } else if (obs.includes('capacitación')) {
+                  fillColor = '#d1ecf1';
+                } else if (obs.includes('evento')) {
+                  fillColor = '#e2e3e5';
+                } else if (obs.includes('vacaciones pagadas')) {
+                  fillColor = '#c3e6cb';
+                } else if (obs.includes('vacaciones')) {
+                  fillColor = '#d4edda';
+                } else if (obs.includes('permiso con goce')) {
+                  fillColor = '#f8d7da';
+                } else if (obs.includes('permiso')) {
+                  fillColor = '#fde2e4';
+                } else if (obs.includes('incapacidad')) {
+                  fillColor = '#d6d8d9';
+                } else if (obs.includes('festivo')) {
+                  fillColor = '#fce5cd';
+                } else if (obs.includes('descanso')) {
+                  fillColor = '#e2f0cb';
+                } else if (obs.includes('puente')) {
+                  fillColor = '#f0e5ff';
+                } else if (obs.includes('suspensión')) {
+                  fillColor = '#f5c6cb';
+                } else if (obs.includes('asistencia marcada manualmente')) {
+                  fillColor = '#b2f2bb'; // 📝 Verde agua claro
+                } else if (estado.includes('asistencia completa')) {
+                  fillColor = '#d0f0fd';
+                } else if (estado.includes('entrada sin salida')) {
+                  fillColor = '#ffeeba';
+                } else if (estado.includes('salida automática')) {
+                  fillColor = '#d1ecf1';
+                } else if (estado.includes('incompleta')) {
+                  fillColor = '#f8d7da';
+                } else if (estado.includes('falta')) {
+                  fillColor = '#f5c6cb';
+                }
+
+                return [
+                  { text: d.diaSemana, fillColor },
+                  { text: d.fecha, fillColor },
+                  { text: d.entrada || '-', fillColor },
+                  { text: d.salida || '-', fillColor },
+                  { text: d.estado, fillColor },
+                  { text: d.observacion || '-', fillColor }
+                ];
+              })
             ]
           },
           layout: 'lightHorizontalLines'
@@ -449,7 +514,7 @@ export class DetalleTrabajadorComponent implements OnInit {
     };
 
     const doc = pdfMake.createPdf(docDefinition);
-    setTimeout(() => doc.open(), 0); // ✅ Garantiza que el navegador no lo bloquee
+    setTimeout(() => doc.open(), 0);
   }
 
   generarDias(inicio: Date, fin: Date): any[] {
@@ -484,43 +549,109 @@ export class DetalleTrabajadorComponent implements OnInit {
     eventosTrabajador: EventoEspecial[],
     eventosSede: EventoEspecial[]
   ): DiaProcesado[] {
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = DateTime.now().setZone('America/Mexico_City').toISODate() || '';
 
     return dias.map(dia => {
       const fecha = dia.fecha;
 
-      // 1. Eventos del trabajador (máxima prioridad)
       const eventoTrabajador = this.buscarEvento(fecha, eventosTrabajador);
-      if (eventoTrabajador) {
-        return {
-          ...dia,
-          estado: this.iconoEstado(eventoTrabajador.tipo),
-          observacion: eventoTrabajador.descripcion || eventoTrabajador.tipo || ''
-        };
-      }
-
-      // 2. Asistencias
       const asistencia = this.buscarAsistencia(fecha, asistencias);
-      if (asistencia) {
-        return this.procesarAsistencia(dia, asistencia, hoy);
+      const eventoSede = this.buscarEvento(fecha, eventosSede);
+
+      // 🆕 Caso especial: Media Jornada en calendario de sede
+      if (eventoSede?.tipo === 'Media Jornada') {
+        if (asistencia) {
+          const diaProcesado = this.procesarAsistencia(dia, asistencia, eventoSede);
+
+          // Aseguramos que se muestre como asistencia completa aunque sea media jornada
+          if (diaProcesado.entrada !== '-' && diaProcesado.salida !== '-') {
+            diaProcesado.estado = '✅ Asistencia Completa';
+            diaProcesado.observacion = 'Media Jornada registrada' +
+              (eventoSede.descripcion ? ` (${eventoSede.descripcion})` : '');
+          }
+          return diaProcesado;
+        } else {
+          return {
+            ...dia,
+            estado: '❌ Falta',
+            observacion: 'Media Jornada programada - ' +
+              (eventoSede.descripcion || 'Sin registro de asistencia'),
+            entrada: eventoSede.horaEntrada ? this.formatearHoraManual(eventoSede.horaEntrada) : '-',
+            salida: eventoSede.horaSalida ? this.formatearHoraManual(eventoSede.horaSalida) : '-'
+          };
+        }
       }
 
-      // 3. Eventos de sede
-      const eventoSede = this.buscarEvento(fecha, eventosSede);
-      if (eventoSede) {
+      // Lógica normal para otros casos
+      const opciones: { fuente: string; tipo: string; data: any }[] = [];
+
+      if (eventoTrabajador) opciones.push({ fuente: 'trabajador', tipo: eventoTrabajador.tipo, data: eventoTrabajador });
+      if (asistencia) {
+        const tipoAsistencia = this.definirTipoAsistencia(asistencia, dia.fecha, hoy);
+        opciones.push({ fuente: 'asistencia', tipo: tipoAsistencia, data: asistencia });
+      }
+      if (eventoSede) opciones.push({ fuente: 'sede', tipo: eventoSede.tipo, data: eventoSede });
+
+      const opcionGanadora = opciones.sort((a, b) =>
+        this.obtenerPrioridadEstado(b.tipo) - this.obtenerPrioridadEstado(a.tipo)
+      )[0];
+
+      if (!opcionGanadora) {
         return {
           ...dia,
-          estado: this.iconoEstado(eventoSede.tipo),
-          observacion: eventoSede.descripcion || eventoSede.tipo || ''
+          estado: '❌ Falta',
+          observacion: 'No registrado',
+          entrada: '-', salida: '-'
         };
       }
 
-      // 4. Ausencia por defecto
-      return {
-        ...dia,
-        estado: '❌ Falta',
-        observacion: 'No registrado'
-      };
+      switch (opcionGanadora.fuente) {
+        case 'trabajador':
+          if (opcionGanadora.tipo === 'Asistencia') {
+            return {
+              ...dia,
+              entrada: opcionGanadora.data.horaEntrada
+                ? this.formatearHoraManual(opcionGanadora.data.horaEntrada)
+                : '-',
+              salida: opcionGanadora.data.horaSalida
+                ? this.formatearHoraManual(opcionGanadora.data.horaSalida)
+                : '-',
+              estado: this.iconoEstado('Asistencia'),
+              observacion: 'Asistencia marcada manualmente'
+            };
+          } else {
+            return {
+              ...dia,
+              estado: this.iconoEstado(opcionGanadora.tipo),
+              observacion: opcionGanadora.data.descripcion || this.descripcionPorTipo(opcionGanadora.tipo),
+              entrada: '-', salida: '-'
+            };
+          }
+
+        case 'asistencia':
+          return this.procesarAsistencia(dia, opcionGanadora.data, eventoSede || undefined);
+
+        case 'sede':
+          const tiposConAsistencia = ['Capacitación', 'Evento'];
+          if (tiposConAsistencia.includes(opcionGanadora.tipo) && asistencia) {
+            return this.procesarAsistencia(dia, asistencia, eventoSede || undefined);
+          }
+
+          return {
+            ...dia,
+            estado: this.iconoEstado(opcionGanadora.tipo),
+            observacion: opcionGanadora.data.descripcion || this.descripcionPorTipo(opcionGanadora.tipo),
+            entrada: '-', salida: '-'
+          };
+
+        default:
+          return {
+            ...dia,
+            estado: '❌ Falta',
+            observacion: 'No registrado',
+            entrada: '-', salida: '-'
+          };
+      }
     });
   }
 
@@ -531,90 +662,76 @@ export class DetalleTrabajadorComponent implements OnInit {
   }
 
   private buscarAsistencia(fecha: string, asistencias: Asistencia[]): Asistencia | null {
-    return asistencias?.find((a: Asistencia) => {
+    // Buscar primero coincidencia exacta por a.fecha
+    const exacta = asistencias.find((a: Asistencia) => {
       if (!a) return false;
+      return a.fecha && this.normalizarFecha(a.fecha) === fecha;
+    });
 
-      // Verificar por fecha directa
-      if (a.fecha && this.normalizarFecha(a.fecha) === fecha) return true;
+    if (exacta) return exacta;
 
-      // Verificar en los detalles
-      if (a.detalle?.length) {
-        return a.detalle.some((reg: RegistroAsistencia) =>
-          reg.fechaHora && this.normalizarFecha(reg.fechaHora) === fecha
-        );
-      }
-
-      return false;
+    // Si no hay coincidencia por fecha directa, buscar en el detalle
+    return asistencias.find((a: Asistencia) => {
+      if (!a?.detalle?.length) return false;
+      return a.detalle.some((reg: RegistroAsistencia) =>
+        reg.fechaHora && this.normalizarFecha(reg.fechaHora) === fecha
+      );
     }) || null;
   }
 
-  private procesarEventoTrabajador(dia: any, evento: any): DiaProcesado {
-    return {
-      ...dia,
-      estado: this.iconoEstado(evento.tipo),
-      observacion: evento.descripcion || evento.tipo
-    };
-  }
-
-  private procesarAsistencia(dia: any, asistencia: Asistencia, hoy: string): DiaProcesado {
-    console.log('🧪 Analizando asistencia:', asistencia);
-
-    // ✅ Caso 1: Estado explícito sin necesidad de detalles
-    if (asistencia.estado && asistencia.estado === 'Asistencia Completa') {
-      const entrada = asistencia.detalle?.find((d: RegistroAsistencia) => d.tipo === 'Entrada');
-      const salida = asistencia.detalle?.find((d: RegistroAsistencia) => d.tipo === 'Salida');
-
-      return {
-        ...dia,
-        entrada: entrada ? this.formatoHora(this.normalizarFechaHora(entrada.fechaHora)) : '-',
-        salida: salida ? this.formatoHora(this.normalizarFechaHora(salida.fechaHora)) : '-',
-        estado: this.iconoEstado('Asistencia Completa'),
-        observacion: asistencia.observacion || 'Asistencia completa registrada'
-      };
-    }
-
-    // ✅ Caso 2: Con detalle (entrada y/o salida)
+  private procesarAsistencia(dia: any, asistencia: Asistencia, eventoSede?: EventoEspecial): DiaProcesado {
     const entrada = asistencia.detalle?.find((d: RegistroAsistencia) => d.tipo === 'Entrada');
     const salida = asistencia.detalle?.find((d: RegistroAsistencia) => d.tipo === 'Salida');
+    const hoyDateStr = DateTime.now().setZone('America/Mexico_City').toISODate() || '';
 
     const diaProcesado: DiaProcesado = {
-      ...dia,
-      entrada: entrada ? this.formatoHora(this.normalizarFechaHora(entrada.fechaHora)) : '-',
-      salida: salida ? this.formatoHora(this.normalizarFechaHora(salida.fechaHora)) : '-'
+        ...dia,
+        entrada: entrada ? this.formatoHora(this.normalizarFechaHora(entrada.fechaHora)) : '-',
+        salida: salida ? this.formatoHora(this.normalizarFechaHora(salida.fechaHora)) : '-'
     };
 
-    if (entrada && salida) {
-      diaProcesado.estado = '✅ Asistencia Completa';
-      diaProcesado.observacion = asistencia.observacion || 'Entrada y salida registradas';
-    } else if (entrada) {
-      if (dia.fecha < hoy) {
+    // 🆕 Primero verificamos si es Media Jornada desde el calendario de sede
+    const esMediaJornada = eventoSede?.tipo === 'Media Jornada';
+
+    if (esMediaJornada) {
+        if (entrada && salida) {
+            diaProcesado.estado = '✅ Asistencia Completa';
+            diaProcesado.observacion = 'Media Jornada registrada';
+        } else if (entrada) {
+            diaProcesado.estado = '⚠️ Media Jornada';
+            diaProcesado.observacion = 'Falta registro de salida para Media Jornada';
+        } else {
+            diaProcesado.estado = '❌ Falta';
+            diaProcesado.observacion = 'Falta registro de entrada para Media Jornada';
+        }
+    }
+    // Lógica normal para otros casos
+    else if (entrada && salida) {
+        diaProcesado.estado = '✅ Asistencia Completa';
+        diaProcesado.observacion = asistencia.observacion || 'Entrada y salida registradas';
+    } else if (entrada && dia.fecha === hoyDateStr) {
+        diaProcesado.estado = '🕓 Entrada sin salida';
+        diaProcesado.observacion = 'En espera del registro de salida';
+    } else if (entrada && dia.fecha < hoyDateStr) {
         diaProcesado.estado = '🕒 Salida Automática';
         diaProcesado.observacion = entrada.salida_automatica
-          ? 'Salida automática registrada'
-          : 'Falta registro de salida';
-      } else {
-        diaProcesado.estado = '⏳ Pendiente';
-        diaProcesado.observacion = 'Esperando registro de salida';
-      }
+            ? 'Salida automática registrada'
+            : 'Falta registro de salida';
     } else if (salida) {
-      diaProcesado.estado = '⚠️ Incompleta';
-      diaProcesado.observacion = 'Falta registro de entrada';
+        diaProcesado.estado = '⚠️ Incompleta';
+        diaProcesado.observacion = 'Falta registro de entrada';
     } else {
-      diaProcesado.estado = '❌ Falta';
-      diaProcesado.observacion = 'Sin registros de asistencia';
+        diaProcesado.estado = '❌ Falta';
+        diaProcesado.observacion = 'Sin registros de asistencia';
+    }
+
+    // 💡 Si hay evento sede (incluyendo Media Jornada), lo mencionamos
+    if (eventoSede) {
+        diaProcesado.observacion += ` (${eventoSede.tipo}${eventoSede.descripcion ? ': ' + eventoSede.descripcion : ''})`;
     }
 
     return diaProcesado;
-  }
-
-  private procesarEventoSede(dia: any, evento: any): DiaProcesado {
-    const tipoNormalizado = this.normalizarTipoEvento(evento.tipo);
-    return {
-      ...dia,
-      estado: this.iconoEstado(tipoNormalizado),
-      observacion: evento.descripcion || evento.tipo
-    };
-  }
+}
 
   private normalizarTipoEvento(tipo: string): string {
     // Mapeo de tipos de sede a formatos consistentes
@@ -631,6 +748,51 @@ export class DetalleTrabajadorComponent implements OnInit {
     return tipos[tipo.toLowerCase()] || tipo;
   }
 
+  private definirTipoAsistencia(asistencia: Asistencia, fecha: string, hoy: string): string {
+    const entrada = asistencia.detalle?.find((d: RegistroAsistencia) => d.tipo === 'Entrada');
+    const salida = asistencia.detalle?.find((d: RegistroAsistencia) => d.tipo === 'Salida');
+
+    if (entrada && salida) return 'Asistencia Completa';
+    if (entrada && fecha === hoy) return 'Entrada sin salida';
+    if (entrada && fecha < hoy) return 'Salida Automática';
+    if (salida) return 'Incompleta';
+    return 'Falta';
+  }
+
+  obtenerPrioridadEstado(tipo: string): number {
+    const mapa: { [key: string]: number } = {
+      // 1. Manual (más alto)
+      'Falta': 100,
+      'Asistencia': 100,
+
+      // 2. Asistencia real
+      'Asistencia Completa': 90,
+      'Salida Automática': 85,
+      'Entrada sin salida': 80,
+
+      // 3. Justificaciones del trabajador
+      'Incapacidad': 70,
+      'Permiso': 70,
+      'Permiso con Goce': 70,
+      'Vacaciones': 70,
+      'Vacaciones Pagadas': 70,
+
+      // 4. Calendario sede
+      'Media Jornada': 60,
+      'Capacitación': 60,
+      'Evento': 60,
+      'Festivo': 50,
+      'Descanso': 50,
+      'Puente': 50,
+      'Suspensión': 50,
+
+      // Por defecto
+      'Falta Default': 10
+    };
+
+    return mapa[tipo] || 0;
+  }
+
   contarEstados(dias: any[]): string[] {
     const conteo: { [key: string]: number } = {};
 
@@ -639,7 +801,9 @@ export class DetalleTrabajadorComponent implements OnInit {
       conteo[estado] = (conteo[estado] || 0) + 1;
     });
 
-    return Object.entries(conteo).map(([estado, cantidad]) => `${estado}: ${cantidad} día(s)`);
+    return Object.entries(conteo).map(
+      ([estado, cantidad]) => `${estado}: ${cantidad} día(s)`
+    );
   }
 
   formatoHora(fechaHora: string): string {
@@ -651,8 +815,34 @@ export class DetalleTrabajadorComponent implements OnInit {
     }
   }
 
+  formatearHoraManual(horaStr: string): string {
+    if (!horaStr) return '-';
+    try {
+      return DateTime.fromFormat(horaStr, 'HH:mm')
+        .setZone('America/Mexico_City')
+        .toFormat('hh:mm a'); // 👉 12 horas con AM/PM
+    } catch {
+      return horaStr; // Por si acaso
+    }
+  }
+
+  descripcionPorTipo(tipo: string): string {
+    const descripciones: { [key: string]: string } = {
+      'Incapacidad': 'Día justificado por incapacidad médica',
+      'Permiso': 'Permiso autorizado',
+      'Permiso con Goce': 'Permiso con goce de sueldo',
+      'Vacaciones': 'Periodo vacacional autorizado',
+      'Vacaciones Pagadas': 'Vacaciones pagadas',
+      'Falta': 'Falta justificada manualmente',
+      'Asistencia': 'Asistencia marcada manualmente',
+      'Media Jornada': 'Jornada parcial autorizada'
+    };
+
+    return descripciones[tipo] || tipo;
+  }
+
   iconoEstado(tipo: string): string {
-    const mapaEstados: {[key: string]: string} = {
+    const mapaEstados: { [key: string]: string } = {
       // Calendario del Trabajador
       'Incapacidad': '🩺 Incapacidad',
       'Vacaciones Pagadas': '💰 Vacaciones Pagadas',
@@ -665,6 +855,7 @@ export class DetalleTrabajadorComponent implements OnInit {
       'Asistencia Completa': '✅ Asistencia Completa',
       'Salida Automática': '🕒 Salida Automática',
       'Pendiente': '⏳ Pendiente',
+      'Entrada sin salida': '🕓 Entrada sin salida',
 
       // Calendario de Sede
       'Festivo': '🎉 Festivo',

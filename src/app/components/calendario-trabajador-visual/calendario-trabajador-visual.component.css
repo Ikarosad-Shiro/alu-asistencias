@@ -40,65 +40,6 @@
   color: #333;
 }
 
-/* 📌 Formulario */
-.formulario-dia {
-  width: 100%;
-  max-width: 600px;
-  background: rgba(255, 255, 255, 0.85);
-  padding: 20px;
-  border-radius: 15px;
-  margin-bottom: 25px;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-}
-
-.formulario-dia label {
-  font-weight: bold;
-  color: #333;
-}
-
-.formulario-dia select,
-.formulario-dia input[type="date"],
-.formulario-horario input[type="time"] {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 0.95rem;
-}
-
-.formulario-dia input[type="checkbox"] {
-  margin-left: 5px;
-  transform: scale(1.2);
-}
-
-.formulario-dia button {
-  background-color: #1ab331;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 10px;
-  border: none;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-}
-
-.formulario-dia button:hover {
-  background-color: #28c745;
-  transform: scale(1.05);
-}
-
-/* 📌 Horario */
-.formulario-horario {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
-}
-
 /* 📌 Calendario visual */
 .calendario-grid {
   width: 100%;
@@ -134,77 +75,29 @@
 }
 
 /* 📌 Colores por tipo */
-.dia.vacaciones {
-  background-color: #4CAF50 !important;
-  color: white;
-  font-weight: bold;
-}
-
-.dia.vacaciones-pagadas {
-  background-color: #BA68C8 !important;
-  color: white;
-  font-weight: bold;
-}
-
-.dia.permiso {
-  background-color: #FFA000 !important;
-  color: white;
-  font-weight: bold;
-}
-
-.dia.permiso-goce {
-  background-color: #FF7043 !important;
-  color: white;
-  font-weight: bold;
-}
-
-.dia.incapacidad {
-  background-color: #1976D2 !important;
-  color: white;
-  font-weight: bold;
-}
-
-.dia.falta {
-  background-color: #D32F2F !important;
-  color: white;
-  font-weight: bold;
-}
-
-.dia.asistencia {
-  background-color: #00BCD4 !important; /* 💙 Azul cian real */
-  color: white;
-  font-weight: bold;
-}
+.dia.vacaciones { background-color: #4CAF50 !important; color: white; font-weight: bold; }
+.dia.vacaciones-pagadas { background-color: #BA68C8 !important; color: white; font-weight: bold; }
+.dia.permiso { background-color: #FFA000 !important; color: white; font-weight: bold; }
+.dia.permiso-goce { background-color: #FF7043 !important; color: white; font-weight: bold; }
+.dia.incapacidad { background-color: #1976D2 !important; color: white; font-weight: bold; }
+.dia.falta { background-color: #D32F2F !important; color: white; font-weight: bold; }
+.dia.asistencia { background-color: #00BCD4 !important; color: white; font-weight: bold; }
+.dia.asistencia-completa { background-color: #43A047 !important; color: white; font-weight: bold; }
+.dia.salida-automatica { background-color: #29B6F6 !important; color: white; font-weight: bold; }
+.dia.pendiente { background-color: #FBC02D !important; color: white; font-weight: bold; }
+.dia.descanso { background-color: #90A4AE !important; color: white; font-weight: bold; }
+.dia.festivo { background-color: #F06292 !important; color: white; font-weight: bold; }
+.dia.puente { background-color: #64B5F6 !important; color: white; font-weight: bold; }
+.dia.media-jornada { background-color: #FFD54F !important; color: #333; font-weight: bold; }
+.dia.capacitacion { background-color: #4DD0E1 !important; color: white; font-weight: bold; }
+.dia.evento { background-color: #A1887F !important; color: white; font-weight: bold; }
+.dia.suspension { background-color: #E53935 !important; color: white; font-weight: bold; }
 
 /* Días vacíos */
 .dia.vacio {
   background: transparent;
   box-shadow: none;
   cursor: default;
-}
-
-/* Responsive */
-@media (max-width: 600px) {
-  .calendario-grid {
-    gap: 6px;
-  }
-
-  .dia {
-    height: 40px;
-    font-size: 0.9rem;
-  }
-}
-
-/* Animación */
-@keyframes fadeInDia {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 /* Leyenda */
@@ -237,8 +130,23 @@
 .color-box.incapacidad { background-color: #1976D2; }
 .color-box.falta { background-color: #D32F2F; }
 .color-box.asistencia { background-color: #00BCD4; }
+.color-box.asistencia-completa { background-color: #43A047; }
+.color-box.salida-automatica { background-color: #29B6F6; }
+.color-box.pendiente { background-color: #FBC02D; }
+.color-box.descanso { background-color: #90A4AE; }
+.color-box.festivo { background-color: #F06292; }
+.color-box.puente { background-color: #64B5F6; }
+.color-box.media-jornada { background-color: #FFD54F; }
+.color-box.capacitacion { background-color: #4DD0E1; }
+.color-box.evento { background-color: #A1887F; }
+.color-box.suspension { background-color: #E53935; }
 
-/* Animación para días recién agregados */
+/* Animación */
+@keyframes fadeInDia {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 @keyframes burbuja {
   0% { transform: scale(1); background-color: #ffffff; }
   50% { transform: scale(1.2); background-color: #ffeb3b; }
@@ -247,4 +155,15 @@
 
 .nuevo-dia {
   animation: burbuja 0.8s ease;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .calendario-grid {
+    gap: 6px;
+  }
+  .dia {
+    height: 40px;
+    font-size: 0.9rem;
+  }
 }

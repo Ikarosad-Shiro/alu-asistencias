@@ -16,8 +16,12 @@
   <div class="main-content">
     <div class="content-container">
 
-      <!-- Botón de regresar -->
-      <button class="btn-regresar" (click)="regresar()">⬅ Regresar</button>
+      <!-- Botón de regresar y refrescar -->
+     <div class="fila-extremos">
+        <button class="btn-morado" (click)="regresar()">⬅ Regresar</button>
+        <button class="btn-morado" (click)="refrescarVista()">🔄 Actualizar Página</button>
+      </div>
+
 
       <!-- Título con nombre y sede -->
       <h2 class="titulo-nombre">👤 {{ trabajador.nombre }}</h2>
@@ -26,18 +30,7 @@
       <button mat-raised-button color="primary" (click)="abrirSelectorDeFechas()">
         🧾 Generar PDF
       </button>
-            <!-- 📅 Calendario del Trabajador -->
-            <div class="calendario-container">
-              <h3>📅 Calendario del Trabajador</h3>
-              <app-calendario-unificado
-                *ngIf="trabajador.asistencias"
-                [asistencias]="trabajador.asistencias"
-                [eventosSede]="eventosSede"
-                [eventosTrabajador]="eventosTrabajador">
-              </app-calendario-unificado>
-            </div>
           <p></p>
-    <!-- 🛠 Información del Trabajador -->
     <!-- 📌 Información del Trabajador en un panel colapsable -->
     <mat-accordion>
       <mat-expansion-panel [expanded]="false" class="panel-transparente">
@@ -120,6 +113,17 @@
       <!-- 🔒 Mensaje para Revisor -->
       <div class="mensaje-revisor" *ngIf="rolUsuario === 'Revisor'">
         🔒 Solo puedes visualizar los detalles del trabajador.
+      </div>
+
+     <!-- 📅 Calendario del Trabajador -->
+      <div class="calendario-container">
+        <h3>📅 Calendario del Trabajador</h3>
+         <app-calendario-unificado
+           *ngIf="trabajador.asistencias"
+           [asistencias]="trabajador.asistencias"
+           [eventosSede]="eventosSede"
+           [eventosTrabajador]="eventosTrabajador">
+        </app-calendario-unificado>
       </div>
     </div>
   </div>

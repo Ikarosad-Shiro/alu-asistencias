@@ -62,34 +62,34 @@ export class CalendarioUnificadoComponent implements OnInit, OnChanges {
     const fechaStr = fecha.toISOString().split('T')[0];
     const hoyStr = new Date().toISOString().split('T')[0];
 
-    // 🟡 1️⃣ Eventos del trabajador (tienen prioridad)
+    // 1️⃣ Eventos del trabajador
     const eventoTrabajador = this.eventosTrabajador.find(e => e.fecha === fechaStr);
     if (eventoTrabajador) return eventoTrabajador.tipo;
 
-    // 🔵 2️⃣ Eventos de la sede
+    // 2️⃣ Eventos de la sede
     const eventoSede = this.eventosSede.find(e => e.fecha === fechaStr);
     if (eventoSede) return eventoSede.tipo;
 
-    // 🔒 3️⃣ Si es futuro y no hay evento → mostrar en blanco
+    // 3️⃣ Futuro sin evento
     if (fechaStr > hoyStr) return '';
 
-    // 🕒 4️⃣ Asistencias
+    // 4️⃣ Revisión de asistencias
     const asistencia = this.asistencias.find(a => a.fecha === fechaStr);
     if (asistencia && asistencia.detalle?.length > 0) {
-      const tieneEntrada = asistencia.detalle.some((d: RegistroDetalle) => d.tipo === 'Entrada');
-      const tieneSalida = asistencia.detalle.some((d: RegistroDetalle) => d.tipo === 'Salida');
+      const tieneEntrada = asistencia.detalle.some(d => d.tipo === 'Entrada');
+      const tieneSalida = asistencia.detalle.some(d => d.tipo === 'Salida');
 
       if (tieneEntrada && tieneSalida) return 'Asistencia Completa';
-      if (tieneEntrada && fechaStr < hoyStr) return 'Salida Automática';
-      if (tieneEntrada && fechaStr === hoyStr) return 'Pendiente';
+      if (tieneEntrada && !tieneSalida && fechaStr === hoyStr) return 'Pendiente';
+      if (tieneEntrada && !tieneSalida && fechaStr < hoyStr) return 'Salida Automática';
+      if (!tieneEntrada && tieneSalida) return 'Incompleta';
     }
 
-    // ❌ 5️⃣ Si no hay nada y es día pasado → marcar como falta
     return 'Falta';
   }
 
   getClaseEstado(estado: string | null): string {
-    return estado ? estado.toLowerCase().replace(/ /g, '-') : '';
+    return estado ? estado.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '') : '';
   }
 
   getDescripcionEstado(estado: string | null): string {
