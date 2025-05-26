@@ -71,4 +71,10 @@ export class AsistenciaService {
 
       return this.http.get(`${this.apiUrl}/unificado/${trabajadorId}`, { params });
   }
+
+  obtenerUnificadoPorSede(sedeId: number, inicio: string, fin: string) {
+    const params = new URLSearchParams({ inicio, fin });
+    return this.http.get(`${this.apiUrl}/unificado-sede/${sedeId}?${params.toString()}`);
+  }
+
 }
