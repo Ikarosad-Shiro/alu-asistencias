@@ -141,6 +141,63 @@
 .color-box.evento { background-color: #A1887F; }
 .color-box.suspension { background-color: #E53935; }
 
+/* Formulario de Configuracion de calendario trabajdor */
+.formulario-dia {
+  background: rgba(255, 255, 255, 0.85);
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 600px;
+}
+
+.fila-superior {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.fecha-simple,
+.fecha-rango,
+.formulario-horario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+input[type="date"],
+input[type="time"],
+select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  width: 100%;
+  max-width: 200px;
+}
+
+.btn-agregar {
+  background-color: #6a1275;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-agregar:hover {
+  background-color: #8a1c9d;
+  transform: scale(1.05);
+}
+
+
 /* Animación */
 @keyframes fadeInDia {
   0% { opacity: 0; transform: scale(0.8); }

@@ -436,47 +436,44 @@ export class DetalleTrabajadorComponent implements OnInit {
                 { text: 'Estado', bold: true },
                 { text: 'Observación', bold: true }
               ],
-              ...dias.map(d => {
-                let fillColor = null;
+              ...dias.map(d => {let fillColor = null;
                 const obs = d.observacion?.toLowerCase() || '';
-                const estado = d.estado?.toLowerCase() || '';
+                const estado = (d.estado?.split(' ').slice(1).join(' ') || '').toLowerCase(); // 💡 quita emoji
 
-                if (obs.includes('media jornada')) {
-                  fillColor = '#fff3cd';
-                } else if (obs.includes('capacitación')) {
-                  fillColor = '#d1ecf1';
-                } else if (obs.includes('evento')) {
-                  fillColor = '#e2e3e5';
-                } else if (obs.includes('vacaciones pagadas')) {
-                  fillColor = '#c3e6cb';
-                } else if (obs.includes('vacaciones')) {
-                  fillColor = '#d4edda';
-                } else if (obs.includes('permiso con goce')) {
-                  fillColor = '#f8d7da';
-                } else if (obs.includes('permiso')) {
-                  fillColor = '#fde2e4';
-                } else if (obs.includes('incapacidad')) {
-                  fillColor = '#d6d8d9';
-                } else if (obs.includes('festivo')) {
-                  fillColor = '#fce5cd';
-                } else if (obs.includes('descanso')) {
-                  fillColor = '#e2f0cb';
-                } else if (obs.includes('puente')) {
-                  fillColor = '#f0e5ff';
-                } else if (obs.includes('suspensión')) {
-                  fillColor = '#f5c6cb';
-                } else if (obs.includes('asistencia marcada manualmente')) {
-                  fillColor = '#b2f2bb'; // 📝 Verde agua claro
-                } else if (estado.includes('asistencia completa')) {
-                  fillColor = '#d0f0fd';
-                } else if (estado.includes('entrada sin salida')) {
-                  fillColor = '#ffeeba';
-                } else if (estado.includes('salida automática')) {
-                  fillColor = '#d1ecf1';
-                } else if (estado.includes('incompleta')) {
-                  fillColor = '#f8d7da';
+                if (estado.includes('vacaciones pagadas')) {
+                  fillColor = '#E1BEE7'; // 💜 Lila claro
+                } else if (estado.includes('vacaciones')) {
+                  fillColor = '#C8E6C9'; // 🌿 Verde suave
+                } else if (estado.includes('permiso con goce')) {
+                  fillColor = '#FFCCBC'; // 🍑 Naranja claro
+                } else if (estado.includes('permiso')) {
+                  fillColor = '#FFE0B2'; // 🍊 Suave
+                } else if (estado.includes('incapacidad')) {
+                  fillColor = '#BBDEFB'; // 💙 Azul cielo
                 } else if (estado.includes('falta')) {
-                  fillColor = '#f5c6cb';
+                  fillColor = '#FFCDD2'; // 🔴 Rojo clarito
+                } else if (estado.includes('asistencia completa')) {
+                  fillColor = '#A5D6A7'; // ✅ Verde claro
+                } else if (estado.includes('asistencia')) {
+                  fillColor = '#B2EBF2'; // 🩵 Cian suave
+                } else if (estado.includes('salida automática')) {
+                  fillColor = '#B3E5FC'; // 💧 Azul pastel
+                } else if (estado.includes('pendiente')) {
+                  fillColor = '#FFF59D'; // 🟡 Amarillo claro
+                } else if (estado.includes('descanso')) {
+                  fillColor = '#CFD8DC'; // 💤 Gris azulado claro
+                } else if (estado.includes('festivo')) {
+                  fillColor = '#F8BBD0'; // 💖 Rosado claro
+                } else if (estado.includes('puente')) {
+                  fillColor = '#BBDEFB'; // 🌉 Azul cielo claro
+                } else if (estado.includes('media jornada')) {
+                  fillColor = '#FFE082'; // ☀️ Amarillo pastel
+                } else if (estado.includes('capacitación')) {
+                  fillColor = '#B2EBF2'; // 🧠 Cian claro
+                } else if (estado.includes('evento')) {
+                  fillColor = '#D7CCC8'; // ☕ Marrón pastel
+                } else if (estado.includes('suspensión')) {
+                  fillColor = '#FFCDD2'; // 🚫 Rojo claro
                 }
 
                 return [
@@ -557,6 +554,17 @@ export class DetalleTrabajadorComponent implements OnInit {
       const eventoTrabajador = this.buscarEvento(fecha, eventosTrabajador);
       const asistencia = this.buscarAsistencia(fecha, asistencias);
       const eventoSede = this.buscarEvento(fecha, eventosSede);
+
+      // 🔮 Si es futuro, dejar vacío sin estado ni observación
+      if (fecha > hoy) {
+        return {
+          ...dia,
+          entrada: '',
+          salida: '',
+          estado: '',
+          observacion: ''
+        };
+      }
 
       // 🆕 Caso especial: Media Jornada en calendario de sede
       if (eventoSede?.tipo === 'Media Jornada') {

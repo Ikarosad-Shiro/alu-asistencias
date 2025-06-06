@@ -89,7 +89,12 @@ export class CalendarioUnificadoComponent implements OnInit, OnChanges {
   }
 
   getClaseEstado(estado: string | null): string {
-    return estado ? estado.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '') : '';
+    if (!estado) return '';
+    return estado
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita tildes
+      .replace(/ /g, '-')      // reemplaza espacios por guiones
+      .replace(/[^\w-]/g, ''); // remueve caracteres no válidos
   }
 
   getDescripcionEstado(estado: string | null): string {

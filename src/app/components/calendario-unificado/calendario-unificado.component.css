@@ -61,21 +61,25 @@
 }
 
 /* 🎨 Colores por tipo de estado */
-.asistencia-completa { background-color: #b0f2b6; color: #1B5E20; font-weight: bold; }
-.asistencia           { background-color: #80DEEA; color: #006064; font-weight: bold; }
-.salida-automatica   { background-color: #d4e2ff; color: #0D47A1; font-weight: bold; }
-.pendiente           { background-color: #fff3cd; color: #F57F17; font-weight: bold; }
-.falta               { background-color: #f8d7da; color: #B71C1C; font-weight: bold; }
-.vacaciones          { background-color: #cce5ff; color: #0D47A1; font-weight: bold; }
-.permiso             { background-color: #e2d5f6; color: #4A148C; font-weight: bold; }
-.incapacidad         { background-color: #ffecd6; color: #BF360C; font-weight: bold; }
-.descanso            { background-color: #e6ffe6; color: #2E7D32; font-weight: bold; }
-.festivo             { background-color: #ffe6f0; color: #C2185B; font-weight: bold; }
-.puente              { background-color: #e0f7fa; color: #006064; font-weight: bold; }
-.media-jornada       { background-color: #ffe0b2; color: #E65100; font-weight: bold; }
-.capacitación        { background-color: #dcedc8; color: #558B2F; font-weight: bold; }
-.evento              { background-color: #f3e5f5; color: #6A1B9A; font-weight: bold; }
-.suspensión          { background-color: #ffcdd2; color: #C62828; font-weight: bold; }
+.asistencia-completa            { background-color: #b0f2b6; color: #1B5E20; font-weight: bold; }
+.asistencia                     { background-color: #80DEEA; color: #006064; font-weight: bold; }
+.salida-automatica              { background-color: #d4e2ff; color: #0D47A1; font-weight: bold; }
+.pendiente                      { background-color: #fff3cd; color: #F57F17; font-weight: bold; }
+.falta                          { background-color: #f8d7da; color: #B71C1C; font-weight: bold; }
+.vacaciones                     { background-color: #cce5ff; color: #0D47A1; font-weight: bold; }
+.permiso                        { background-color: #e2d5f6; color: #4A148C; font-weight: bold; }
+.incapacidad                    { background-color: #ffecd6; color: #BF360C; font-weight: bold; }
+.descanso                       { background-color: #e6ffe6; color: #2E7D32; font-weight: bold; }
+.festivo                        { background-color: #ffe6f0; color: #C2185B; font-weight: bold; }
+.puente                         { background-color: #e0f7fa; color: #006064; font-weight: bold; }
+.media-jornada                  { background-color: #ffe0b2; color: #E65100; font-weight: bold; }
+.capacitación                   { background-color: #dcedc8; color: #558B2F; font-weight: bold; }
+.evento                         { background-color: #f3e5f5; color: #6A1B9A; font-weight: bold; }
+.suspensión                     { background-color: #ffcdd2; color: #C62828; font-weight: bold; }
+.dia.permiso-con-goce-de-sueldo { background-color: #fac5b5; color: #FF7043; font-weight: bold; }
+.dia.capacitacion               { background-color: #a5d8df; color: #03383f; font-weight: bold; }
+.dia.suspension                 { background-color: #f1605d; color: #990604; font-weight: bold; }
+.dia.vacaciones-pagadas         { background-color: #e195ee; color: #5b036b; font-weight: bold; }
 
 /* Leyenda */
 .leyenda {
@@ -98,21 +102,25 @@
 }
 
 /* Leyenda colores */
-.color.asistencia-completa { background-color: #b0f2b6; }
-.color.asistencia           { background-color: #80DEEA; }
-.color.salida-automatica   { background-color: #d4e2ff; }
-.color.pendiente           { background-color: #fff3cd; }
-.color.falta               { background-color: #f8d7da; }
-.color.vacaciones          { background-color: #cce5ff; }
-.color.permiso             { background-color: #e2d5f6; }
-.color.incapacidad         { background-color: #ffecd6; }
-.color.descanso            { background-color: #e6ffe6; }
-.color.festivo             { background-color: #ffe6f0; }
-.color.puente              { background-color: #e0f7fa; }
-.color.media-jornada       { background-color: #ffe0b2; }
-.color.capacitación        { background-color: #dcedc8; }
-.color.evento              { background-color: #f3e5f5; }
-.color.suspensión          { background-color: #ffcdd2; }
+.color.asistencia-completa        { background-color: #b0f2b6; }
+.color.asistencia                 { background-color: #80DEEA; }
+.color.salida-automatica          { background-color: #d4e2ff; }
+.color.pendiente                  { background-color: #fff3cd; }
+.color.falta                      { background-color: #f8d7da; }
+.color.vacaciones                 { background-color: #cce5ff; }
+.color.permiso                    { background-color: #e2d5f6; }
+.color.incapacidad                { background-color: #ffecd6; }
+.color.descanso                   { background-color: #e6ffe6; }
+.color.festivo                    { background-color: #ffe6f0; }
+.color.puente                     { background-color: #e0f7fa; }
+.color.media-jornada              { background-color: #ffe0b2; }
+.color.capacitación               { background-color: #a5d8df; }
+.color.evento                     { background-color: #f3e5f5; }
+.color.suspensión                 { background-color: #ffcdd2; }
+.color.permiso-goce               { background-color: #fac5b5; }
+.color.capacitacion               { background-color: #71deec; }
+.color.suspension                 { background-color: #f1605d; }
+.color.vacaciones-pagadas         { background-color: #e195ee; }
 
 .icono {
   font-size: 1.2rem;

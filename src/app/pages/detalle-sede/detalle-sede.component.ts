@@ -349,15 +349,7 @@ export class DetalleSedeComponent implements OnInit {
         body: any[][];
         dontBreakRows: boolean;
       };
-      layout: {
-        hLineWidth: (i: number, node: any) => number;
-        vLineWidth: (i: number, node: any) => number;
-        hLineColor: (i: number, node: any) => string;
-        paddingTop: (i: number, node: any) => number;
-        paddingBottom: (i: number, node: any) => number;
-        paddingLeft: (i: number, node: any) => number;
-        paddingRight: (i: number, node: any) => number;
-      };
+      layout: PdfTableLayout; // 👈 Aquí ya tomará en cuenta fillColor
       margin: number[];
       pageBreak?: 'before' | 'after' | 'both';
     }
@@ -453,23 +445,23 @@ export class DetalleSedeComponent implements OnInit {
           // Función optimizada para determinar el color basado en estado y horas
           const obtenerColorPorEstado = (estado: string = '', entrada: string = '', salida: string = ''): string => {
             const coloresPorEstado: { [key: string]: string } = {
-              'Asistencia Completa': '#a3e635',
-              'Asistencia Manual': '#4ade80', // ✅ Asegúrate de incluir este
-              'Salida Automática': '#34d399',
-              'Pendiente': '#facc15',
-              'Falta': '#f87171',
-              'Vacaciones': '#60a5fa',
-              'Vacaciones Pagadas': '#3b82f6',
-              'Permiso': '#fbbf24',
-              'Permiso con Goce': '#fb923c',
-              'Incapacidad': '#f472b6',
-              'Descanso': '#c084fc',
-              'Festivo': '#a78bfa',
-              'Puente': '#94a3b8',
-              'Evento': '#67e8f9',
-              'Capacitación': '#5eead4',
-              'Media Jornada': '#fde047',
-              'Suspensión': '#fb7185'
+              'Asistencia Completa': '#d9f99d',     // Verde limón claro
+              'Asistencia Manual': '#bbf7d0',       // Verde menta pastel
+              'Salida Automática': '#99f6e4',       // Agua clara
+              'Pendiente': '#fef9c3',               // Amarillo suave
+              'Falta': '#fecaca',                   // Rojo rosado
+              'Vacaciones': '#bae6fd',              // Azul celeste claro
+              'Vacaciones Pagadas': '#ddd6fe',      // Lila suave
+              'Permiso': '#fde68a',                 // Naranja pastel
+              'Permiso con Goce': '#fef3c7',        // Amarillo pálido
+              'Incapacidad': '#fbcfe8',             // Rosa claro
+              'Descanso': '#e2e8f0',                // Gris azulado claro
+              'Festivo': '#fae8ff',                 // Rosita lavanda
+              'Puente': '#f5f5f4',                  // Gris neutro clarito
+              'Evento': '#ccfbf1',                  // Verde-agua claro
+              'Capacitación': '#ecfccb',            // Verde pastito claro
+              'Media Jornada': '#fef08a',           // Amarillo semipastel
+              'Suspensión': '#fca5a5'               // Rojo pastel
             };
 
             // 1. Prioridad a estados explícitos
@@ -503,7 +495,7 @@ export class DetalleSedeComponent implements OnInit {
           const crearTabla = (subFechas: string[], trabajadores: any[]): PdfTableNode => {
             const body: any[][] = [];
 
-            // Encabezado 1 con fechas duplicadas (Entrada / Salida)
+            // 🧩 Encabezado 1 con fechas duplicadas (Entrada / Salida)
             const header1 = ['Nombre del trabajador', ...subFechas.flatMap(f => [f, ''])];
             body.push(
               header1.map(text => ({
@@ -514,7 +506,7 @@ export class DetalleSedeComponent implements OnInit {
               }))
             );
 
-            // Encabezado 2 fijo: Entrada / Salida por cada fecha
+            // 📆 Encabezado 2 fijo: Entrada / Salida por cada fecha
             const header2 = [''].concat(subFechas.flatMap(() => ['Entrada', 'Salida']));
             body.push(
               header2.map(text => ({
@@ -525,6 +517,14 @@ export class DetalleSedeComponent implements OnInit {
               }))
             );
 
+            const hoy = DateTime.now().toFormat('yyyy-MM-dd');
+
+            const formatearHora = (hora: string): string => {
+              if (!hora) return '';
+              if (hora.includes(':')) return hora;
+              return `${hora.slice(0, 2)}:${hora.slice(2)}`;
+            };
+
             trabajadores.forEach((t: any) => {
               const nombre = [t.nombre, t.apellido].filter(Boolean).join(' ');
               const fila: any[] = [{
@@ -532,8 +532,6 @@ export class DetalleSedeComponent implements OnInit {
                 style: 'nombreTrabajador',
                 fillColor: ''
               }];
-
-              const hoy = DateTime.now().toFormat('yyyy-MM-dd');
 
               subFechas.forEach((fecha: string) => {
                 const datos = t.datosPorDia[fecha] || {};
@@ -546,7 +544,11 @@ export class DetalleSedeComponent implements OnInit {
                 const estadoVacio = !estado || estado === '—';
 
                 // 💥 Asistencia manual desde calendario del trabajador
-                const esAsistenciaManual = estado?.trim().toLowerCase() === 'asistencia' && datos?.horaEntrada && datos?.horaSalida;
+                const esAsistenciaManual = (
+                  (datos?.tipo?.trim()?.toLowerCase() === 'asistencia') &&
+                  datos?.horaEntrada &&
+                  datos?.horaSalida
+                );
 
                 if (fecha > hoy) {
                   entrada = '';
@@ -554,8 +556,8 @@ export class DetalleSedeComponent implements OnInit {
                   estado = '';
                 } else if (esAsistenciaManual) {
                   estado = 'Asistencia Manual';
-                  entrada = datos.horaEntrada;
-                  salida = datos.horaSalida;
+                  entrada = formatearHora(datos.horaEntrada);
+                  salida = formatearHora(datos.horaSalida);
                 } else {
                   const sinDatos = entradaVacia && salidaVacia && estadoVacio;
                   if (sinDatos) {
@@ -571,7 +573,7 @@ export class DetalleSedeComponent implements OnInit {
                   text: entrada,
                   style: 'celdaTexto',
                   fillColor: color || undefined,
-                  estadoReal: estado // ✅ se guarda para colorear correctamente
+                  estadoReal: estado
                 });
                 fila.push({
                   text: salida,
@@ -610,7 +612,7 @@ export class DetalleSedeComponent implements OnInit {
                 paddingBottom: () => 4,
                 paddingLeft: () => 4,
                 paddingRight: () => 4
-              } as any,
+              },
               margin: [0, 0, 0, 10]
             };
           };
@@ -727,23 +729,23 @@ export class DetalleSedeComponent implements OnInit {
 
     const obtenerColorPorEstado = (estado: string = ''): string => {
       const coloresPorEstado: { [key: string]: string } = {
-        'Asistencia Completa': '#a3e635',
-        'Asistencia Manual': '#4ade80',
-        'Salida Automática': '#34d399',
-        'Pendiente': '#facc15',
-        'Falta': '#f87171',
-        'Vacaciones': '#60a5fa',
-        'Vacaciones Pagadas': '#3b82f6',
-        'Permiso': '#fbbf24',
-        'Permiso con Goce': '#fb923c',
-        'Incapacidad': '#f472b6',
-        'Descanso': '#c084fc',
-        'Festivo': '#a78bfa',
-        'Puente': '#94a3b8',
-        'Evento': '#67e8f9',
-        'Capacitación': '#5eead4',
-        'Media Jornada': '#fde047',
-        'Suspensión': '#fb7185'
+        'Asistencia Completa': '#C8E6C9', // Verde pastel
+        'Asistencia Manual': '#A5D6A7',   // Verde más suave
+        'Salida Automática': '#B2EBF2',   // Azul muy claro
+        'Pendiente': '#FFF9C4',           // Amarillo claro
+        'Falta': '#FFCDD2',               // Rojo suave
+        'Vacaciones': '#B3E5FC',          // Azul cielo
+        'Vacaciones Pagadas': '#D1C4E9',  // Lila clarito
+        'Permiso': '#FFE0B2',             // Naranja claro
+        'Permiso con Goce': '#FFECB3',    // Amarillo más pastel
+        'Incapacidad': '#F8BBD0',         // Rosa bebé
+        'Descanso': '#CFD8DC',            // Gris azulado claro
+        'Festivo': '#FCE4EC',             // Rosado muy claro
+        'Puente': '#D7CCC8',              // Gris café claro
+        'Evento': '#E0F2F1',              // Verde agua pastel
+        'Capacitación': '#F1F8E9',        // Verde limón muy tenue
+        'Media Jornada': '#FFF9C4',       // Amarillo suave
+        'Suspensión': '#FFCDD2'           // Rojo pastel
       };
 
       const estadoNormalizado = estado
