@@ -533,10 +533,27 @@ export class DetalleSedeComponent implements OnInit {
                 fillColor: ''
               }];
 
+              const convertirHoraMexico = (fechaHoraStr: string): string => {
+                try {
+                  const horaLuxon = DateTime.fromISO(fechaHoraStr, { zone: 'utc' }).setZone('America/Mexico_City');
+                  return horaLuxon.toFormat('HH:mm'); // o 'hh:mm a' si quieres formato AM/PM
+                } catch {
+                  return '—';
+                }
+              };
+
               subFechas.forEach((fecha: string) => {
                 const datos = t.datosPorDia[fecha] || {};
                 let entrada = datos?.entrada || '—';
                 let salida = datos?.salida || '—';
+
+                if (entrada && entrada !== '—' && entrada.includes('T')) {
+                  entrada = convertirHoraMexico(entrada);
+                }
+                if (salida && salida !== '—' && salida.includes('T')) {
+                  salida = convertirHoraMexico(salida);
+                }
+
                 let estado = datos?.estado || '';
 
                 const entradaVacia = !entrada || entrada === '—';
@@ -890,4 +907,5 @@ export class DetalleSedeComponent implements OnInit {
 
     pdfMake.createPdf(docDefinition).open();
   }
+
 }
