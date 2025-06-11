@@ -981,115 +981,77 @@ export class DetalleTrabajadorComponent implements OnInit {
     return `📌 ${tipo}`;
   }
 
-/*
-  exportarExcel(nombrePersonalizado?: string): void {
-    const nombreArchivo = nombrePersonalizado || `Reporte_Asistencias_${this.trabajador.nombre}.xlsx`;
+  exportarExcelConEstilo(nombreArchivo: string = 'Reporte_Asistencias.xlsx'): void {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Asistencias');
 
-    // 🟢 Filas de encabezado descriptivo
-    const encabezado = [
-      [`Nombre del Trabajador:`, `${this.trabajador.nombre} ${this.trabajador.apellido}`],
-      [`Sede:`, this.obtenerNombreSede(this.trabajador.sede)],
-      [`Periodo:`, `${this.diasProcesados[0]?.fecha || '—'} al ${this.diasProcesados[this.diasProcesados.length - 1]?.fecha || '—'}`],
-      [], // ← Línea vacía para separación
-      ['Día', 'Fecha', 'Entrada', 'Salida', 'Estado', 'Observación']
-    ];
+    // 🧾 Encabezado con datos del trabajador
+    worksheet.addRow([`👤 Nombre:`, `${this.trabajador.nombre || ''} ${this.trabajador.apellido || ''}`]);
+    worksheet.addRow([`🏢 Sede:`, this.obtenerNombreSede(this.trabajador.sede)]);
+    worksheet.addRow([`📅 Periodo:`, `${this.formatearFecha(this.fechaInicio)} a ${this.formatearFecha(this.fechaFin)}`]);
+    worksheet.addRow([]); // Separación
 
-    // 🔄 Convertir datos procesados a filas tipo array
-    const cuerpo = this.diasProcesados.map(dia => [
-      dia.diaSemana,
-      dia.fecha,
-      dia.entrada || '—',
-      dia.salida || '—',
-      dia.estado || '—',
-      dia.observacion || ''
-    ]);
+    // 📌 Cabecera de tabla
+    const header = ['Día', 'Fecha', 'Entrada', 'Salida', 'Estado', 'Observación'];
+    const headerRow = worksheet.addRow(header);
 
-    // 📦 Unir encabezado con cuerpo
-    const hojaCompleta = [...encabezado, ...cuerpo];
-
-    // 🧾 Crear hoja de cálculo
-    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(hojaCompleta);
-    const wb: XLSX.WorkBook = { Sheets: { 'Asistencias': ws }, SheetNames: ['Asistencias'] };
-
-    // 📥 Exportar
-    const excelBuffer: any = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob: Blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    FileSaver.saveAs(blob, nombreArchivo);
-  }
-*/
-
-exportarExcelConEstilo(nombreArchivo: string = 'Reporte_Asistencias.xlsx'): void {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Asistencias');
-
-  // 🧾 Encabezado con datos del trabajador
-  worksheet.addRow([`👤 Nombre:`, `${this.trabajador.nombre || ''} ${this.trabajador.apellido || ''}`]);
-  worksheet.addRow([`🏢 Sede:`, this.obtenerNombreSede(this.trabajador.sede)]);
-  worksheet.addRow([`📅 Periodo:`, `${this.formatearFecha(this.fechaInicio)} a ${this.formatearFecha(this.fechaFin)}`]);
-  worksheet.addRow([]); // Separación
-
-  // 📌 Cabecera de tabla
-  const header = ['Día', 'Fecha', 'Entrada', 'Salida', 'Estado', 'Observación'];
-  const headerRow = worksheet.addRow(header);
-
-  headerRow.eachCell((cell: ExcelJS.Cell) => {
-    cell.font = { bold: true };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE0E0E0' }
-    };
-    cell.border = {
-      top: { style: 'thin' },
-      bottom: { style: 'thin' },
-      left: { style: 'thin' },
-      right: { style: 'thin' }
-    };
-  });
-
-  // 📅 Agregar filas de días
-  for (const dia of this.diasProcesados) {
-    const fila = worksheet.addRow([
-      dia.diaSemana,
-      dia.fecha,
-      dia.entrada || '—',
-      dia.salida || '—',
-      dia.estado || '—',
-      dia.observacion || ''
-    ]);
-
-    // 🎨 Colorear filas según estado
-    let color = 'FFFFFFFF'; // blanco
-    const estado = (dia.estado || '').toLowerCase();
-
-    if (estado.includes('asistencia completa')) color = 'FFA5D6A7';
-    else if (estado.includes('asistencia')) color = 'FFB2EBF2';
-    else if (estado.includes('falta')) color = 'FFFFCDD2';
-    else if (estado.includes('pendiente')) color = 'FFFFF59D';
-    else if (estado.includes('vacaciones')) color = 'FFC8E6C9';
-    else if (estado.includes('permiso')) color = 'FFFFECB3';
-    else if (estado.includes('incapacidad')) color = 'FFBBDEFB';
-
-    fila.eachCell((cell: ExcelJS.Cell) => {
+    headerRow.eachCell((cell: ExcelJS.Cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: color }
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' }
       };
     });
+
+    // 📅 Agregar filas de días
+    for (const dia of this.diasProcesados) {
+      const fila = worksheet.addRow([
+        dia.diaSemana,
+        dia.fecha,
+        dia.entrada || '—',
+        dia.salida || '—',
+        dia.estado || '—',
+        dia.observacion || ''
+      ]);
+
+      // 🎨 Colorear filas según estado
+      let color = 'FFFFFFFF'; // blanco
+      const estado = (dia.estado || '').toLowerCase();
+
+      if (estado.includes('asistencia completa')) color = 'FFA5D6A7';
+      else if (estado.includes('asistencia')) color = 'FFB2EBF2';
+      else if (estado.includes('falta')) color = 'FFFFCDD2';
+      else if (estado.includes('pendiente')) color = 'FFFFF59D';
+      else if (estado.includes('vacaciones')) color = 'FFC8E6C9';
+      else if (estado.includes('permiso')) color = 'FFFFECB3';
+      else if (estado.includes('incapacidad')) color = 'FFBBDEFB';
+
+      fila.eachCell((cell: ExcelJS.Cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: color }
+        };
+      });
+    }
+
+    // 📐 Ajustar ancho
+    worksheet.columns.forEach((col: Partial<ExcelJS.Column>) => {
+      if (col) col.width = 25;
+    });
+
+    // 💾 Guardar archivo
+    workbook.xlsx.writeBuffer().then((buffer: any) => {
+      const blob = new Blob([buffer], { type: 'application/octet-stream' });
+      FileSaver.saveAs(blob, nombreArchivo);
+    });
   }
-
-  // 📐 Ajustar ancho
-  worksheet.columns.forEach((col: Partial<ExcelJS.Column>) => {
-    if (col) col.width = 25;
-  });
-
-  // 💾 Guardar archivo
-  workbook.xlsx.writeBuffer().then((buffer: any) => {
-    const blob = new Blob([buffer], { type: 'application/octet-stream' });
-    FileSaver.saveAs(blob, nombreArchivo);
-  });
-}
-
 }
