@@ -19,6 +19,10 @@ import Swal from 'sweetalert2';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 
+import * as XLSX from 'xlsx';
+import * as FileSaver from 'file-saver';
+import * as ExcelJS from 'exceljs';
+
 // ✅ Forma correcta de asignar las fuentes
 (pdfMake as any).vfs = pdfFonts.vfs;
 
@@ -55,12 +59,16 @@ interface DiaProcesado {
   templateUrl: './detalle-trabajador.component.html',
   styleUrls: ['./detalle-trabajador.component.css']
 })
+
 export class DetalleTrabajadorComponent implements OnInit {
   trabajador: any = {};
   trabajadorOriginal: any;
   modoEdicion: boolean = false;
   rolUsuario: string = '';
   sedes: any[] = [];
+  diasProcesados: DiaProcesado[] = [];
+  fechaInicio!: Date;
+  fechaFin!: Date;
 
   // 📌 Calendario unificado
   eventosSede: EventoEspecial[] = [];
@@ -314,6 +322,85 @@ export class DetalleTrabajadorComponent implements OnInit {
     });
   }
 
+  abrirSelectorDeFechasExcel() {
+    Swal.fire({
+      title: '📊 Selecciona el rango de fechas',
+      html: `
+        <input type="date" id="fechaInicio" class="swal2-input">
+        <input type="date" id="fechaFin" class="swal2-input">
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Generar Excel',
+      didOpen: () => {
+        const inputInicio = document.getElementById('fechaInicio') as HTMLInputElement;
+        const inputFin = document.getElementById('fechaFin') as HTMLInputElement;
+        if (inputInicio && inputFin) {
+          inputInicio.value = '';
+          inputFin.value = '';
+        }
+      },
+      preConfirm: () => {
+        const popup = Swal.getPopup();
+        const inicio = (popup?.querySelector('#fechaInicio') as HTMLInputElement)?.value;
+        const fin = (popup?.querySelector('#fechaFin') as HTMLInputElement)?.value;
+
+        if (!inicio || !fin) {
+          Swal.showValidationMessage('⚠️ Ambas fechas son necesarias');
+          return;
+        }
+
+        return { inicio, fin };
+      }
+    }).then(async (result) => {
+      if (result.isConfirmed && result.value) {
+        const { inicio, fin } = result.value;
+        const fechaInicio = new Date(`${inicio}T00:00:00`);
+        const fechaFin = new Date(`${fin}T00:00:00`);
+
+        // 💾 Guardar fechas para el encabezado del Excel
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+
+        try {
+          const datos = await lastValueFrom(
+            this.asistenciaService.obtenerDatosUnificados(this.trabajador._id, fechaInicio, fechaFin).pipe(
+              map(({ asistencias, eventosTrabajador, eventosSede }) => {
+                const asistenciasValidas = asistencias.filter((a: Asistencia) =>
+                  (a?.detalle?.length ?? 0) > 0 || a?.estado !== undefined
+                );
+                const dias = this.generarDias(fechaInicio, fechaFin);
+                const procesados = this.procesarDias(
+                  dias,
+                  asistenciasValidas,
+                  eventosTrabajador || [],
+                  eventosSede || []
+                );
+
+                this.diasProcesados = procesados;
+                return procesados;
+              }),
+              catchError((error: unknown) => {
+                console.error('❌ Error al procesar datos para Excel:', error);
+                throw error;
+              })
+            )
+          );
+
+          const nombreLimpio = `${this.trabajador.nombre || ''}_${this.trabajador.apellido || ''}`.replace(/\s+/g, '_');
+          const nombreArchivo = `Reporte_Asistencias_${nombreLimpio}_${inicio}_a_${fin}.xlsx`;
+
+          this.exportarExcelConEstilo(nombreArchivo);
+          await Swal.fire('✅ ¡Listo!', 'Se generó el archivo Excel correctamente', 'success');
+
+        } catch (error: any) {
+          console.error('🔥 Error generando Excel:', error);
+          await Swal.fire('❌ Error', 'No se pudo generar el Excel', 'error');
+        }
+      }
+    });
+  }
+
   // Modifica los métodos que procesan fechas para asegurar que siempre sean strings
   private normalizarFecha(fecha: any): string {
     if (!fecha) return '';
@@ -354,6 +441,8 @@ export class DetalleTrabajadorComponent implements OnInit {
               eventosTrabajador || [],
               eventosSede || []
             );
+
+            this.diasProcesados = datosProcesados;
 
             if (!datosProcesados || !Array.isArray(datosProcesados)) {
               throw new Error('No se pudieron procesar los datos para el reporte');
@@ -398,9 +487,10 @@ export class DetalleTrabajadorComponent implements OnInit {
     }
   }
 
-  formatearFecha(fecha: Date): string {
-    const fechaLocal = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()); // precisión local
-    return fechaLocal.toLocaleDateString('es-MX', {
+  formatearFecha(fecha: Date | undefined): string {
+    if (!fecha || isNaN(fecha.getTime())) return '—';
+
+    return fecha.toLocaleDateString('es-MX', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -890,4 +980,116 @@ export class DetalleTrabajadorComponent implements OnInit {
 
     return `📌 ${tipo}`;
   }
+
+/*
+  exportarExcel(nombrePersonalizado?: string): void {
+    const nombreArchivo = nombrePersonalizado || `Reporte_Asistencias_${this.trabajador.nombre}.xlsx`;
+
+    // 🟢 Filas de encabezado descriptivo
+    const encabezado = [
+      [`Nombre del Trabajador:`, `${this.trabajador.nombre} ${this.trabajador.apellido}`],
+      [`Sede:`, this.obtenerNombreSede(this.trabajador.sede)],
+      [`Periodo:`, `${this.diasProcesados[0]?.fecha || '—'} al ${this.diasProcesados[this.diasProcesados.length - 1]?.fecha || '—'}`],
+      [], // ← Línea vacía para separación
+      ['Día', 'Fecha', 'Entrada', 'Salida', 'Estado', 'Observación']
+    ];
+
+    // 🔄 Convertir datos procesados a filas tipo array
+    const cuerpo = this.diasProcesados.map(dia => [
+      dia.diaSemana,
+      dia.fecha,
+      dia.entrada || '—',
+      dia.salida || '—',
+      dia.estado || '—',
+      dia.observacion || ''
+    ]);
+
+    // 📦 Unir encabezado con cuerpo
+    const hojaCompleta = [...encabezado, ...cuerpo];
+
+    // 🧾 Crear hoja de cálculo
+    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(hojaCompleta);
+    const wb: XLSX.WorkBook = { Sheets: { 'Asistencias': ws }, SheetNames: ['Asistencias'] };
+
+    // 📥 Exportar
+    const excelBuffer: any = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob: Blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    FileSaver.saveAs(blob, nombreArchivo);
+  }
+*/
+
+exportarExcelConEstilo(nombreArchivo: string = 'Reporte_Asistencias.xlsx'): void {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Asistencias');
+
+  // 🧾 Encabezado con datos del trabajador
+  worksheet.addRow([`👤 Nombre:`, `${this.trabajador.nombre || ''} ${this.trabajador.apellido || ''}`]);
+  worksheet.addRow([`🏢 Sede:`, this.obtenerNombreSede(this.trabajador.sede)]);
+  worksheet.addRow([`📅 Periodo:`, `${this.formatearFecha(this.fechaInicio)} a ${this.formatearFecha(this.fechaFin)}`]);
+  worksheet.addRow([]); // Separación
+
+  // 📌 Cabecera de tabla
+  const header = ['Día', 'Fecha', 'Entrada', 'Salida', 'Estado', 'Observación'];
+  const headerRow = worksheet.addRow(header);
+
+  headerRow.eachCell((cell: ExcelJS.Cell) => {
+    cell.font = { bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+    cell.border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+
+  // 📅 Agregar filas de días
+  for (const dia of this.diasProcesados) {
+    const fila = worksheet.addRow([
+      dia.diaSemana,
+      dia.fecha,
+      dia.entrada || '—',
+      dia.salida || '—',
+      dia.estado || '—',
+      dia.observacion || ''
+    ]);
+
+    // 🎨 Colorear filas según estado
+    let color = 'FFFFFFFF'; // blanco
+    const estado = (dia.estado || '').toLowerCase();
+
+    if (estado.includes('asistencia completa')) color = 'FFA5D6A7';
+    else if (estado.includes('asistencia')) color = 'FFB2EBF2';
+    else if (estado.includes('falta')) color = 'FFFFCDD2';
+    else if (estado.includes('pendiente')) color = 'FFFFF59D';
+    else if (estado.includes('vacaciones')) color = 'FFC8E6C9';
+    else if (estado.includes('permiso')) color = 'FFFFECB3';
+    else if (estado.includes('incapacidad')) color = 'FFBBDEFB';
+
+    fila.eachCell((cell: ExcelJS.Cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: color }
+      };
+    });
+  }
+
+  // 📐 Ajustar ancho
+  worksheet.columns.forEach((col: Partial<ExcelJS.Column>) => {
+    if (col) col.width = 25;
+  });
+
+  // 💾 Guardar archivo
+  workbook.xlsx.writeBuffer().then((buffer: any) => {
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+    FileSaver.saveAs(blob, nombreArchivo);
+  });
+}
+
 }

@@ -27,9 +27,16 @@
       <h2 class="titulo-nombre">👤 {{ trabajador.nombre }}</h2>
       <p class="subtitulo-sede">🏢 {{ obtenerNombreSede(trabajador.sede) }}</p>
 
-      <button mat-raised-button color="primary" (click)="abrirSelectorDeFechas()">
-        🧾 Generar PDF
-      </button>
+      <div class="botones-descarga">
+        <button mat-raised-button color="warn" class="btn-descarga" (click)="abrirSelectorDeFechas()">
+          📄 Generar PDF
+        </button>
+
+        <button mat-raised-button color="primary" class="btn-descarga btn-excel" (click)="abrirSelectorDeFechasExcel()">
+          📊 Generar Excel
+        </button>
+      </div>
+
           <p></p>
     <!-- 📌 Información del Trabajador en un panel colapsable -->
     <mat-accordion>
