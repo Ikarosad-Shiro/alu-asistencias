@@ -11,6 +11,11 @@ import { HttpClient } from '@angular/common/http';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 
+import * as FileSaver from 'file-saver';
+import * as ExcelJS from 'exceljs';
+import { lastValueFrom } from 'rxjs';
+import type { BorderStyle } from 'exceljs';
+
 import { DateTime } from 'luxon';
 import { AsistenciaService } from 'src/app/services/asistencia.service'; // Asegúrate de tenerlo
 
@@ -56,6 +61,15 @@ export class DetalleSedeComponent implements OnInit {
   codigoVerificacion: string = '';
   trabajadoresProcesados: any[] = [];
   fechasRango: string[] = [];
+  fechaInicio!: Date;
+  fechaFin!: Date;
+
+  bordeCelda: Partial<ExcelJS.Borders> = {
+    top: { style: 'thin' as BorderStyle, color: { argb: 'FFDEE2E6' } },
+    left: { style: 'thin' as BorderStyle, color: { argb: 'FFDEE2E6' } },
+    bottom: { style: 'thin' as BorderStyle, color: { argb: 'FFDEE2E6' } },
+    right: { style: 'thin' as BorderStyle, color: { argb: 'FFDEE2E6' } }
+  };
 
   constructor(
     private route: ActivatedRoute,
@@ -908,4 +922,239 @@ export class DetalleSedeComponent implements OnInit {
     pdfMake.createPdf(docDefinition).open();
   }
 
+  abrirSelectorDeFechasExcel(): void {
+    Swal.fire({
+      title: '📅 Selecciona el rango de fechas',
+      html: `
+        <input type="date" id="fechaInicio" class="swal2-input">
+        <input type="date" id="fechaFin" class="swal2-input">
+      `,
+      confirmButtonText: 'Generar Excel',
+      showCancelButton: true,
+      focusConfirm: false,
+      didOpen: () => {
+        const inputInicio = document.getElementById('fechaInicio') as HTMLInputElement;
+        const inputFin = document.getElementById('fechaFin') as HTMLInputElement;
+        const hoy = new Date().toISOString().split('T')[0];
+        if (inputInicio && inputFin) {
+          inputInicio.value = hoy;
+          inputFin.value = hoy;
+        }
+      },
+      preConfirm: () => {
+        const popup = Swal.getPopup();
+        const inicio = (popup?.querySelector('#fechaInicio') as HTMLInputElement)?.value;
+        const fin = (popup?.querySelector('#fechaFin') as HTMLInputElement)?.value;
+
+        if (!inicio || !fin) {
+          Swal.showValidationMessage('⚠️ Ambas fechas son necesarias');
+          return;
+        }
+
+        return { inicio, fin };
+      }
+    }).then(async (result) => {
+      if (result.isConfirmed && result.value) {
+        const { inicio, fin } = result.value;
+        this.fechaInicio = new Date(`${inicio}T00:00:00`);
+        this.fechaFin = new Date(`${fin}T00:00:00`);
+        const nombreArchivo = `Reporte_Asistencias_Sede_${this.sede?.nombre || 'SinNombre'}_${inicio}_a_${fin}.xlsx`;
+
+        try {
+          const res: any = await lastValueFrom(this.asistenciaService.obtenerUnificadoPorSede(this.sede.id, inicio, fin));
+          const trabajadoresUnificados = res.trabajadores || [];
+
+          const fechasFormateadas = this.generarDias(this.fechaInicio, this.fechaFin).map(d =>
+            DateTime.fromJSDate(d).toFormat('yyyy-MM-dd')
+          );
+
+          this.exportarExcelPorSede(nombreArchivo, trabajadoresUnificados, fechasFormateadas);
+          Swal.fire('✅ ¡Listo!', 'Se generó el archivo Excel correctamente', 'success');
+        } catch (error) {
+          console.error('❌ Error al generar Excel:', error);
+          Swal.fire('❌ Error', 'No se pudieron obtener las asistencias.', 'error');
+        }
+      }
+    });
+  }
+
+  generarDias(fechaInicio: Date, fechaFin: Date): Date[] {
+    const dias: Date[] = [];
+    const actual = new Date(fechaInicio);
+    while (actual <= fechaFin) {
+      dias.push(new Date(actual));
+      actual.setDate(actual.getDate() + 1);
+    }
+    return dias;
+  }
+
+  exportarExcelPorSede(nombreArchivo: string, trabajadores: any[], fechas: string[]) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Asistencias por sede');
+
+    const eventosSede = this.eventos.filter(evento => {
+      const fechaEvento = new Date(evento.fecha);
+      return fechaEvento >= this.fechaInicio && fechaEvento <= this.fechaFin;
+    });
+
+    // 🧩 Cabecera
+    worksheet.addRow([`Sede: ${this.sede?.nombre || ''}`]);
+    worksheet.addRow([`Periodo: ${this.fechaInicio.toLocaleDateString()} - ${this.fechaFin.toLocaleDateString()}`]);
+    worksheet.addRow([]);
+
+    // 🧱 Encabezados
+    const encabezados: string[] = ['Nombre Completo'];
+    fechas.forEach(f => {
+      encabezados.push(`${f} Entrada`, `${f} Salida`);
+    });
+    const headerRow = worksheet.addRow(encabezados);
+
+    worksheet.columns = [
+      { width: 35 },
+      ...fechas.flatMap(() => [{ width: 17 }, { width: 17 }])
+    ];
+
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF343A40' }
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = this.bordeCelda;
+    });
+
+    const normalizarEstado = (estado: string): { clave: string; texto: string } => {
+      if (!estado || estado === '—') return { clave: 'falta', texto: 'Falta' };
+
+      const textoMostrar = estado
+        .replace(/\b\w/g, l => l.toUpperCase())
+        .replace(/([a-z])([A-Z])/g, '$1 $2');
+
+      const clave = estado
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const mapaVariantes: { [key: string]: string } = {
+        'capacitacion': 'capacitación',
+        'dia festivo': 'festivo',
+        'dia puente': 'puente',
+        'descanso laboral': 'descanso',
+        'permiso con goce': 'permiso con goce de sueldo',
+        'media jornada': 'media jornada',
+        'suspension': 'suspensión'
+      };
+
+      return {
+        clave: mapaVariantes[clave] || clave,
+        texto: textoMostrar
+      };
+    };
+
+    const hoy = DateTime.now().toFormat('yyyy-MM-dd');
+
+    trabajadores.forEach(t => {
+      const row = worksheet.addRow([`${t.nombre || ''} ${t.apellido || ''}`.trim() || '—']);
+      let colIndex = 2;
+
+      fechas.forEach(f => {
+        const esFuturo = f > hoy;
+        const datos = t.datosPorDia?.[f] || {};
+        const tipo = (datos?.tipo || '').toLowerCase();
+        let entrada = datos?.entrada || '—';
+        let salida = datos?.salida || '—';
+        let estado = datos?.estado || '';
+
+        const eventoDia = eventosSede.find(e => DateTime.fromISO(e.fecha).toFormat('yyyy-MM-dd') === f);
+
+        // 🕒 Día futuro: celda en blanco sin color
+        if (esFuturo) {
+          const celdaEntrada = row.getCell(colIndex++);
+          celdaEntrada.value = '';
+          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+          celdaEntrada.border = this.bordeCelda;
+          celdaEntrada.alignment = { horizontal: 'center', vertical: 'middle' };
+
+          const celdaSalida = row.getCell(colIndex++);
+          celdaSalida.value = '';
+          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+          celdaSalida.border = this.bordeCelda;
+          celdaSalida.alignment = { horizontal: 'center', vertical: 'middle' };
+          return;
+        }
+
+        // 🧠 Jerarquía de estado
+        if (eventoDia) {
+          estado = eventoDia.tipo || eventoDia.descripcion || '';
+          entrada = salida = '—';
+        } else if (tipo === 'asistencia' && datos?.horaEntrada && datos?.horaSalida) {
+          estado = 'Asistencia Manual';
+          entrada = datos.horaEntrada;
+          salida = datos.horaSalida;
+        } else if (!estado && entrada !== '—' && salida !== '—') {
+          estado = 'Asistencia Completa';
+        } else if (!estado || estado === '—') {
+          estado = 'Falta';
+        }
+
+        const { clave: claveColor, texto: textoEstado } = normalizarEstado(estado);
+        const color = this.coloresEstados[claveColor] || this.coloresEstados['—'];
+
+        const entradaTexto = entrada === '—' && salida === '—' && estado ? textoEstado : entrada;
+        const salidaTexto = entrada === '—' && salida === '—' && estado ? '' : salida;
+
+        const celdaEntrada = row.getCell(colIndex++);
+        celdaEntrada.value = entradaTexto;
+        celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
+        celdaEntrada.border = this.bordeCelda;
+        celdaEntrada.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        const celdaSalida = row.getCell(colIndex++);
+        celdaSalida.value = salidaTexto;
+        celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
+        celdaSalida.border = this.bordeCelda;
+        celdaSalida.alignment = { horizontal: 'center', vertical: 'middle' };
+      });
+    });
+
+    // 💾 Guardar
+    workbook.xlsx.writeBuffer().then((buffer: any) => {
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      FileSaver.saveAs(blob, nombreArchivo);
+    });
+  }
+
+  // Colores actualizados con todas las variantes
+  coloresEstados: { [estado: string]: string } = {
+    'asistencia completa': 'FFD9F99D',
+    'asistencia manual': 'FFBBF7D0',
+    'salida automática': 'FF99F6E4',
+    'pendiente': 'FFFEF9C3',
+    'falta': 'FFFECACA',
+    'vacaciones': 'FFBAE6FD',
+    'vacaciones pagadas': 'FFDDD6FE',
+    'permiso': 'FFFDE68A',
+    'permiso con goce de sueldo': 'FFFEF3C7',
+    'incapacidad': 'FFFBCFE8',
+    'descanso': 'FFE2E8F0',
+    'festivo': 'FFFAE8FF',
+    'puente': 'FFF5F5F4',
+    'evento': 'FFCCFBF1',
+    'capacitación': 'FFECFCCB',
+    'media jornada': 'FFFEF08A',
+    'suspensión': 'FFFCA5A5',
+    '—': 'FFFFFFFF',
+    // Variantes comunes
+    'capacitacion': 'FFECFCCB', // Sin tilde
+    'dia festivo': 'FFFAE8FF',
+    'dia puente': 'FFF5F5F4',
+    'evento especial': 'FFCCFBF1',
+    'descanso laboral': 'FFE2E8F0'
+  };
 }

@@ -32,11 +32,22 @@
       <p>Administración de datos de la sede.</p>
     </div>
 
-    <div class="boton-descarga">
-      <button class="btn-update" (click)="generarPdfPorSede()">
+    <div class="botones-descarga" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px;">
+      <!-- 📄 Botón para generar PDF -->
+      <button class="btn-update"
+        style="background-color: #a30202; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;"
+        (click)="generarPdfPorSede()">
         📄 Descargar PDF de asistencias
       </button>
+
+      <!-- 📊 Botón para generar Excel -->
+      <button class="btn-update"
+        style="background-color: #16861a; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;"
+        (click)="abrirSelectorDeFechasExcel()">
+        📊 Generar Excel por sede
+      </button>
     </div>
+
     <p></p>
 
     <div class="card">

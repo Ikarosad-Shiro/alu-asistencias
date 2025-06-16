@@ -75,6 +75,27 @@
   background-color: #c82333;
 }
 
+/*botones de descarga*/
+.btn-update {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-update:hover {
+  opacity: 0.85;
+}
+
+.btn-update.excel {
+  background-color: #28a745;
+}
+
+
 /* 📌 Responsive sidebar */
 @media (max-width: 1024px) {
   .sidebar {
