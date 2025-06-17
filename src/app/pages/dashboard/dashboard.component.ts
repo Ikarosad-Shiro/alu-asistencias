@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AsistenciaService } from 'src/app/services/asistencia.service';
-
+import Swal from 'sweetalert2';
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
@@ -12,7 +12,7 @@ export class DashboardComponent implements OnInit {
   usuarioRol: string = '';
 
   trabajadoresHoy: any[] = []; // 🆕 Asistencias del día actual
-  columnas: string[] = ['nombre', 'hora', 'sede']; // Columnas para la tabla
+  columnas: string[] = ['nombre', 'hora', 'sede', 'acciones']; // Columnas para la tabla
 
   constructor(
     private router: Router,
@@ -57,6 +57,14 @@ export class DashboardComponent implements OnInit {
       this.trabajadoresHoy = data;
       console.log("✅ Asistencias de hoy:", this.trabajadoresHoy);
     });
+  }
+
+  verDetalle(trabajador: any) {
+    if (trabajador._id) {
+      this.router.navigate(['/trabajadores', trabajador._id]);
+    } else {
+      Swal.fire('No se pudo redirigir', 'ID del trabajador no encontrado.', 'warning');
+    }
   }
 
 // 📌 Función para mostrar/ocultar la sidebar en móviles

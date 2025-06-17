@@ -94,15 +94,61 @@
 }
 
 /* 📌 Tabla de asistencias del dia de hoy jaja */
-.tabla-asistencia-hoy {
-  margin-top: 20px;
-  background: rgba(255, 255, 255, 0.85);
-  padding: 16px;
-  border-radius: 12px;
+.tabla-asistencia-hoy th {
+  background-color: #673ab7;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  padding: 10px;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 0.8px rgba(0, 0, 0, 0.4);
+  user-select: none;
 }
 
+/* 📌 Estilo general de tabla */
 .full-width-table {
   width: 100%;
+  border-collapse: collapse;
+}
+
+/* 📌 Encabezados de la tabla */
+.tabla-asistencia-hoy th {
+  background-color: #460f66;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px;
+}
+
+/* Celdas normales centradas */
+.tabla-asistencia-hoy td {
+  text-align: center;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* 👤 Pero la columna Nombre alineada a la izquierda */
+.tabla-asistencia-hoy td.nombre-col {
+  text-align: left;
+  padding-left: 16px;
+}
+
+/* 📌 Botón "Ver" */
+.btn-ver {
+  background-color: #6a1275;
+  color: white;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-ver:hover {
+  background-color: #460f66;
 }
 
 
