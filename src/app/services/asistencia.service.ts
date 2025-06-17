@@ -77,4 +77,8 @@ export class AsistenciaService {
     return this.http.get(`${this.apiUrl}/unificado-sede/${sedeId}?${params.toString()}`);
   }
 
+  obtenerAsistenciasDeHoy(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/hoy`);
+  }
+
 }

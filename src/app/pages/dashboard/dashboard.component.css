@@ -93,6 +93,19 @@
   background-color: #c82333;
 }
 
+/* 📌 Tabla de asistencias del dia de hoy jaja */
+.tabla-asistencia-hoy {
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.full-width-table {
+  width: 100%;
+}
+
+
 /* 📌 Sidebar Oculta en móviles */
 @media (max-width: 1024px) {
   .sidebar {
@@ -256,4 +269,5 @@ mat-card {
   .sidebar-overlay {
     display: none !important; /* Elimina el fondo en escritorio */
   }
+
 }

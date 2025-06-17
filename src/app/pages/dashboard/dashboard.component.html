@@ -28,30 +28,39 @@
 
   <!-- 📌 Contenido principal -->
   <div class="main-content">
-    <div class="content-container">
       <!-- 📌 Contenedor de bienvenida -->
       <div class="welcome-card">
         <h2>Bienvenido, {{ usuarioNombre }} 👋</h2>
         <p>Selecciona una opción del menú para comenzar.</p>
       </div>
 
-      <!-- 📌 Contenedor de estadísticas -->
-      <div class="stats-container">
-        <div class="card">
-          <h3>📊 Asistencia Diaria</h3>
-          <p>Aquí irá la información de asistencia diaria.</p>
-        </div>
+            <!-- 📌 Tabla: Trabajadores que llegaron hoy -->
+      <mat-card class="tabla-asistencia-hoy">
+        <h3>👥 Trabajadores que llegaron hoy</h3>
+        <table mat-table [dataSource]="trabajadoresHoy" class="mat-elevation-z1 full-width-table">
 
-        <div class="card">
-          <h3>📍 Asistencia por Sede</h3>
-          <p>Aquí irá la información de asistencia por sede.</p>
-        </div>
+          <!-- Nombre -->
+          <ng-container matColumnDef="nombre">
+            <th mat-header-cell *matHeaderCellDef>Nombre</th>
+            <td mat-cell *matCellDef="let trabajador">{{ trabajador.nombre }}</td>
+          </ng-container>
 
-        <div class="card">
-          <h3>📅 Comparación Mensual</h3>
-          <p>Aquí irá la comparación de asistencia mensual.</p>
-        </div>
-      </div>
-    </div>
+          <!-- Hora -->
+          <ng-container matColumnDef="hora">
+            <th mat-header-cell *matHeaderCellDef>Entrada</th>
+            <td mat-cell *matCellDef="let trabajador">{{ trabajador.hora }}</td>
+          </ng-container>
+
+          <!-- Sede -->
+          <ng-container matColumnDef="sede">
+            <th mat-header-cell *matHeaderCellDef>Sede</th>
+            <td mat-cell *matCellDef="let trabajador">{{ trabajador.sede }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
+        </table>
+
+      </mat-card>
   </div>
 </div>

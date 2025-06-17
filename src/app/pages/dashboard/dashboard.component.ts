@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { AsistenciaService } from 'src/app/services/asistencia.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -10,7 +11,13 @@ export class DashboardComponent implements OnInit {
   usuarioNombre: string = 'Usuario';
   usuarioRol: string = '';
 
-  constructor(private router: Router) {
+  trabajadoresHoy: any[] = []; // 🆕 Asistencias del día actual
+  columnas: string[] = ['nombre', 'hora', 'sede']; // Columnas para la tabla
+
+  constructor(
+    private router: Router,
+    private asistenciaService: AsistenciaService
+  ) {
     console.log("📌 Constructor ejecutado.");
     this.obtenerUsuario(); // Intentar obtener usuario al inicio
 
@@ -27,6 +34,7 @@ export class DashboardComponent implements OnInit {
     // **Asegurar que los datos se actualicen después de la carga inicial**
     setTimeout(() => {
       this.obtenerUsuario();
+      this.cargarAsistenciasHoy();
     }, 500);
   }
 
@@ -42,6 +50,13 @@ export class DashboardComponent implements OnInit {
     }
 
     console.log("✅ Usuario actualizado:", usuario);
+  }
+
+  cargarAsistenciasHoy() {
+    this.asistenciaService.obtenerAsistenciasDeHoy().subscribe((data) => {
+      this.trabajadoresHoy = data;
+      console.log("✅ Asistencias de hoy:", this.trabajadoresHoy);
+    });
   }
 
 // 📌 Función para mostrar/ocultar la sidebar en móviles
