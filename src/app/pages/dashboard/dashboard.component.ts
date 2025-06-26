@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AsistenciaService } from 'src/app/services/asistencia.service';
 import Swal from 'sweetalert2';
+import { SedeService } from 'src/app/services/sede.service';
+
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
@@ -14,9 +16,14 @@ export class DashboardComponent implements OnInit {
   trabajadoresHoy: any[] = []; // 🆕 Asistencias del día actual
   columnas: string[] = ['nombre', 'hora', 'sede', 'acciones']; // Columnas para la tabla
 
+  sedes: { id: number, nombre: string }[] = [];
+  filtroSede: string = '';
+  trabajadoresOriginal: any[] = [];
+
   constructor(
     private router: Router,
-    private asistenciaService: AsistenciaService
+    private asistenciaService: AsistenciaService,
+    private sedeService: SedeService
   ) {
     console.log("📌 Constructor ejecutado.");
     this.obtenerUsuario(); // Intentar obtener usuario al inicio
@@ -35,6 +42,7 @@ export class DashboardComponent implements OnInit {
     setTimeout(() => {
       this.obtenerUsuario();
       this.cargarAsistenciasHoy();
+      this.obtenerSedes();
     }, 500);
   }
 
@@ -52,11 +60,38 @@ export class DashboardComponent implements OnInit {
     console.log("✅ Usuario actualizado:", usuario);
   }
 
+  mostrarTabla:boolean= false;
+  toggleTablaAsistencia(){
+    this.mostrarTabla = !this.mostrarTabla
+  }
+
+  obtenerSedes() {
+    this.sedeService.obtenerSedes().subscribe({
+      next: (res) => this.sedes = res,
+      error: (err) => console.error('❌ Error al obtener sedes:', err)
+    });
+  }
+
   cargarAsistenciasHoy() {
     this.asistenciaService.obtenerAsistenciasDeHoy().subscribe((data) => {
-      this.trabajadoresHoy = data;
+      this.trabajadoresOriginal = data; // <-- Guardamos copia sin filtrar
+      this.trabajadoresHoy = data;      // <-- Mostramos todos al inicio
       console.log("✅ Asistencias de hoy:", this.trabajadoresHoy);
     });
+  }
+
+  filtrarPorSede() {
+    if (!this.filtroSede) {
+      this.trabajadoresHoy = this.trabajadoresOriginal;
+    } else {
+      const nombreSede = this.obtenerNombreSede(Number(this.filtroSede));
+      this.trabajadoresHoy = this.trabajadoresOriginal.filter(t => t.sede === nombreSede);
+    }
+  }
+
+  obtenerNombreSede(id: number): string {
+    const sede = this.sedes.find(s => s.id === id);
+    return sede ? sede.nombre : 'Sin sede';
   }
 
   verDetalle(trabajador: any) {
@@ -67,15 +102,15 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-// 📌 Función para mostrar/ocultar la sidebar en móviles
-toggleSidebar() {
-  const sidebar = document.querySelector('.sidebar');
-  const overlay = document.querySelector('.sidebar-overlay');
+  // 📌 Función para mostrar/ocultar la sidebar en móviles
+  toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
 
-  if (sidebar && overlay) {
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
-    }
+    if (sidebar && overlay) {
+      sidebar.classList.toggle('active');
+      overlay.classList.toggle('active');
+      }
   }
   // 📌 Función para verificar si es administrador o Dios
   esAdmin(): boolean {

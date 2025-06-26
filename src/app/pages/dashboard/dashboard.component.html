@@ -36,43 +36,65 @@
     </div>
 
     <!-- 📌 Tabla: Trabajadores que llegaron hoy -->
-    <mat-card class="tabla-asistencia-hoy">
-      <h3>👥 Trabajadores que llegaron hoy</h3>
+    <mat-accordion>
+      <mat-expansion-panel class="panel-transparente" [expanded]="true">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            👥 Trabajadores que llegaron hoy
+          </mat-panel-title>
+        </mat-expansion-panel-header>
 
-      <table mat-table [dataSource]="trabajadoresHoy" class="mat-elevation-z1 full-width-table">
+        <!-- 🔎 Filtro de sede -->
+        <div class="search-container transparente">
+          <label>Filtrar por sede:</label>
+          <select [(ngModel)]="filtroSede" (change)="filtrarPorSede()">
+            <option value="">Todas las sedes</option>
+            <option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</option>
+          </select>
+        </div>
 
-        <!-- Nombre -->
-        <ng-container matColumnDef="nombre">
-          <th mat-header-cell *matHeaderCellDef class="morado-header">Nombre</th>
-          <td mat-cell *matCellDef="let trabajador" class="nombre-col">{{ trabajador.nombre }}</td>
-        </ng-container>
+        <!-- Tabla de trabajadores -->
+        <div *ngIf="trabajadoresHoy.length > 0">
+          <table mat-table [dataSource]="trabajadoresHoy" class="mat-elevation-z1 full-width-table">
 
-        <!-- Hora -->
-        <ng-container matColumnDef="hora">
-          <th mat-header-cell *matHeaderCellDef class="morado-header">Entrada</th>
-          <td mat-cell *matCellDef="let trabajador">{{ trabajador.hora }}</td>
-        </ng-container>
+            <!-- Nombre -->
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef class="morado-header">Nombre</th>
+              <td mat-cell *matCellDef="let trabajador" class="nombre-col">{{ trabajador.nombre }}</td>
+            </ng-container>
 
-        <!-- Sede -->
-        <ng-container matColumnDef="sede">
-          <th mat-header-cell *matHeaderCellDef class="morado-header">Sede</th>
-          <td mat-cell *matCellDef="let trabajador">{{ trabajador.sede }}</td>
-        </ng-container>
+            <!-- Hora -->
+            <ng-container matColumnDef="hora">
+              <th mat-header-cell *matHeaderCellDef class="morado-header">Entrada</th>
+              <td mat-cell *matCellDef="let trabajador">{{ trabajador.hora }}</td>
+            </ng-container>
 
-        <!-- Acción -->
-        <ng-container matColumnDef="acciones">
-          <th mat-header-cell *matHeaderCellDef class="morado-header">Acciónes</th>
-          <td mat-cell *matCellDef="let trabajador">
-            <button class="btn-ver" (click)="verDetalle(trabajador)">
-              Ver
-            </button>
-          </td>
-        </ng-container>
+            <!-- Sede -->
+            <ng-container matColumnDef="sede">
+              <th mat-header-cell *matHeaderCellDef class="morado-header">Sede</th>
+              <td mat-cell *matCellDef="let trabajador">{{ trabajador.sede }}</td>
+            </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-        <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
-      </table>
+            <!-- Acción -->
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="morado-header">Acciones</th>
+              <td mat-cell *matCellDef="let trabajador">
+                <button class="btn-ver" (click)="verDetalle(trabajador)">
+                  Ver Trabajador
+                </button>
+              </td>
+            </ng-container>
 
-    </mat-card>
+            <!-- Filas -->
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
+          </table>
+        </div>
+
+        <div *ngIf="trabajadoresHoy.length === 0" style="padding: 16px;">
+          🫥 No hay trabajadores registrados hoy en esta sede.
+        </div>
+      </mat-expansion-panel>
+    </mat-accordion>
   </div>
 </div>

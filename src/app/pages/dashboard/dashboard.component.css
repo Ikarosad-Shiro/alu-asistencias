@@ -93,62 +93,114 @@
   background-color: #c82333;
 }
 
-/* 📌 Tabla de asistencias del dia de hoy jaja */
-.tabla-asistencia-hoy th {
-  background-color: #673ab7;
-  color: white;
-  font-weight: 600;
-  text-align: center;
-  padding: 10px;
-  font-size: 14px;
-  letter-spacing: 0.5px;
-  text-shadow: 0 0 0.8px rgba(0, 0, 0, 0.4);
-  user-select: none;
+mat-accordion {
+  width: 80%;
+  display: flex;
+  justify-content: center;
 }
 
-/* 📌 Estilo general de tabla */
+/* 📌 Panel de trabajadores que llegaron hoy */
+.panel-transparente {
+  width: 100%;
+  max-width: 1000px; /* Puedes subirlo hasta 1200px o más si quieres */
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.322);
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0);
+  overflow: hidden;
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+
+/* 📌 Encabezado del acordeón */
+.panel-transparente .mat-expansion-panel-header {
+  background: transparent;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* 📌 Contenedor de filtro */
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 10px 15px;
+  border-radius: 12px;
+  margin: 15px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* 📌 Estilo del select */
+.search-container select {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* 📌 Tabla */
 .full-width-table {
   width: 100%;
+  margin: 20px 0;
   border-collapse: collapse;
 }
 
-/* 📌 Encabezados de la tabla */
-.tabla-asistencia-hoy th {
-  background-color: #460f66;
-  color: white;
-  font-weight: 600;
+/* Encabezados */
+th.morado-header {
+  background-color: #340869;
+  color: #fff;
+  font-weight: 700;
   text-align: center;
-  padding: 8px;
+  font-size: 15px;
+  padding: 12px 10px;
+  letter-spacing: 0.6px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Celdas normales centradas */
-.tabla-asistencia-hoy td {
+/* Celdas */
+td {
   text-align: center;
-  padding: 8px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.568);
+  font-size: 14px;
   border-bottom: 1px solid #ddd;
 }
 
-/* 👤 Pero la columna Nombre alineada a la izquierda */
-.tabla-asistencia-hoy td.nombre-col {
+/* Celda de nombre con mejor lectura */
+td.nombre-col {
   text-align: left;
   padding-left: 16px;
+  font-weight: 500;
+  font-size: 14.5px;
+  color: #212121;
 }
 
-/* 📌 Botón "Ver" */
+/* Botón Ver */
 .btn-ver {
-  background-color: #6a1275;
-  color: white;
-  padding: 5px 12px;
+  background-color: #6a1b9a;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  text-shadow: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .btn-ver:hover {
-  background-color: #460f66;
+  background-color: #4a148c;
+  transform: scale(1.03);
 }
 
 
