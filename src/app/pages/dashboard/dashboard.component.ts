@@ -4,6 +4,7 @@ import { AsistenciaService } from 'src/app/services/asistencia.service';
 import Swal from 'sweetalert2';
 import { SedeService } from 'src/app/services/sede.service';
 import { TrabajadoresService } from 'src/app/services/trabajadores.service';
+import { DateTime } from 'luxon'; // asegúrate de tener esto arriba si usas Luxon
 
 interface ResumenHoras {
   nombre: string;
@@ -36,6 +37,45 @@ export class DashboardComponent implements OnInit {
   trabajadoresQueNoHanLlegado: any[] = [];
   trabajadoresQueNoHanLlegadoFiltrados: any[] = []; // 👈 esta línea faltaba
   filtroSedeFaltantes: string = '';
+
+  //grafico circular
+  chartLabels: string[] = ['Asistieron', 'Ausentes'];
+  chartData: any = {
+    labels: ['Asistieron', 'Ausentes'],
+    datasets: [
+      {
+        data: [0, 0],
+        backgroundColor: ['#4caf50', '#f44336'] // verde, rojo (opcional)
+      }
+    ]
+  };
+  chartOptions: any = {
+    plugins: {
+      legend: {
+        labels: {
+          color: 'black' // 👈 Aquí defines el color del texto de la leyenda
+        }
+      }
+    }
+  };
+  graficaAsistencia: { asistencia: number, ausencia: number } = { asistencia: 0, ausencia: 0 };
+
+  chartType: string = 'doughnut';
+
+  indiceSedeGrafica: number = -1; // -1 representa "Todas las sedes"
+
+  get nombreSedeSeleccionada(): string {
+    const hoy = DateTime.now().setZone('America/Mexico_City').setLocale('es');
+    const fecha = hoy.toFormat("cccc dd LLLL yyyy"); // ejemplo: 01 julio 2025
+
+    const nombreSede = this.indiceSedeGrafica === -1
+      ? 'Todas las sedes'
+      : this.sedes[this.indiceSedeGrafica]?.nombre || '';
+
+    return `${nombreSede} - ${fecha}`;
+  }
+
+  currentMonth: Date = new Date();
 
   mostrarTabla: boolean = false;
 
@@ -148,6 +188,13 @@ export class DashboardComponent implements OnInit {
             this.trabajadoresQueNoHanLlegadoFiltrados = [...this.trabajadoresQueNoHanLlegado];
 
             this.filtrarPorSedeFaltantes();
+
+            // 📊 Contador para la gráfica circular
+            this.graficaAsistencia = {
+              asistencia: this.trabajadoresHoy.length,
+              ausencia: this.trabajadoresQueNoHanLlegado.length
+            };
+            this.actualizarGraficaAsistencia(); // 👈 ESTA LÍNEA
           },
           error: (error) => {
             console.error("❌ Error al obtener asistencias de hoy:", error);
@@ -188,7 +235,48 @@ export class DashboardComponent implements OnInit {
       .slice(0, 3);
   }
 
+  //Grafico circular
+  actualizarGraficaAsistencia() {
+    let asistencia = this.trabajadoresHoy;
+    let ausencia = this.trabajadoresQueNoHanLlegado;
 
+    if (this.indiceSedeGrafica !== -1) {
+      const sedeNombre = this.sedes[this.indiceSedeGrafica]?.nombre;
+      asistencia = asistencia.filter(t => t.sede === sedeNombre);
+      ausencia = ausencia.filter(t => t.nombreSede === sedeNombre);
+    }
+
+    this.chartData = {
+      labels: ['Asistieron', 'Ausentes'],
+      datasets: [{
+        data: [asistencia.length, ausencia.length],
+        backgroundColor: ['#3e95cd', '#ff6384'],
+        borderWidth: 1
+      }]
+    };
+  }
+
+  cambiarSedeAnterior() {
+    if (this.indiceSedeGrafica === -1) {
+      this.indiceSedeGrafica = this.sedes.length - 1;
+    } else if (this.indiceSedeGrafica > 0) {
+      this.indiceSedeGrafica--;
+    } else {
+      this.indiceSedeGrafica = -1; // Volver a "Todas"
+    }
+    this.actualizarGraficaAsistencia();
+  }
+
+  cambiarSedeSiguiente() {
+    if (this.indiceSedeGrafica === -1) {
+      this.indiceSedeGrafica = 0;
+    } else if (this.indiceSedeGrafica < this.sedes.length - 1) {
+      this.indiceSedeGrafica++;
+    } else {
+      this.indiceSedeGrafica = -1; // Volver a "Todas"
+    }
+    this.actualizarGraficaAsistencia();
+  }
 
   // 📌 Función para mostrar/ocultar la sidebar en móviles
   toggleSidebar() {

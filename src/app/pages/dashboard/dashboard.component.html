@@ -184,7 +184,27 @@
           </tbody>
         </table>
       </mat-card>
-    </div>
 
+      <mat-card class="card-transparente">
+        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px;">
+          <button mat-icon-button (click)="cambiarSedeAnterior()">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span style="font-weight: bold; margin: 0 8px;">
+            {{ nombreSedeSeleccionada }}
+          </span>
+          <button mat-icon-button (click)="cambiarSedeSiguiente()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+
+        <h3>📊 Resumen de Asistencia de Hoy</h3>
+        <canvas baseChart
+          [data]="chartData"
+          [options]="chartOptions"
+          [type]="'doughnut'">
+        </canvas>
+      </mat-card>
+    </div>
   </div>
 </div>
