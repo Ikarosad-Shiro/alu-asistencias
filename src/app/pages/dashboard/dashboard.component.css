@@ -113,7 +113,6 @@ mat-accordion {
   padding: 20px;
 }
 
-
 /* 📌 Encabezado del acordeón */
 .panel-transparente .mat-expansion-panel-header {
   background: transparent;
@@ -201,6 +200,55 @@ td.nombre-col {
 .btn-ver:hover {
   background-color: #4a148c;
   transform: scale(1.03);
+}
+
+.tabla-mini {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.tabla-mini th {
+  background-color: #340869;
+  color: white;
+  padding: 8px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 4px 4px 0 0;
+}
+
+.tabla-mini td {
+  padding: 8px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid #ddd;
+}
+
+/* Hover opcional */
+.tabla-mini tr:hover td {
+  background-color: #f3f3f3;
+}
+
+/* Reutilizamos el contenedor de tarjetas */
+.bloque-estadisticas-personalizadas {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto 40px;
+}
+
+.card-transparente {
+  flex: 1;
+  min-width: 300px;
+  background: rgba(255, 255, 255, 0.322);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  padding: 20px;
 }
 
 

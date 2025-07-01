@@ -81,4 +81,7 @@ export class AsistenciaService {
     return this.http.get<any[]>(`${this.apiUrl}/hoy`);
   }
 
+  obtenerUnificadoPorTrabajador(id: string, inicio: string, fin: string) {
+    return this.http.get(`${environment.apiUrl}/asistencias/unificado/${id}?inicio=${inicio}&fin=${fin}`);
+  }
 }

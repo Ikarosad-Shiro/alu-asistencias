@@ -37,7 +37,7 @@
 
     <!-- 📌 Tabla: Trabajadores que llegaron hoy -->
     <mat-accordion>
-      <mat-expansion-panel class="panel-transparente" [expanded]="true">
+      <mat-expansion-panel class="panel-transparente" [expanded]="false">
         <mat-expansion-panel-header>
           <mat-panel-title>
             👥 Trabajadores que llegaron hoy
@@ -96,5 +96,95 @@
         </div>
       </mat-expansion-panel>
     </mat-accordion>
+
+    <div>
+      <p></p>
+    </div>
+
+    <!-- 📌 Tabla: Personas que aún no han llegado hoy -->
+    <mat-accordion>
+      <mat-expansion-panel class="panel-transparente" [expanded]="false">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            🚫 Personas que aún no han llegado hoy
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <!-- 🔎 Filtro de sede para los que no han llegado -->
+        <div class="search-container transparente">
+          <label>Filtrar por sede:</label>
+          <select [(ngModel)]="filtroSedeFaltantes" (change)="filtrarPorSedeFaltantes()">
+            <option value="">Todas las sedes</option>
+            <option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</option>
+          </select>
+        </div>
+
+        <!-- Tabla de trabajadores -->
+        <div *ngIf="trabajadoresQueNoHanLlegadoFiltrados.length > 0">
+          <table mat-table [dataSource]="trabajadoresQueNoHanLlegadoFiltrados" class="mat-elevation-z1 full-width-table">
+
+            <!-- Nombre -->
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef class="morado-header">Nombre</th>
+              <td mat-cell *matCellDef="let persona" class="nombre-col">
+                {{ persona.nombre }} {{ persona.apellido || '' }}
+              </td>
+            </ng-container>
+
+            <!-- Sede -->
+            <ng-container matColumnDef="sede">
+              <th mat-header-cell *matHeaderCellDef class="morado-header">Sede</th>
+              <td mat-cell *matCellDef="let persona">
+                {{ persona.nombreSede || persona.sede || '—' }}
+              </td>
+            </ng-container>
+
+            <!-- Acción -->
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="morado-header">Acciones</th>
+              <td mat-cell *matCellDef="let persona">
+                <button class="btn-ver" (click)="verDetalle(persona)">
+                  Ver Trabajador
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="['nombre', 'sede', 'acciones']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['nombre', 'sede', 'acciones'];"></tr>
+          </table>
+        </div>
+
+        <div *ngIf="trabajadoresQueNoHanLlegadoFiltrados.length === 0" style="padding: 16px;">
+          🎉 Todos los trabajadores han llegado hoy.
+        </div>
+      </mat-expansion-panel>
+    </mat-accordion>
+
+    <div>
+      <p></p>
+    </div>
+
+    <!-- 📊 Estadísticas con tablas -->
+    <div class="bloque-estadisticas-personalizadas">
+      <!-- 🟥 Llegadas más tardías -->
+      <mat-card class="card-transparente">
+        <h3>⏰ Top 5 - Llegadas más tardías</h3>
+        <table class="tabla-mini">
+          <thead>
+            <tr>
+              <th>Trabajador</th>
+              <th>Entrada</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of topTarde">
+              <td>{{ t.nombre }}</td>
+              <td>{{ t.hora }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </mat-card>
+    </div>
+
   </div>
 </div>

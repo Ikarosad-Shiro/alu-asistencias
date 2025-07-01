@@ -40,6 +40,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { NgChartsModule } from 'ng2-charts';
 
 // Angular Calendar
 import { CalendarModule, DateAdapter } from 'angular-calendar';
@@ -79,6 +80,7 @@ import { CalendarioUnificadoComponent } from './components/calendario-unificado/
     ReactiveFormsModule,
     HttpClientModule,
     CommonModule,
+    NgChartsModule,
 
     // Angular Material
     MatFormFieldModule,
