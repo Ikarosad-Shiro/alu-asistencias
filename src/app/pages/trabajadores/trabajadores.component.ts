@@ -8,6 +8,7 @@ interface Trabajador {
   nombre: string;
   sede: number;
   sincronizado: boolean;
+  estado?: 'activo' | 'inactivo'; // ← ❗️opcional
 }
 
 @Component({
@@ -32,6 +33,8 @@ export class TrabajadoresComponent implements OnInit {
   sedeTrabajador: string = '';
   mensajeModal: string = '';
   tipoMensajeModal: 'exito' | 'error' | 'advertencia' = 'exito';
+
+  estadoFiltro: string = 'todos'; // ✅ Aquí sí va
 
   constructor(
     private router: Router,
@@ -68,7 +71,7 @@ export class TrabajadoresComponent implements OnInit {
 
   obtenerTrabajadores() {
     this.trabajadoresService.obtenerTrabajadores().subscribe(
-      (data) => {
+      (data: Trabajador[]) => {
         this.trabajadores = data;
         this.filtrarTrabajadores();
       },
@@ -76,6 +79,7 @@ export class TrabajadoresComponent implements OnInit {
         console.error('Error al obtener trabajadores', error);
       }
     );
+
   }
 
   filtrarTrabajadores() {
@@ -83,10 +87,16 @@ export class TrabajadoresComponent implements OnInit {
       const coincideNombre = this.filtroNombre
         ? trabajador.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase())
         : true;
+
       const coincideSede = this.filtroSede
         ? trabajador.sede === Number(this.filtroSede)
         : true;
-      return coincideNombre && coincideSede;
+
+      const coincideEstado = this.estadoFiltro === 'todos'
+        ? true
+        : trabajador.estado === this.estadoFiltro;
+
+      return coincideNombre && coincideSede && coincideEstado;
     });
   }
 
@@ -129,7 +139,7 @@ export class TrabajadoresComponent implements OnInit {
 
   agregarTrabajador(nombre: string, sede: string) {
     const sedeNumero = Number(sede);
-    const nuevoTrabajador: Trabajador = { nombre, sede: sedeNumero, sincronizado: false };
+    const nuevoTrabajador: Trabajador = { nombre, sede: sedeNumero, sincronizado: false, estado: 'activo' };
 
     this.trabajadoresService.agregarTrabajador(nuevoTrabajador).subscribe(
       () => {

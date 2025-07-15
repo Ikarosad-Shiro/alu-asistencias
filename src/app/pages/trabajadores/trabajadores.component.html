@@ -35,6 +35,18 @@
         <button class="btn-buscar" (click)="filtrarTrabajadores()">🔍 Buscar</button>
       </div>
 
+      <!-- 🟢 Nuevo: Filtro por estado con instrucción -->
+      <div class="search-container">
+        <label for="estado-select" style="font-weight: bold; margin-right: 8px;">
+          Filtrar por estatus del trabajador:
+        </label>
+        <select id="estado-select" [(ngModel)]="estadoFiltro" (change)="filtrarTrabajadores()" class="estado-select">
+          <option value="todos">Todos</option>
+          <option value="activo">🟢 Activos</option>
+          <option value="inactivo">🔴 Inactivos</option>
+        </select>
+      </div>
+
       <!-- 📌 Formulario para agregar trabajador -->
       <div class="add-worker-form" *ngIf="rolUsuario !== 'Revisor'">
         <input type="text" placeholder="Nombre del trabajador" #nombre />
@@ -59,6 +71,7 @@
               <th>Nombre</th>
               <th>Sede</th>
               <th>Estado</th>
+              <th>Estatus</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -69,6 +82,11 @@
               <td>
                 <span [ngClass]="{ 'activo': trabajador.sincronizado, 'pendiente': !trabajador.sincronizado }">
                   {{ trabajador.sincronizado ? '✅ Sincronizado' : '⏳ Pendiente' }}
+                </span>
+              </td>
+              <td>
+                <span [ngClass]="trabajador.estado === 'inactivo' ? 'text-danger' : 'text-success'">
+                  {{ trabajador.estado === 'inactivo' ? '🔴 Inactivo' : '🟢 Activo' }}
                 </span>
               </td>
               <td class="btn-actions">
