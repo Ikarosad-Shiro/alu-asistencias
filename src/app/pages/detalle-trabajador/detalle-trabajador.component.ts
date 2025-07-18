@@ -38,7 +38,6 @@ interface Asistencia extends Omit<AsistenciaModel, 'detalle'> {
   observacion?: string; // Añadir esta propiedad
 }
 
-// Por esta:
 interface EventoEspecial extends EventoEspecialModel { // ✅ Usa el modelo directamente
   descripcion?: string;
   horaEntrada?: string; // ⏰ Añadir este campo
@@ -52,6 +51,27 @@ interface DiaProcesado {
   salida?: string;
   estado: string;
   observacion?: string;
+}
+
+interface HistorialSede {
+  idSede: string;
+  nombre: string;
+  fechaInicio: Date | null;
+  fechaFin: Date | null;
+}
+
+interface Trabajador {
+  _id?: string;
+  nombre: string;
+  sede: number | null;
+  sincronizado: boolean;
+  correo?: string;
+  telefono?: string;
+  telefonoEmergencia?: string;
+  direccion?: string;
+  puesto?: string;
+  estado?: 'activo' | 'inactivo';
+  historialSedes?: HistorialSede[];
 }
 
 @Component({
@@ -143,6 +163,59 @@ export class DetalleTrabajadorComponent implements OnInit {
             }));
 
             // 📅 Procesar eventos trabajador
+            this.eventosTrabajador = (calendarioTrabajador?.diasEspeciales || []).map((e: EventoEspecial) => ({
+              ...e,
+              fecha: this.normalizarFecha(e.fecha),
+              descripcion: e.descripcion || e.tipo || ''
+            }));
+          },
+          error: (error: HttpErrorResponse) => {
+            console.error('❌ Error al obtener información relacionada:', error);
+            this.mostrarMensaje('Error al cargar asistencias o calendarios', 'error');
+          }
+        });
+      },
+      error: (error: HttpErrorResponse) => {
+        console.error('❌ Error al obtener trabajador:', error);
+        this.mostrarMensaje('Error al cargar datos del trabajador', 'error');
+        this.router.navigate(['/trabajadores']);
+      }
+    });
+  }
+
+  cargarTrabajadorPorId(id: string) {
+    this.trabajadoresService.obtenerTrabajador(id).subscribe({
+      next: (trabajador: any) => {
+        this.trabajador = trabajador;
+        this.trabajadorOriginal = JSON.parse(JSON.stringify(trabajador));
+
+        forkJoin({
+          asistencias: this.trabajadoresService.obtenerAsistencias(id),
+          calendarioSede: this.sedeService.obtenerEventosCalendario(
+            trabajador.sede,
+            new Date().getFullYear()
+          ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>,
+          calendarioTrabajador: this.trabajadoresService.obtenerEventosCalendarioTrabajador(
+            id,
+            new Date().getFullYear()
+          ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>
+        }).subscribe({
+          next: ({ asistencias, calendarioSede, calendarioTrabajador }) => {
+            this.trabajador.asistencias = asistencias.map((a: any) => ({
+              ...a,
+              fecha: this.normalizarFecha(a.fecha),
+              detalle: a.detalle?.map((d: any) => ({
+                ...d,
+                fechaHora: this.normalizarFechaHora(d.fechaHora)
+              }))
+            }));
+
+            this.eventosSede = (calendarioSede?.diasEspeciales || []).map((e: EventoEspecial) => ({
+              ...e,
+              fecha: this.normalizarFecha(e.fecha),
+              descripcion: e.descripcion || e.tipo || ''
+            }));
+
             this.eventosTrabajador = (calendarioTrabajador?.diasEspeciales || []).map((e: EventoEspecial) => ({
               ...e,
               fecha: this.normalizarFecha(e.fecha),
@@ -1054,4 +1127,156 @@ export class DetalleTrabajadorComponent implements OnInit {
       FileSaver.saveAs(blob, nombreArchivo);
     });
   }
+
+  desactivarTrabajador() {
+    Swal.fire({
+      title: '¿Estás seguro de desactivar al trabajador?',
+      html: `
+        <p style="font-weight: bold; color: #a30202;">⚠️ Esta acción tiene consecuencias importantes:</p>
+        <ul style="text-align: left; font-size: 0.95rem;">
+          <li>🧼 Se eliminará el registro de la huella en el checador.</li>
+          <li>📆 No se podran visualizar los calendarios del trabajador.</li>
+          <li>📤 Será desvinculado de su sede actual.</li>
+        </ul>
+        <p style="margin-top: 12px;">¿Deseas continuar?</p>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, desactivar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      width: 550
+    }).then(result => {
+      if (result.isConfirmed) {
+        // Paso 2: Solicitar contraseña
+        Swal.fire({
+          title: '🔒 Ingresa tu contraseña',
+          input: 'password',
+          inputPlaceholder: 'Contraseña',
+          inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
+          showCancelButton: true,
+          confirmButtonText: 'Confirmar'
+        }).then(confirm => {
+          if (confirm.isConfirmed && confirm.value) {
+            const contraseña = confirm.value;
+
+            this.trabajadoresService.verificarContraseña(contraseña).subscribe(valido => {
+              if (valido) {
+                const historial = this.trabajador.historialSedes || [];
+                const ahora = new Date();
+
+                // 🧠 Cerrar historial abierto (si existe)
+                const ultimoRegistro = historial.find((h: HistorialSede) => !h.fechaFin);
+                if (ultimoRegistro) {
+                  ultimoRegistro.fechaFin = ahora;
+                }
+
+                const dataActualizada = {
+                  estado: 'inactivo',
+                  sede: null,
+                  sincronizado: false,
+                  historialSedes: historial
+                };
+
+                this.trabajadoresService.actualizarTrabajador(this.trabajador._id!, dataActualizada).subscribe(() => {
+                  Swal.fire('✅ Trabajador desactivado correctamente');
+                  this.cargarTrabajadorPorId(this.trabajador._id!);
+                }, err => {
+                  console.error(err);
+                  Swal.fire('❌ Error al desactivar');
+                });
+
+              } else {
+                Swal.fire('⚠️ Contraseña incorrecta');
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
+  cambiarSede() {
+    const opciones = this.sedes.map(s => ({
+      value: s.id,
+      text: s.nombre
+    }));
+
+    Swal.fire({
+      title: 'Selecciona la nueva sede',
+      input: 'select',
+      inputOptions: this.sedes.reduce((acc, sede) => {
+        acc[sede.id] = sede.nombre;
+        return acc;
+      }, {} as any),
+      inputPlaceholder: 'Selecciona una sede',
+      showCancelButton: true,
+      confirmButtonText: 'Continuar'
+    }).then(result => {
+      if (result.isConfirmed && result.value) {
+        const nuevaSede = Number(result.value);
+
+        Swal.fire({
+          title: '🔒 Ingresa tu contraseña',
+          input: 'password',
+          inputPlaceholder: 'Contraseña',
+          inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
+          showCancelButton: true,
+          confirmButtonText: 'Confirmar'
+        }).then(confirm => {
+          if (confirm.isConfirmed && confirm.value) {
+            const contraseña = confirm.value;
+
+            this.trabajadoresService.verificarContraseña(contraseña).subscribe(valido => {
+              if (valido) {
+                const ahora = new Date();
+
+                const historial = this.trabajador.historialSedes || [];
+
+                // 🧠 1. Cerrar el último historial abierto (si existe)
+                const ultimoRegistro = historial.find((h: HistorialSede) => !h.fechaFin);
+                if (ultimoRegistro) {
+                  ultimoRegistro.fechaFin = ahora;
+                }
+
+                // 🧠 2. Crear nuevo historial para la nueva sede
+                const nuevaSedeObj = this.sedes.find(s => s.id === nuevaSede);
+                if (nuevaSedeObj) {
+                  historial.push({
+                    idSede: nuevaSede.toString(),
+                    nombre: nuevaSedeObj.nombre,
+                    fechaInicio: ahora,
+                    fechaFin: null
+                  });
+                }
+
+                // 🧠 3. Preparar nuevo estado
+                const nuevoEstado = this.trabajador.estado === 'inactivo' ? 'activo' : this.trabajador.estado;
+
+                // 🧠 4. Enviar actualización
+                const dataActualizada = {
+                  sede: nuevaSede,
+                  estado: nuevoEstado,
+                  sincronizado: false,
+                  historialSedes: historial
+                };
+
+                this.trabajadoresService.actualizarTrabajador(this.trabajador._id!, dataActualizada).subscribe(() => {
+                  Swal.fire('✅ Sede actualizada correctamente');
+                  this.cargarTrabajadorPorId(this.trabajador._id!); // Refrescar
+                }, err => {
+                  console.error(err);
+                  Swal.fire('❌ Error al cambiar de sede');
+                });
+              } else {
+                Swal.fire('⚠️ Contraseña incorrecta');
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
 }

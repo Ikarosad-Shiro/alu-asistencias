@@ -55,7 +55,7 @@ export class TrabajadoresService {
     );
   }
 
-  //--------------------------------- para un solo trabajador------------------
+  //--------------------------------- para un solo trabajador------------------//
   // 🔥 Obtener un trabajador específico
   obtenerTrabajador(id: string): Observable<Trabajador> {
     return this.http.get<Trabajador>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
