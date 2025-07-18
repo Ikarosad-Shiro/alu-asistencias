@@ -51,9 +51,12 @@ export class LoginComponent implements OnInit {
         localStorage.setItem('token', response.token);
         localStorage.setItem('usuario', JSON.stringify(response.usuario));
 
-        // ✅ 🚀 🔄 Redirigir al Dashboard y forzar actualización
+        // ✅ 🟣 ¡Aquí agregamos el rol explícitamente!
+        localStorage.setItem('rol', response.usuario.rol);
+
+        // ✅ Redirigir al Dashboard
         this.router.navigate(['/dashboard']).then(() => {
-          window.location.reload(); // 🔄 Esto fuerza la recarga con el usuario correcto
+          window.location.reload();
         });
       },
       (error: any) => {

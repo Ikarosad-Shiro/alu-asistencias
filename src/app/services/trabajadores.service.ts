@@ -61,11 +61,12 @@ export class TrabajadoresService {
     return this.http.get<Trabajador>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
   }
 
-// 🔥 Obtener asistencias de un trabajador específico
-obtenerAsistencias(trabajadorId: string): Observable<any[]> {
-  const url = `${this.apiUrl}/${trabajadorId}/asistencias`;
-  return this.http.get<any[]>(url, { headers: this.getAuthHeaders() });
-}
+  // 🔥 Obtener asistencias de un trabajador específico
+  obtenerAsistencias(trabajadorId: string): Observable<any[]> {
+    const url = `${this.apiUrl}/${trabajadorId}/asistencias`;
+    return this.http.get<any[]>(url, { headers: this.getAuthHeaders() });
+  }
+
   // 🔥 Actualizar un trabajador existente
   actualizarTrabajador(id: string, trabajador: any) {
     return this.http.put(`${this.apiUrl}/${id}`, trabajador, { headers: this.getAuthHeaders() });
@@ -74,6 +75,10 @@ obtenerAsistencias(trabajadorId: string): Observable<any[]> {
   obtenerEventosCalendarioTrabajador(trabajadorId: string, anio: number): Observable<any> {
     const url = `${environment.apiUrl}/calendario-trabajador/${trabajadorId}/${anio}`;
     return this.http.get<any>(url, { headers: this.getAuthHeaders() });
+  }
+
+  actualizarSincronizacion(id: string, sincronizado: boolean) {
+    return this.http.put(`${this.apiUrl}/sincronizacion/${id}`, { sincronizado }, { headers: this.getAuthHeaders() });
   }
 
 }

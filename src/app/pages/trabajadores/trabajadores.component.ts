@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { TrabajadoresService } from 'src/app/services/trabajadores.service';
 import { SedeService } from 'src/app/services/sede.service';
+import Swal from 'sweetalert2';
+import { ChangeDetectorRef } from '@angular/core';
 
 interface Trabajador {
   _id?: string;
@@ -36,16 +38,25 @@ export class TrabajadoresComponent implements OnInit {
 
   estadoFiltro: string = 'todos'; // ✅ Aquí sí va
 
+  // Guardamos el estado anterior antes de cambiar
+  valorOriginal: { [id: string]: string } = {};
+
   constructor(
     private router: Router,
     private trabajadoresService: TrabajadoresService,
-    private sedeService: SedeService
+    private sedeService: SedeService,
+    private cdRef: ChangeDetectorRef // ← aquí
   ) {}
 
   ngOnInit() {
+    this.rolUsuario = localStorage.getItem('rol') || '';
+    if (!this.rolUsuario) {
+      console.warn('⚠️ Rol de usuario no encontrado. Redirigiendo a login...');
+      this.router.navigate(['/login']);
+      return;
+    }
     this.obtenerSedes();
     this.obtenerTrabajadores();
-    this.rolUsuario = localStorage.getItem('rol') || '';
   }
 
   toggleSidebar() {
@@ -155,6 +166,71 @@ export class TrabajadoresComponent implements OnInit {
 
   verTrabajador(trabajadorId: string) {
     this.router.navigate(['/trabajadores', trabajadorId]);
+  }
+
+  guardarValorOriginal(trabajador: any) {
+    this.valorOriginal[trabajador._id] = trabajador.sincronizado ? 'Sincronizado' : 'Pendiente';
+  }
+
+  cambiarSincronizacion(trabajador: any, event: Event) {
+    const selectElement = event.target as HTMLSelectElement;
+    const nuevoEstado = selectElement.value;
+    const sincronizadoNuevo = nuevoEstado === 'Sincronizado';
+
+    const advertencia = sincronizadoNuevo
+      ? '⚠️ Al marcarlo como "Sincronizado", el sistema del checador lo ignorará y no lo registrará automáticamente.'
+      : '⚠️ Si lo marcas como "Pendiente", se eliminará la huella del checador en la siguiente sincronización automática.';
+
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: advertencia,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, continuar',
+      cancelButtonText: 'Cancelar'
+    }).then((res: any) => {
+      if (!res.isConfirmed) {
+        // ❌ Restaurar valor anterior visualmente
+        selectElement.value = this.valorOriginal[trabajador._id];
+        return;
+      }
+
+      Swal.fire({
+        title: '🔒 Ingresa tu contraseña',
+        input: 'password',
+        inputPlaceholder: 'Contraseña',
+        inputAttributes: {
+          autocapitalize: 'off',
+          autocorrect: 'off'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Confirmar'
+      }).then((confirmacion: any) => {
+        if (confirmacion.isConfirmed && confirmacion.value) {
+          const contraseña = confirmacion.value;
+
+          this.trabajadoresService.verificarContraseña(contraseña).subscribe(valido => {
+            if (valido) {
+              this.trabajadoresService.actualizarSincronizacion(trabajador._id!, sincronizadoNuevo).subscribe(
+                () => {
+                  trabajador.sincronizado = sincronizadoNuevo;
+                  Swal.fire('✅ Éxito', 'Estado de sincronización actualizado.', 'success');
+                },
+                err => {
+                  console.error('Error al actualizar sincronización', err);
+                  Swal.fire('❌ Error', 'No se pudo actualizar el estado.', 'error');
+                }
+              );
+            } else {
+              Swal.fire('❌ Contraseña incorrecta', 'La contraseña no es válida.', 'error');
+            }
+          });
+        } else {
+          // ❌ Cancelado al ingresar contraseña
+          selectElement.value = this.valorOriginal[trabajador._id];
+        }
+      });
+    });
   }
 
   actualizarTabla() {
