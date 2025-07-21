@@ -7,7 +7,7 @@ import { environment } from 'src/environments/environment'; // ✉️ aquí lleg
   providedIn: 'root'
 })
 export class BackendPingService {
-  private url = `${environment.apiUrl}/api`; // 🧭 toma la dirección de la carta
+ private url = `${environment.apiUrl}/ping`; // 🧭 toma la dirección de la carta
 
   constructor(private http: HttpClient) {}
 
