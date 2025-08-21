@@ -19,6 +19,7 @@ import Swal from 'sweetalert2';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 
+import { excelSanitize, EXCEL_MIME } from 'src/app/utils/excel';
 import * as FileSaver from 'file-saver';
 import * as ExcelJS from 'exceljs';
 
@@ -1053,79 +1054,69 @@ export class DetalleTrabajadorComponent implements OnInit {
     return `📌 ${tipo}`;
   }
 
-  exportarExcelConEstilo(nombreArchivo: string = 'Reporte_Asistencias.xlsx'): void {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Asistencias');
+exportarExcelConEstilo(nombreArchivo: string = 'Reporte_Asistencias.xlsx'): void {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Asistencias');
 
-    // 🧾 Encabezado con datos del trabajador
-    worksheet.addRow([`👤 Nombre:`, `${this.trabajador.nombre || ''} ${this.trabajador.apellido || ''}`]);
-    worksheet.addRow([`🏢 Sede:`, this.obtenerNombreSede(this.trabajador.sede)]);
-    worksheet.addRow([`📅 Periodo:`, `${this.formatearFecha(this.fechaInicio)} a ${this.formatearFecha(this.fechaFin)}`]);
-    worksheet.addRow([]); // Separación
+  // 🧾 Encabezado con datos del trabajador (sanitizado)
+  worksheet.addRow([ excelSanitize('👤 Nombre:'), excelSanitize(`${this.trabajador.nombre || ''} ${this.trabajador.apellido || ''}`) ]);
+  worksheet.addRow([ excelSanitize('🏢 Sede:'),   excelSanitize(this.obtenerNombreSede(this.trabajador.sede)) ]);
+  worksheet.addRow([ excelSanitize('📅 Periodo:'), excelSanitize(`${this.formatearFecha(this.fechaInicio)} a ${this.formatearFecha(this.fechaFin)}`) ]);
+  worksheet.addRow([]); // Separación
 
-    // 📌 Cabecera de tabla
-    const header = ['Día', 'Fecha', 'Entrada', 'Salida', 'Estado', 'Observación'];
-    const headerRow = worksheet.addRow(header);
+  // 📌 Cabecera de tabla
+  const header = ['Día', 'Fecha', 'Entrada', 'Salida', 'Estado', 'Observación'].map(excelSanitize);
+  const headerRow = worksheet.addRow(header);
 
-    headerRow.eachCell((cell: ExcelJS.Cell) => {
-      cell.font = { bold: true };
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
-      cell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFE0E0E0' }
-      };
-      cell.border = {
-        top: { style: 'thin' },
-        bottom: { style: 'thin' },
-        left: { style: 'thin' },
-        right: { style: 'thin' }
-      };
-    });
+  headerRow.eachCell((cell: ExcelJS.Cell) => {
+    cell.font = { bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+    cell.border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
 
-    // 📅 Agregar filas de días
-    for (const dia of this.diasProcesados) {
-      const fila = worksheet.addRow([
-        dia.diaSemana,
-        dia.fecha,
-        dia.entrada || '—',
-        dia.salida || '—',
-        dia.estado || '—',
-        dia.observacion || ''
-      ]);
+  // 📅 Agregar filas de días (sanitizado)
+  for (const dia of this.diasProcesados) {
+    const fila = worksheet.addRow([
+      excelSanitize(dia.diaSemana),
+      excelSanitize(dia.fecha),
+      excelSanitize(dia.entrada || '—'),
+      excelSanitize(dia.salida  || '—'),
+      excelSanitize(dia.estado  || '—'),
+      excelSanitize(dia.observacion || '')
+    ]);
 
-      // 🎨 Colorear filas según estado
-      let color = 'FFFFFFFF'; // blanco
-      const estado = (dia.estado || '').toLowerCase();
+    // 🎨 Colorear filas según estado
+    let color = 'FFFFFFFF'; // blanco
+    const estado = (dia.estado || '').toLowerCase();
 
-      if (estado.includes('asistencia completa')) color = 'FFA5D6A7';
-      else if (estado.includes('asistencia')) color = 'FFB2EBF2';
-      else if (estado.includes('falta')) color = 'FFFFCDD2';
-      else if (estado.includes('pendiente')) color = 'FFFFF59D';
-      else if (estado.includes('vacaciones')) color = 'FFC8E6C9';
-      else if (estado.includes('permiso')) color = 'FFFFECB3';
-      else if (estado.includes('incapacidad')) color = 'FFBBDEFB';
+    if (estado.includes('asistencia completa')) color = 'FFA5D6A7';
+    else if (estado.includes('asistencia'))      color = 'FFB2EBF2';
+    else if (estado.includes('falta'))           color = 'FFFFCDD2';
+    else if (estado.includes('pendiente'))       color = 'FFFFF59D';
+    else if (estado.includes('vacaciones'))      color = 'FFC8E6C9';
+    else if (estado.includes('permiso'))         color = 'FFFFECB3';
+    else if (estado.includes('incapacidad'))     color = 'FFBBDEFB';
 
-      fila.eachCell((cell: ExcelJS.Cell) => {
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: color }
-        };
-      });
-    }
-
-    // 📐 Ajustar ancho
-    worksheet.columns.forEach((col: Partial<ExcelJS.Column>) => {
-      if (col) col.width = 25;
-    });
-
-    // 💾 Guardar archivo
-    workbook.xlsx.writeBuffer().then((buffer: any) => {
-      const blob = new Blob([buffer], { type: 'application/octet-stream' });
-      FileSaver.saveAs(blob, nombreArchivo);
+    fila.eachCell((cell: ExcelJS.Cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
     });
   }
+
+  // 📐 Ajustar ancho
+  worksheet.columns.forEach((col: Partial<ExcelJS.Column>) => { if (col) col.width = 25; });
+
+  // 💾 Guardar con MIME correcto
+  workbook.xlsx.writeBuffer().then((buffer: ArrayBuffer) => {
+  const blob = new Blob([buffer], { type: EXCEL_MIME });
+    FileSaver.saveAs(blob, nombreArchivo);
+  });
+}
 
   desactivarTrabajador() {
     Swal.fire({

@@ -12,6 +12,7 @@ import Swal from 'sweetalert2';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 
+import { excelSanitize, EXCEL_MIME } from 'src/app/utils/excel';
 import * as FileSaver from 'file-saver';
 import * as ExcelJS from 'exceljs';
 import { lastValueFrom, firstValueFrom } from 'rxjs';
@@ -1039,147 +1040,130 @@ get dias(): FormArray<FormGroup> {
     return dias;
   }
 
-  exportarExcelPorSede(nombreArchivo: string, trabajadores: any[], fechas: string[]) {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Asistencias por sede');
+exportarExcelPorSede(nombreArchivo: string, trabajadores: any[], fechas: string[]) {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Asistencias por sede');
 
-    const eventosSede = this.eventos.filter(evento => {
-      const fechaEvento = new Date(evento.fecha);
-      return fechaEvento >= this.fechaInicio && fechaEvento <= this.fechaFin;
-    });
+  const eventosSede = this.eventos.filter(evento => {
+    const fechaEvento = new Date(evento.fecha);
+    return fechaEvento >= this.fechaInicio && fechaEvento <= this.fechaFin;
+  });
 
-    // 🧩 Cabecera
-    worksheet.addRow([`Sede: ${this.sede?.nombre || ''}`]);
-    worksheet.addRow([`Periodo: ${this.fechaInicio.toLocaleDateString()} - ${this.fechaFin.toLocaleDateString()}`]);
-    worksheet.addRow([]);
+  // 🧩 Cabecera (sanitizada)
+  worksheet.addRow([ excelSanitize(`Sede: ${this.sede?.nombre || ''}`) ]);
+  worksheet.addRow([ excelSanitize(`Periodo: ${this.fechaInicio.toLocaleDateString()} - ${this.fechaFin.toLocaleDateString()}`) ]);
+  worksheet.addRow([]);
 
-    // 🧱 Encabezados
-    const encabezados: string[] = ['Nombre Completo'];
-    fechas.forEach(f => {
-      encabezados.push(`${f} Entrada`, `${f} Salida`);
-    });
-    const headerRow = worksheet.addRow(encabezados);
+  // 🧱 Encabezados (sanitizados)
+  const encabezados: string[] = ['Nombre Completo'];
+  fechas.forEach(f => {
+    encabezados.push(`${f} Entrada`, `${f} Salida`);
+  });
+  const headerRow = worksheet.addRow(encabezados.map(excelSanitize));
 
-    worksheet.columns = [
-      { width: 35 },
-      ...fechas.flatMap(() => [{ width: 17 }, { width: 17 }])
-    ];
+  worksheet.columns = [
+    { width: 35 },
+    ...fechas.flatMap(() => [{ width: 17 }, { width: 17 }])
+  ];
 
-    headerRow.eachCell(cell => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FF343A40' }
-      };
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
-      cell.border = this.bordeCelda;
-    });
+  headerRow.eachCell(cell => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF343A40' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = this.bordeCelda;
+  });
 
-    const normalizarEstado = (estado: string): { clave: string; texto: string } => {
-      if (!estado || estado === '—') return { clave: 'falta', texto: 'Falta' };
+  const normalizarEstado = (estado: string): { clave: string; texto: string } => {
+    if (!estado || estado === '—') return { clave: 'falta', texto: 'Falta' };
+    const textoMostrar = estado
+      .replace(/\b\w/g, l => l.toUpperCase())
+      .replace(/([a-z])([A-Z])/g, '$1 $2');
 
-      const textoMostrar = estado
-        .replace(/\b\w/g, l => l.toUpperCase())
-        .replace(/([a-z])([A-Z])/g, '$1 $2');
+    const clave = estado
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-      const clave = estado
-        .toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^\w\s]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      const mapaVariantes: { [key: string]: string } = {
-        'capacitacion': 'capacitación',
-        'dia festivo': 'festivo',
-        'dia puente': 'puente',
-        'descanso laboral': 'descanso',
-        'permiso con goce': 'permiso con goce de sueldo',
-        'media jornada': 'media jornada',
-        'suspension': 'suspensión'
-      };
-
-      return {
-        clave: mapaVariantes[clave] || clave,
-        texto: textoMostrar
-      };
+    const mapaVariantes: { [key: string]: string } = {
+      'capacitacion': 'capacitación',
+      'dia festivo': 'festivo',
+      'dia puente': 'puente',
+      'descanso laboral': 'descanso',
+      'permiso con goce': 'permiso con goce de sueldo',
+      'media jornada': 'media jornada',
+      'suspension': 'suspensión'
     };
 
-    const hoy = DateTime.now().toFormat('yyyy-MM-dd');
+    return { clave: mapaVariantes[clave] || clave, texto: textoMostrar };
+  };
 
-    trabajadores.forEach(t => {
-      const row = worksheet.addRow([`${t.nombre || ''} ${t.apellido || ''}`.trim() || '—']);
-      let colIndex = 2;
+  const hoy = DateTime.now().toFormat('yyyy-MM-dd');
 
-      fechas.forEach(f => {
-        const esFuturo = f > hoy;
-        const datos = t.datosPorDia?.[f] || {};
-        const tipo = (datos?.tipo || '').toLowerCase();
-        let entrada = datos?.entrada || '—';
-        let salida = datos?.salida || '—';
-        let estado = datos?.estado || '';
+  trabajadores.forEach(t => {
+    const row = worksheet.addRow([ excelSanitize(`${t.nombre || ''} ${t.apellido || ''}`.trim() || '—') ]);
+    let colIndex = 2;
 
-        const eventoDia = eventosSede.find(e => DateTime.fromISO(e.fecha).toFormat('yyyy-MM-dd') === f);
+    fechas.forEach(f => {
+      const esFuturo = f > hoy;
+      const datos = t.datosPorDia?.[f] || {};
+      const tipo = (datos?.tipo || '').toLowerCase();
+      let entrada = datos?.entrada || '—';
+      let salida = datos?.salida || '—';
+      let estado = datos?.estado || '';
 
-        // 🕒 Día futuro: celda en blanco sin color
-        if (esFuturo) {
-          const celdaEntrada = row.getCell(colIndex++);
-          celdaEntrada.value = '';
-          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
-          celdaEntrada.border = this.bordeCelda;
-          celdaEntrada.alignment = { horizontal: 'center', vertical: 'middle' };
+      const eventoDia = eventosSede.find(e => DateTime.fromISO(e.fecha).toFormat('yyyy-MM-dd') === f);
 
-          const celdaSalida = row.getCell(colIndex++);
-          celdaSalida.value = '';
-          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
-          celdaSalida.border = this.bordeCelda;
-          celdaSalida.alignment = { horizontal: 'center', vertical: 'middle' };
-          return;
-        }
+      // 🕒 Día futuro: celda en blanco sin color
+      if (esFuturo) {
+        const c1 = row.getCell(colIndex++); c1.value = ''; c1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+        c1.border = this.bordeCelda; c1.alignment = { horizontal: 'center', vertical: 'middle' };
+        const c2 = row.getCell(colIndex++); c2.value = ''; c2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+        c2.border = this.bordeCelda; c2.alignment = { horizontal: 'center', vertical: 'middle' };
+        return;
+      }
 
-        // 🧠 Jerarquía de estado
-        if (eventoDia) {
-          estado = eventoDia.tipo || eventoDia.descripcion || '';
-          entrada = salida = '—';
-        } else if (tipo === 'asistencia' && datos?.horaEntrada && datos?.horaSalida) {
-          estado = 'Asistencia Manual';
-          entrada = datos.horaEntrada;
-          salida = datos.horaSalida;
-        } else if (!estado && entrada !== '—' && salida !== '—') {
-          estado = 'Asistencia Completa';
-        } else if (!estado || estado === '—') {
-          estado = 'Falta';
-        }
+      // 🧠 Jerarquía de estado
+      if (eventoDia) {
+        estado = eventoDia.tipo || eventoDia.descripcion || '';
+        entrada = salida = '—';
+      } else if (tipo === 'asistencia' && datos?.horaEntrada && datos?.horaSalida) {
+        estado = 'Asistencia Manual';
+        entrada = datos.horaEntrada;
+        salida = datos.horaSalida;
+      } else if (!estado && entrada !== '—' && salida !== '—') {
+        estado = 'Asistencia Completa';
+      } else if (!estado || estado === '—') {
+        estado = 'Falta';
+      }
 
-        const { clave: claveColor, texto: textoEstado } = normalizarEstado(estado);
-        const color = this.coloresEstados[claveColor] || this.coloresEstados['—'];
+      const { clave: claveColor, texto: textoEstado } = normalizarEstado(estado);
+      const color = this.coloresEstados[claveColor] || this.coloresEstados['—'];
 
-        const entradaTexto = entrada === '—' && salida === '—' && estado ? textoEstado : entrada;
-        const salidaTexto = entrada === '—' && salida === '—' && estado ? '' : salida;
+      const entradaTexto = excelSanitize(entrada === '—' && salida === '—' && estado ? textoEstado : entrada);
+      const salidaTexto  = excelSanitize(entrada === '—' && salida === '—' && estado ? '' : salida);
 
-        const celdaEntrada = row.getCell(colIndex++);
-        celdaEntrada.value = entradaTexto;
-        celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
-        celdaEntrada.border = this.bordeCelda;
-        celdaEntrada.alignment = { horizontal: 'center', vertical: 'middle' };
+      const celdaEntrada = row.getCell(colIndex++);
+      celdaEntrada.value = excelSanitize(entradaTexto);
+      celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
+      celdaEntrada.border = this.bordeCelda;
+      celdaEntrada.alignment = { horizontal: 'center', vertical: 'middle' };
 
-        const celdaSalida = row.getCell(colIndex++);
-        celdaSalida.value = salidaTexto;
-        celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
-        celdaSalida.border = this.bordeCelda;
-        celdaSalida.alignment = { horizontal: 'center', vertical: 'middle' };
-      });
+      const celdaSalida = row.getCell(colIndex++);
+      celdaSalida.value  = excelSanitize(salidaTexto);
+      celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
+      celdaSalida.border = this.bordeCelda;
+      celdaSalida.alignment = { horizontal: 'center', vertical: 'middle' };
     });
+  });
 
-    // 💾 Guardar
-    workbook.xlsx.writeBuffer().then((buffer: any) => {
-      const blob = new Blob([buffer], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-      FileSaver.saveAs(blob, nombreArchivo);
-    });
-  }
+  // 💾 Guardar con MIME correcto
+  workbook.xlsx.writeBuffer().then((buffer: ArrayBuffer) => {
+    const blob = new Blob([buffer], { type: EXCEL_MIME });
+    FileSaver.saveAs(blob, nombreArchivo);
+  });
+}
 
   // Colores actualizados con todas las variantes
   coloresEstados: { [estado: string]: string } = {
