@@ -19,7 +19,6 @@ import Swal from 'sweetalert2';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 
-import * as XLSX from 'xlsx';
 import * as FileSaver from 'file-saver';
 import * as ExcelJS from 'exceljs';
 

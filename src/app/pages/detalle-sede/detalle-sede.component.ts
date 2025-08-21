@@ -505,6 +505,14 @@ get dias(): FormArray<FormGroup> {
   }
 
   generarPdfPorSede(): void {
+    // Tipo del valor que devuelve el modal
+    type RangoReporte = {
+      inicio: string;
+      fin: string;
+      modo: 'una' | 'dividido';
+      formato: 'carta' | 'oficio';
+    };
+
     // Interfaces locales para tipado fuerte
     interface PdfTableNode {
       table: {
@@ -513,7 +521,7 @@ get dias(): FormArray<FormGroup> {
         body: any[][];
         dontBreakRows: boolean;
       };
-      layout: PdfTableLayout; // 👈 Aquí ya tomará en cuenta fillColor
+      layout: PdfTableLayout; // usa tu interfaz ya declarada arriba en el archivo
       margin: number[];
       pageBreak?: 'before' | 'after' | 'both';
     }
@@ -527,7 +535,8 @@ get dias(): FormArray<FormGroup> {
       pageSize?: any;
     }
 
-    Swal.fire({
+    // 👇 Genérico permite null, y preConfirm siempre regresa RangoReporte | null
+    Swal.fire<RangoReporte | null>({
       title: '📅 Selecciona el rango de fechas',
       html: `
         <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
@@ -541,9 +550,11 @@ get dias(): FormArray<FormGroup> {
           </div>
           <div style="margin-top: 15px; text-align: left;">
             <label style="font-weight: bold;">Modo de reporte:</label><br/>
-            <input type="radio" name="modo" id="modo-uno" checked onclick="document.getElementById('formato-carta').disabled = true; document.getElementById('formato-oficio').disabled = true;" />
+            <input type="radio" name="modo" id="modo-uno" checked
+                  onclick="document.getElementById('formato-carta').disabled = true; document.getElementById('formato-oficio').disabled = true;" />
             <label for="modo-uno">Una sola hoja (ajustar tamaño)</label><br/>
-            <input type="radio" name="modo" id="modo-dividido" onclick="document.getElementById('formato-carta').disabled = false; document.getElementById('formato-oficio').disabled = false;" />
+            <input type="radio" name="modo" id="modo-dividido"
+                  onclick="document.getElementById('formato-carta').disabled = false; document.getElementById('formato-oficio').disabled = false;" />
             <label for="modo-dividido">Dividir por hojas:</label><br/>
             <div style="margin-left: 20px;">
               <input type="radio" name="formato" id="formato-carta" checked disabled />
@@ -556,7 +567,7 @@ get dias(): FormArray<FormGroup> {
       `,
       confirmButtonText: 'Generar PDF',
       showCancelButton: true,
-      preConfirm: () => {
+      preConfirm: (): RangoReporte | null => {
         const inicio = (document.getElementById('fecha-inicio') as HTMLInputElement).value;
         const fin = (document.getElementById('fecha-fin') as HTMLInputElement).value;
         const modoUno = (document.getElementById('modo-uno') as HTMLInputElement).checked;
@@ -564,12 +575,11 @@ get dias(): FormArray<FormGroup> {
 
         if (!inicio || !fin) {
           Swal.showValidationMessage('❌ Debes seleccionar ambas fechas');
-          return;
+          return null;
         }
-
         if (inicio > fin) {
           Swal.showValidationMessage('❌ La fecha de inicio no puede ser mayor que la de fin');
-          return;
+          return null;
         }
 
         return {
@@ -579,10 +589,10 @@ get dias(): FormArray<FormGroup> {
           formato: formatoCarta ? 'carta' : 'oficio'
         };
       }
-    }).then((result) => {
-      if (!result.isConfirmed) return;
+    }).then(({ isConfirmed, value }) => {
+      if (!isConfirmed || !value) return; // value es RangoReporte | null
 
-      const { inicio, fin, modo, formato } = result.value;
+      const { inicio, fin, modo, formato } = value;
 
       this.asistenciaService.obtenerUnificadoPorSede(this.sede.id, inicio, fin).subscribe({
         next: (res: any) => {
@@ -594,7 +604,7 @@ get dias(): FormArray<FormGroup> {
 
           const fechas = Object.keys(trabajadores[0].datosPorDia);
 
-          // 🔍 Marcar explícitamente los días vacíos como Faltas
+          // Marcar explícitamente los días vacíos como Faltas
           fechas.forEach((fecha) => {
             trabajadores.forEach((trabajador) => {
               if (!trabajador.datosPorDia[fecha]) {
@@ -604,164 +614,106 @@ get dias(): FormArray<FormGroup> {
           });
 
           const chunkSize = formato === 'carta' ? 6 : 10;
-          const tablas: PdfTableNode[] = [];
 
-          // Función optimizada para determinar el color basado en estado y horas
           const obtenerColorPorEstado = (estado: string = '', entrada: string = '', salida: string = ''): string => {
             const coloresPorEstado: { [key: string]: string } = {
-              'Asistencia Completa': '#d9f99d',     // Verde limón claro
-              'Asistencia Manual': '#bbf7d0',       // Verde menta pastel
-              'Salida Automática': '#99f6e4',       // Agua clara
-              'Pendiente': '#fef9c3',               // Amarillo suave
-              'Falta': '#fecaca',                   // Rojo rosado
-              'Vacaciones': '#bae6fd',              // Azul celeste claro
-              'Vacaciones Pagadas': '#ddd6fe',      // Lila suave
-              'Permiso': '#fde68a',                 // Naranja pastel
-              'Permiso con Goce': '#fef3c7',        // Amarillo pálido
-              'Incapacidad': '#fbcfe8',             // Rosa claro
-              'Descanso': '#e2e8f0',                // Gris azulado claro
-              'Festivo': '#fae8ff',                 // Rosita lavanda
-              'Puente': '#f5f5f4',                  // Gris neutro clarito
-              'Evento': '#ccfbf1',                  // Verde-agua claro
-              'Capacitación': '#ecfccb',            // Verde pastito claro
-              'Media Jornada': '#fef08a',           // Amarillo semipastel
-              'Suspensión': '#fca5a5'               // Rojo pastel
+              'Asistencia Completa': '#d9f99d',
+              'Asistencia Manual': '#bbf7d0',
+              'Salida Automática': '#99f6e4',
+              'Pendiente': '#fef9c3',
+              'Falta': '#fecaca',
+              'Vacaciones': '#bae6fd',
+              'Vacaciones Pagadas': '#ddd6fe',
+              'Permiso': '#fde68a',
+              'Permiso con Goce': '#fef3c7',
+              'Incapacidad': '#fbcfe8',
+              'Descanso': '#e2e8f0',
+              'Festivo': '#fae8ff',
+              'Puente': '#f5f5f4',
+              'Evento': '#ccfbf1',
+              'Capacitación': '#ecfccb',
+              'Media Jornada': '#fef08a',
+              'Suspensión': '#fca5a5'
             };
 
-            // 1. Prioridad a estados explícitos
             if (estado && estado !== '—') {
-              const estadoNormalizado = estado
+              const estN = estado
                 .replace(/[^\w\sáéíóúÁÉÍÓÚ]/g, '')
                 .trim()
                 .toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '');
-
-              for (const [key, color] of Object.entries(coloresPorEstado)) {
-                const keyNormalizado = key
-                  .toLowerCase()
-                  .normalize('NFD')
-                  .replace(/[\u0300-\u036f]/g, '');
-                if (estadoNormalizado.includes(keyNormalizado)) {
-                  return color;
-                }
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              for (const [k, color] of Object.entries(coloresPorEstado)) {
+                const kN = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (estN.includes(kN)) return color;
               }
             }
-
-            // 2. Si no hay estado pero hay horas, es Asistencia Completa
-            if ((entrada && entrada !== '—' && salida && salida !== '—')) {
+            if (entrada && entrada !== '—' && salida && salida !== '—') {
               return coloresPorEstado['Asistencia Completa'];
             }
-
-            return ''; // Sin color por defecto
+            return '';
           };
 
           const crearTabla = (subFechas: string[], trabajadores: any[]): PdfTableNode => {
             const body: any[][] = [];
 
-            // 🧩 Encabezado 1 con fechas duplicadas (Entrada / Salida)
+            // Header 1
             const header1 = ['Nombre del trabajador', ...subFechas.flatMap(f => [f, ''])];
-            body.push(
-              header1.map(text => ({
-                text,
-                style: 'tableHeader',
-                fillColor: '#343a40',
-                color: '#ffffff'
-              }))
-            );
+            body.push(header1.map(text => ({
+              text,
+              style: 'tableHeader',
+              fillColor: '#343a40',
+              color: '#ffffff'
+            })));
 
-            // 📆 Encabezado 2 fijo: Entrada / Salida por cada fecha
+            // Header 2
             const header2 = [''].concat(subFechas.flatMap(() => ['Entrada', 'Salida']));
-            body.push(
-              header2.map(text => ({
-                text,
-                style: 'tableHeader',
-                fillColor: '#495057',
-                color: '#ffffff'
-              }))
-            );
+            body.push(header2.map(text => ({
+              text,
+              style: 'tableHeader',
+              fillColor: '#495057',
+              color: '#ffffff'
+            })));
 
             const hoy = DateTime.now().toFormat('yyyy-MM-dd');
-
-            const formatearHora = (hora: string): string => {
-              if (!hora) return '';
-              if (hora.includes(':')) return hora;
-              return `${hora.slice(0, 2)}:${hora.slice(2)}`;
-            };
+            const formatearHora = (h: string) => (!h ? '' : h.includes(':') ? h : `${h.slice(0,2)}:${h.slice(2)}`);
 
             trabajadores.forEach((t: any) => {
               const nombre = [t.nombre, t.apellido].filter(Boolean).join(' ');
-              const fila: any[] = [{
-                text: nombre,
-                style: 'nombreTrabajador',
-                fillColor: ''
-              }];
+              const fila: any[] = [{ text: nombre, style: 'nombreTrabajador', fillColor: '' }];
 
-              const convertirHoraMexico = (fechaHoraStr: string): string => {
-                try {
-                  const horaLuxon = DateTime.fromISO(fechaHoraStr, { zone: 'utc' }).setZone('America/Mexico_City');
-                  return horaLuxon.toFormat('HH:mm'); // o 'hh:mm a' si quieres formato AM/PM
-                } catch {
-                  return '—';
-                }
+              const tz = (iso: string) => {
+                try { return DateTime.fromISO(iso, { zone: 'utc' }).setZone('America/Mexico_City').toFormat('HH:mm'); }
+                catch { return '—'; }
               };
 
               subFechas.forEach((fecha: string) => {
                 const datos = t.datosPorDia[fecha] || {};
                 let entrada = datos?.entrada || '—';
                 let salida = datos?.salida || '—';
-
-                if (entrada && entrada !== '—' && entrada.includes('T')) {
-                  entrada = convertirHoraMexico(entrada);
-                }
-                if (salida && salida !== '—' && salida.includes('T')) {
-                  salida = convertirHoraMexico(salida);
-                }
+                if (entrada && entrada !== '—' && entrada.includes('T')) entrada = tz(entrada);
+                if (salida && salida !== '—' && salida.includes('T')) salida = tz(salida);
 
                 let estado = datos?.estado || '';
-
                 const entradaVacia = !entrada || entrada === '—';
                 const salidaVacia = !salida || salida === '—';
                 const estadoVacio = !estado || estado === '—';
-
-                // 💥 Asistencia manual desde calendario del trabajador
-                const esAsistenciaManual = (
-                  (datos?.tipo?.trim()?.toLowerCase() === 'asistencia') &&
-                  datos?.horaEntrada &&
-                  datos?.horaSalida
-                );
+                const esManual = (datos?.tipo?.trim()?.toLowerCase() === 'asistencia') && datos?.horaEntrada && datos?.horaSalida;
 
                 if (fecha > hoy) {
-                  entrada = '';
-                  salida = '';
-                  estado = '';
-                } else if (esAsistenciaManual) {
+                  entrada = ''; salida = ''; estado = '';
+                } else if (esManual) {
                   estado = 'Asistencia Manual';
                   entrada = formatearHora(datos.horaEntrada);
                   salida = formatearHora(datos.horaSalida);
                 } else {
                   const sinDatos = entradaVacia && salidaVacia && estadoVacio;
-                  if (sinDatos) {
-                    estado = 'Falta';
-                  } else if (!estado && datos?.entrada && datos?.salida) {
-                    estado = 'Asistencia Completa';
-                  }
+                  if (sinDatos) estado = 'Falta';
+                  else if (!estado && datos?.entrada && datos?.salida) estado = 'Asistencia Completa';
                 }
 
                 const color = obtenerColorPorEstado(estado, entrada, salida);
-
-                fila.push({
-                  text: entrada,
-                  style: 'celdaTexto',
-                  fillColor: color || undefined,
-                  estadoReal: estado
-                });
-                fila.push({
-                  text: salida,
-                  style: 'celdaTexto',
-                  fillColor: color || undefined,
-                  estadoReal: estado
-                });
+                fila.push({ text: entrada, style: 'celdaTexto', fillColor: color || undefined, estadoReal: estado });
+                fila.push({ text: salida,  style: 'celdaTexto', fillColor: color || undefined, estadoReal: estado });
               });
 
               body.push(fila);
@@ -777,13 +729,10 @@ get dias(): FormArray<FormGroup> {
               layout: {
                 fillColor: (rowIndex: number, node: any, columnIndex: number): string | null => {
                   if (rowIndex < 2 || columnIndex === 0) return null;
-
                   const celda = node.table.body[rowIndex][columnIndex];
                   const estado = celda?.estadoReal || celda?.text || '';
-
                   if (celda?.fillColor) return null;
                   if (estado.trim() === '—' || estado.trim() === '') return null;
-
                   return obtenerColorPorEstado(estado);
                 },
                 hLineWidth: (i: number) => (i === 0 || i === 1 || i === body.length) ? 1 : 0,
@@ -801,85 +750,37 @@ get dias(): FormArray<FormGroup> {
           const docDefinition: PdfDocDefinition = {
             pageOrientation: 'landscape',
             content: [
-              {
-                text: `Reporte de Asistencias por Sede`,
-                style: 'header',
-                margin: [0, 0, 0, 5]
-              },
-              {
-                text: `📍 ${this.sede.nombre} (ID: ${this.sede.id})`,
-                style: 'subheader',
-                margin: [0, 0, 0, 2]
-              },
-              {
-                text: `📅 Periodo: ${inicio} al ${fin}\n\n`,
-                style: 'subheader',
-                margin: [0, 0, 0, 10]
-              }
+              { text: `Reporte de Asistencias por Sede`, style: 'header', margin: [0, 0, 0, 5] },
+              { text: `📍 ${this.sede.nombre} (ID: ${this.sede.id})`, style: 'subheader', margin: [0, 0, 0, 2] },
+              { text: `📅 Periodo: ${inicio} al ${fin}\n\n`, style: 'subheader', margin: [0, 0, 0, 10] }
             ],
             styles: {
-              header: {
-                fontSize: 18,
-                bold: true,
-                alignment: 'center',
-                color: '#343a40'
-              },
-              subheader: {
-                fontSize: 12,
-                alignment: 'center',
-                color: '#6c757d'
-              },
-              tableHeader: {
-                bold: true,
-                fontSize: 10,
-                color: 'white',
-                alignment: 'center'
-              },
-              nombreTrabajador: {
-                bold: true,
-                fontSize: 10,
-                color: '#212529'
-              },
-              celdaTexto: {
-                fontSize: 9,
-                alignment: 'center',
-                color: '#212529'
-              }
+              header: { fontSize: 18, bold: true, alignment: 'center', color: '#343a40' },
+              subheader: { fontSize: 12, alignment: 'center', color: '#6c757d' },
+              tableHeader: { bold: true, fontSize: 10, color: 'white', alignment: 'center' },
+              nombreTrabajador: { bold: true, fontSize: 10, color: '#212529' },
+              celdaTexto: { fontSize: 9, alignment: 'center', color: '#212529' }
             },
-            defaultStyle: {
-              font: 'Roboto',
-              lineHeight: 1.2
-            },
-            footer: (currentPage: number, pageCount: number) => {
-              return {
-                text: `Página ${currentPage} de ${pageCount}`,
-                alignment: 'center',
-                fontSize: 9,
-                margin: [0, 10, 0, 0],
-                color: '#6c757d'
-              };
-            }
+            defaultStyle: { font: 'Roboto', lineHeight: 1.2 },
+            footer: (currentPage: number, pageCount: number) => ({
+              text: `Página ${currentPage} de ${pageCount}`,
+              alignment: 'center',
+              fontSize: 9,
+              margin: [0, 10, 0, 0],
+              color: '#6c757d'
+            })
           };
 
           if (modo === 'una') {
             const tabla = crearTabla(fechas, trabajadores);
             docDefinition.content.push(tabla);
-
-            // 💡 Cada día tiene 2 columnas, y cada columna ocupa aprox. 50px. Sumamos también unos 100px para margen y nombre
             const anchoCalculado = Math.max(595, 100 + (fechas.length * 2 * 50));
-
-            docDefinition.pageSize = {
-              width: anchoCalculado,
-              height: 842 // Altura estándar (A4 vertical) o 595 si quisieras horizontal, pero landscape ya rota la hoja
-            };
-          }else {
+            docDefinition.pageSize = { width: anchoCalculado, height: 842 };
+          } else {
             for (let i = 0; i < fechas.length; i += chunkSize) {
               const subFechas = fechas.slice(i, i + chunkSize);
               const tabla = crearTabla(subFechas, trabajadores);
-              const tablaConSalto: PdfTableNode = {
-                ...tabla,
-                ...(i > 0 && { pageBreak: 'before' })
-              };
+              const tablaConSalto: PdfTableNode = { ...tabla, ...(i > 0 && { pageBreak: 'before' }) };
               docDefinition.content.push(tablaConSalto);
             }
             docDefinition.pageSize = formato === 'carta' ? 'LETTER' : 'LEGAL';
