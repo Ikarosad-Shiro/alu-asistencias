@@ -18,3 +18,40 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   border-radius: 8px;
   padding: 8px 20px;
 }
+
+
+/* ===== Variables globales ===== */
+:root{
+  --sidebar-w: 250px;
+  --content-max: 920px;
+  --page-padding-x: 40px;
+  --page-padding-y: 20px;
+
+  --sp-0: 0; --sp-1: 4px; --sp-2: 8px; --sp-3: 12px;
+  --sp-4: 16px; --sp-5: 20px; --sp-6: 24px;
+
+  --c-bg-glass: rgba(255, 255, 255, 0.575);
+  --c-bg-glass-soft: rgba(255, 255, 255, 0.616);
+  --c-bg-glass-softer: rgba(255,255,255,.64);
+  --c-text: #111827; --c-text-muted: rgba(0,0,0,.54);
+
+  --c-primary: #6a1d97; --c-primary-dark: #460f66;
+  --c-danger: #dc3545;  --c-danger-dark: #c82333;
+  --c-success: #198754; --c-success-dark: #146c43;
+
+  --c-gray-900: #343a40; --c-gray-700: #495057;
+
+  --radius-lg: 16px; --radius-md: 10px;
+  --shadow-1: 0 4px 8px rgba(0,0,0,.10);
+  --shadow-2: 0 8px 24px rgba(0,0,0,.12);
+  --border-glass: 1px solid rgba(255,255,255,.35);
+  --blur: 8px; --blur-sm: 6px;
+
+  --btn-radius: 12px;
+  --btn-gap: 10px;
+  --btn-shadow: 0 8px 20px rgba(0,0,0,.12);
+  --btn-ease: cubic-bezier(.2,.8,.2,1);
+}
+
+/* Reset útil global */
+*,*::before,*::after{ box-sizing: border-box; }

@@ -46,12 +46,12 @@ export class SedeService {
 
   // 🔍 Obtener sede por ID
   obtenerSedePorId(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/sedes/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/sedes/${id}`, this.getAuthHeaders());
   }
 
-  // 💾 Actualizar datos editables de una sede
-  actualizarSede(id: number, datos: any): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/sedes/${id}`, datos, this.getAuthHeaders());
+  // ⏰ Actualizar horario base
+  actualizarHorarioBaseDeSede(idSede: number, body: any) {
+    return this.http.put(`${this.apiUrl}/sedes/${idSede}/horario-base`, body, this.getAuthHeaders());
   }
 
   // 📅 Obtener calendario de sede
@@ -68,4 +68,9 @@ export class SedeService {
   cancelarEliminacionSede(id: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/sedes/cancelar-eliminacion/${id}`, {}, this.getAuthHeaders());
   }
+
+    actualizarSede(id: number, body: any) {        // 👈 para tu guardarCambios()
+    return this.http.put(`${this.apiUrl}/sedes/actualizar/${id}`, body);
+  }
+
 }

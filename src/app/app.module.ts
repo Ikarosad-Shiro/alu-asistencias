@@ -41,6 +41,11 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NgChartsModule } from 'ng2-charts';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDividerModule } from '@angular/material/divider';
+import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 // Angular Calendar
 import { CalendarModule, DateAdapter } from 'angular-calendar';
@@ -97,6 +102,11 @@ import { CalendarioUnificadoComponent } from './components/calendario-unificado/
     MatCheckboxModule,
     MatDialogModule,
     MatTooltipModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatDividerModule,
+    NgxMatTimepickerModule,
+    MatSlideToggleModule,
 
     // Angular Calendar
     CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),

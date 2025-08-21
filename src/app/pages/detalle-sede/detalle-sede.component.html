@@ -34,14 +34,14 @@
 
     <div class="botones-descarga" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px;">
       <!-- 📄 Botón para generar PDF -->
-      <button class="btn-update"
+      <button class="btn btn--danger"
         style="background-color: #a30202; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;"
         (click)="generarPdfPorSede()">
         📄 Descargar PDF de asistencias
       </button>
 
       <!-- 📊 Botón para generar Excel -->
-      <button class="btn-update"
+      <button class="btn btn--success"
         style="background-color: #16861a; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;"
         (click)="abrirSelectorDeFechasExcel()">
         📊 Generar Excel por sede
@@ -73,12 +73,132 @@
           <label>Responsable:</label>
           <input [(ngModel)]="sede.responsable" name="responsable" [disabled]="esSoloRevisor()" [ngClass]="{'input-disabled': esSoloRevisor()}" />
         </div>
-        <button class="btn-update" (click)="guardarCambios()" *ngIf="!esSoloRevisor()">
+        <button class="btn btn--primary" (click)="guardarCambios()" *ngIf="!esSoloRevisor()">
           <i class="bi bi-save"></i> Guardar Cambios
         </button>
       </form>
     </div>
+    <!-- Acordeón general -->
+    <mat-accordion class="acordeon-general content-card">
+      <mat-expansion-panel class="panel-horario-base" [expanded]="false">
+        <mat-expansion-panel-header>
+          <mat-panel-title>Horario base</mat-panel-title>
+          <mat-panel-description class="muted" *ngIf="form?.value?.desde as f">
+            Desde: {{ f | date:'dd/MM/yyyy' }}
+          </mat-panel-description>
+        </mat-expansion-panel-header>
 
+        <!-- Contenido del panel -->
+        <mat-card class="content-card">
+          <mat-card-content>
+            <form [formGroup]="form" (ngSubmit)="guardar()">
+              <!-- Barra superior: fecha + botón -->
+              <div class="toolbar-horario">
+                <mat-form-field appearance="outline" class="fecha-inicio">
+                  <mat-label>Fecha de inicio</mat-label>
+                  <input matInput [matDatepicker]="dp" formControlName="desde" autocomplete="off">
+                  <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+                  <mat-datepicker #dp></mat-datepicker>
+                </mat-form-field>
+
+                <span class="grow"></span>
+
+                <button type="button" class="btn btn--pill" (click)="aplicarATodos()">
+                  Copiar primer día a todos
+                </button>
+              </div>
+
+              <!-- Acordeón de días -->
+              <mat-accordion class="horario-accordion" displayMode="flat" multi>
+                <ng-container formArrayName="dias">
+                  <mat-expansion-panel
+                    class="dia-panel"
+                    *ngFor="let diaCtrl of dias.controls; let i = index; trackBy: trackByIndex"
+                    [formGroupName]="i"
+                    [expanded]="false">
+
+                    <mat-expansion-panel-header>
+                      <mat-panel-title class="panel-title">
+                        {{ nombresDias[i] }}
+                      </mat-panel-title>
+
+                      <mat-panel-description class="panel-desc">
+                        <span class="estado-pill" [class.inactivo]="!diaCtrl.value.activo">
+                          {{ diaCtrl.value.activo ? 'Activo' : 'Inactivo' }}
+                        </span>
+                        <span class="resumen"
+                              *ngIf="diaCtrl.value.activo && diaCtrl.value.ini && diaCtrl.value.fin">
+                          • {{ diaCtrl.value.ini }} – {{ diaCtrl.value.fin }}
+                        </span>
+                      </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div class="panel-body" [class.desactivado]="!diaCtrl.value.activo">
+                      <div class="fila-top">
+                        <mat-slide-toggle formControlName="activo">Día activo</mat-slide-toggle>
+                      </div>
+
+                      <div class="campos-hora">
+                        <!-- Entrada -->
+                        <mat-form-field appearance="outline">
+                          <mat-label>Entrada</mat-label>
+                          <input
+                            matInput
+                            formControlName="ini"
+                            [ngxMatTimepicker]="pickerIni"
+                            [format]="12"
+                            placeholder="hh:mm AM/PM"
+                            readonly>
+                          <button
+                            type="button"
+                            mat-icon-button
+                            matSuffix
+                            (click)="pickerIni.open()"
+                            [disabled]="!diaCtrl.value.activo">
+                            <mat-icon>schedule</mat-icon>
+                          </button>
+                          <ngx-mat-timepicker #pickerIni></ngx-mat-timepicker>
+                        </mat-form-field>
+
+                        <!-- Salida -->
+                        <mat-form-field appearance="outline">
+                          <mat-label>Salida</mat-label>
+                          <input
+                            matInput
+                            formControlName="fin"
+                            [ngxMatTimepicker]="pickerFin"
+                            [format]="12"
+                            placeholder="hh:mm AM/PM"
+                            readonly>
+                          <button
+                            type="button"
+                            mat-icon-button
+                            matSuffix
+                            (click)="pickerFin.open()"
+                            [disabled]="!diaCtrl.value.activo">
+                            <mat-icon>schedule</mat-icon>
+                          </button>
+                          <ngx-mat-timepicker #pickerFin></ngx-mat-timepicker>
+                        </mat-form-field>
+                      </div>
+                    </div>
+                  </mat-expansion-panel>
+                </ng-container>
+              </mat-accordion>
+
+              <!-- Botones -->
+              <div class="acciones">
+                <button type="button" mat-stroked-button color="warn" (click)="limpiar()">Limpiar</button>
+                <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || guardando">
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      </mat-expansion-panel>
+    </mat-accordion>
+    <p></p>
     <div class="card">
       <h3>👥 Trabajadores de esta sede</h3>
       <div class="search-container">
@@ -121,7 +241,7 @@
         (eventoEliminado)="eliminarEventoDesdeCalendario($event)">
       </app-calendario-sede>
 
-      <button class="btn-update" routerLink="/calendario-laboral" *ngIf="!esSoloRevisor()">
+      <button class="btn btn--primary btn--block" routerLink="/calendario-laboral" *ngIf="!esSoloRevisor()">
         <i class="bi bi-calendar-plus"></i> Modificar en Calendario Laboral
       </button>
     </div>
@@ -137,7 +257,7 @@
       </p>
 
       <button
-        class="btn-danger"
+        class="btn btn--danger btn--block"
         *ngIf="sede.estado === 'activa'"
         (click)="eliminarSede()">
         <i class="bi bi-trash-fill"></i> Eliminar Sede

@@ -1,19 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef,Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { SedeService } from 'src/app/services/sede.service';
 import { TrabajadoresService } from 'src/app/services/trabajadores.service';
 import { AuthService } from 'src/app/services/auth.service';
-import { UserService } from 'src/app/services/user.service'; // agrega esto si aún no está
+import { UserService } from 'src/app/services/user.service';
 import { CalendarioService } from 'src/app/services/calendario.service';
+import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
-import { HttpClient } from '@angular/common/http';
 
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 
 import * as FileSaver from 'file-saver';
 import * as ExcelJS from 'exceljs';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, firstValueFrom } from 'rxjs';
 import type { BorderStyle } from 'exceljs';
 
 import { DateTime } from 'luxon';
@@ -47,6 +48,7 @@ interface PdfTableLayout {
 
 @Component({
   selector: 'app-detalle-sede',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './detalle-sede.component.html',
   styleUrls: ['./detalle-sede.component.css']
 })
@@ -63,6 +65,7 @@ export class DetalleSedeComponent implements OnInit {
   fechasRango: string[] = [];
   fechaInicio!: Date;
   fechaFin!: Date;
+  busquedaTrabajador: string = '';
 
   bordeCelda: Partial<ExcelJS.Borders> = {
     top: { style: 'thin' as BorderStyle, color: { argb: 'FFDEE2E6' } },
@@ -71,16 +74,24 @@ export class DetalleSedeComponent implements OnInit {
     right: { style: 'thin' as BorderStyle, color: { argb: 'FFDEE2E6' } }
   };
 
+  trackByIndex = (_: number, __: unknown) => _;
+
+  // 🕒 Horario Base (Reactive Forms)
+form!: FormGroup;
+guardando = false;
+nombresDias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
   constructor(
+    private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
     private router: Router,
     private sedeService: SedeService,
     private trabajadoresService: TrabajadoresService,
     private calendarioService: CalendarioService,
     private authService: AuthService,
-    private http: HttpClient,
-    private userService: UserService, // ← ✅ AGREGA ESTA LÍNEA
-    private asistenciaService: AsistenciaService // ✅ ← AGREGA ESTO
+    private userService: UserService,
+    private asistenciaService: AsistenciaService,
+    private fb: FormBuilder
   ) {}
 
   ngOnInit(): void {
@@ -92,12 +103,75 @@ export class DetalleSedeComponent implements OnInit {
       this.obtenerEventos(sedeId, this.anioActual);
       this.obtenerTodasLasSedes();
     }
+  this.form = this.fb.group({
+    desde: [new Date(), Validators.required],
+    dias: this.fb.array(
+      this.nombresDias.map((_, i) => this.crearDia(i === 6)) // 👈 domingo sin horas
+    )
+  });
+
+  // Validadores condicionales: solo piden hora si el día está activo
+this.dias.controls.forEach(ctrl => this.configurarValidadoresDia(ctrl as FormGroup));
+}
+
+  crearDia(esDomingo = false): FormGroup {
+    return this.fb.group({
+      activo: [!esDomingo],                       // domingo: inactivo
+      ini: [esDomingo ? '' : '09:00'],            // domingo: vacío
+      fin: [esDomingo ? '' : '17:00']             // domingo: vacío
+    });
   }
+
+private configurarValidadoresDia(g: FormGroup): void {
+  const activo = g.get('activo')!;
+  const ini = g.get('ini')!;
+  const fin = g.get('fin')!;
+
+  const aplicar = (on: boolean) => {
+    if (on) {
+      // Validadores cuando el día está activo
+      ini.setValidators([Validators.required]);
+      fin.setValidators([Validators.required]);
+
+      // Habilitar los controles de hora
+      ini.enable({ emitEvent: false });
+      fin.enable({ emitEvent: false });
+
+      // Defaults cómodos si están vacíos
+      if (!ini.value) ini.setValue('09:00', { emitEvent: false });
+      if (!fin.value) fin.setValue('17:00', { emitEvent: false });
+    } else {
+      // Quitar validadores y deshabilitar cuando no está activo
+      ini.clearValidators();
+      fin.clearValidators();
+      ini.disable({ emitEvent: false });
+      fin.disable({ emitEvent: false });
+    }
+
+    ini.updateValueAndValidity({ emitEvent: false });
+    fin.updateValueAndValidity({ emitEvent: false });
+  };
+
+  // Estado inicial (ej: domingo inactivo)
+  aplicar(!!activo.value);
+
+  // Reaccionar al slide toggle
+  activo.valueChanges.subscribe(aplicar);
+}
+
+get dias(): FormArray<FormGroup> {
+  return this.form.get('dias') as FormArray<FormGroup>;
+}
+
+
 
   obtenerSede(id: number): void {
     this.sedeService.obtenerSedePorId(id).subscribe({
-      next: (res) => this.sede = res,
-      error: (err) => console.error('❌ Error al obtener sede', err)
+      next: (res: any) => {
+        this.sede = res;
+        this.cargarHorarioBaseExistente(res?.horarioBase);
+      },
+      error: (err: any) => console.error('❌ Error al obtener sede', err)
     });
   }
 
@@ -174,19 +248,18 @@ export class DetalleSedeComponent implements OnInit {
             inputLabel: 'Contraseña',
             showCancelButton: true,
             confirmButtonText: 'Confirmar',
-            preConfirm: (contraseña) => {
-              return this.userService.verificarContraseña(contraseña).toPromise()
-                .then((res) => {
-                  if (!res.valido) {
-                    Swal.showValidationMessage('❌ Contraseña incorrecta');
-                    return false;
-                  }
-                  return true;
-                })
-                .catch(() => {
-                  Swal.showValidationMessage('❌ Error al verificar la contraseña');
+            preConfirm: async (contraseña) => {
+              try {
+                const res = await firstValueFrom(this.userService.verificarContraseña(contraseña));
+                if (!res.valido) {
+                  Swal.showValidationMessage('❌ Contraseña incorrecta');
                   return false;
-                });
+                }
+                return true;
+              } catch {
+                Swal.showValidationMessage('❌ Error al verificar la contraseña');
+                return false;
+              }
             }
           }).then(passwordStep => {
             if (!passwordStep.isConfirmed || !passwordStep.value) return;
@@ -315,7 +388,84 @@ export class DetalleSedeComponent implements OnInit {
     });
   }
 
-  busquedaTrabajador: string = '';
+  aplicarATodos(): void {
+  const base = this.dias.at(0).value; // copia el primer día
+  this.dias.controls.forEach((g: any, idx) => {
+    if (idx > 0) g.patchValue({ ini: base.ini, fin: base.fin, activo: base.activo });
+  });
+  }
+
+  limpiar(): void {
+    this.dias.controls.forEach((g: any) =>
+      g.patchValue({ activo: false, ini: '', fin: '' })
+    );
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+  }
+
+  cargarHorarioBaseExistente(horario: any) {
+    if (!horario) return;
+
+    try {
+      if (horario.desde) {
+        // Si viene ISO (UTC) lo llevamos a Date local
+        const d = DateTime.fromISO(horario.desde).toJSDate();
+        this.form.patchValue({ desde: d });
+      }
+
+      // Desactiva todos primero
+      this.dias.controls.forEach((g: any) => g.patchValue({ activo: false }));
+
+      // Aplica reglas existentes
+      (horario.reglas || []).forEach((r: any) => {
+        const i = (r.dow ?? 1) - 1;  // 1..7 → 0..6
+        const j = r.jornadas?.[0];
+        if (this.dias.at(i) && j) {
+          this.dias.at(i).patchValue({
+            activo: true, ini: j.ini, fin: j.fin
+          });
+        }
+      });
+    } catch {
+      // Si algo llega chueco, no truenes la pantalla 🙂
+    }
+  }
+
+  private buildHorarioPayload(): any {
+    const desdeISO = DateTime.fromJSDate(this.form.value.desde).toUTC().startOf('day').toISO();
+
+    const reglas = this.dias.controls
+      .map((g: any, idx: number) => ({ idx, ...g.value }))
+      .filter(d => d.activo)
+      .map(d => ({
+        dow: d.idx + 1, // 1..7 (Lun..Dom)
+        jornadas: [{ ini: d.ini, fin: d.fin, overnight: false }]
+      }));
+
+    return { horarioBase: { desde: desdeISO, reglas } };
+  }
+
+  async guardar() {
+    await this.guardarHorarioBase();
+  }
+
+  async guardarHorarioBase() {
+    if (this.form.invalid || this.esSoloRevisor()) return;
+    this.guardando = true;
+    try {
+      const payload = this.buildHorarioPayload();
+      await firstValueFrom(
+        this.sedeService.actualizarHorarioBaseDeSede(this.sede.id, payload)
+      );
+      Swal.fire('✅ Guardado', 'Horario base actualizado', 'success');
+    } catch (e) {
+      console.error('❌ Error guardando horario base', e);
+      Swal.fire('❌ Error', 'No se pudo guardar el horario base', 'error');
+    } finally {
+      this.guardando = false;
+    }
+  }
+
   trabajadoresFiltrados(): any[] {
     if (!this.busquedaTrabajador) return this.trabajadores;
     const filtro = this.busquedaTrabajador.toLowerCase();
