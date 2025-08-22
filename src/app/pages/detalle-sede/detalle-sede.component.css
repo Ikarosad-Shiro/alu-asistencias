@@ -54,7 +54,23 @@
   --btn-gap: 10px;
   --btn-shadow: 0 8px 20px rgba(0,0,0,.12);
   --btn-ease: cubic-bezier(.2,.8,.2,1);
+}
 
+/* ===========================
+   Accesibilidad (A11y)
+   =========================== */
+/* Cuando un contenedor está inert, desactiva interacción y selección */
+[inert] {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Efecto visual sutil al bloquear el fondo */
+.contenido-fondo {
+  transition: filter 180ms ease;
+}
+.contenido-fondo[inert] {
+  filter: saturate(0.9) brightness(0.98);
 }
 
 /* ===========================
@@ -67,6 +83,7 @@
   color: var(--c-text);
   background: url('../../../assets/dashboard.webp') no-repeat center center fixed;
   background-size: cover;
+  overflow-x: hidden;
 }
 
 /* Sidebar */
@@ -288,6 +305,7 @@ button.btn.mat-mdc-outlined-button{
   padding: 0;         /* lo ponemos igual a .btn */
 }
 button.btn .mdc-button__label{ padding: 10px 18px; display: inline-flex; gap: var(--btn-gap); }
+
 /* ===========================
    Formularios y tabla
    =========================== */
@@ -490,7 +508,6 @@ input[disabled]{
   transform: translateY(0);
   box-shadow: 0 8px 18px rgba(0,0,0,.10);
 }
-
 
 /* ===========================
    Responsivo

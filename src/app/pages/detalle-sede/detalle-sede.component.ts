@@ -104,67 +104,132 @@ nombresDias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
       this.obtenerEventos(sedeId, this.anioActual);
       this.obtenerTodasLasSedes();
     }
-  this.form = this.fb.group({
-    desde: [new Date(), Validators.required],
-    dias: this.fb.array(
-      this.nombresDias.map((_, i) => this.crearDia(i === 6)) // 👈 domingo sin horas
-    )
-  });
+      this.form = this.fb.group({
+          desde: [new Date(), Validators.required],
+          dias: this.fb.array(this.nombresDias.map((_, i) => this.crearDia(i === 6))),
+          // ⬇️ NUEVO bloque para nuevos ingresos
+          nuevoIngreso: this.fb.group({
+            activo: [false],
+            duracionDias: [30, [Validators.min(1), Validators.max(180)]],
+            aplicarSoloDiasActivosBase: [true],
+            jornadas: this.fb.array([ this.createJornada('08:00','17:00') ])
+          })
+        });
 
-  // Validadores condicionales: solo piden hora si el día está activo
-this.dias.controls.forEach(ctrl => this.configurarValidadoresDia(ctrl as FormGroup));
-}
+        this.dias.controls.forEach(ctrl => this.configurarValidadoresDia(ctrl as FormGroup));
+      }
 
-  crearDia(esDomingo = false): FormGroup {
+
+          // ✅ Pon esto en la clase (junto a tus helpers)
+  private toHHMM(v: any): string {
+      if (!v) return '';
+      if (/^\d{2}:\d{2}$/.test(v)) return v;           // ya viene 24h
+      const s = String(v).trim();
+      const m = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      if (!m) return s;                                 // por si llegara '09:00' u otro
+      let h = parseInt(m[1], 10);
+      const min = m[2];
+      const ampm = m[3].toUpperCase();
+      if (ampm === 'AM') { if (h === 12) h = 0; } else { if (h !== 12) h += 12; }
+      return `${String(h).padStart(2,'0')}:${min}`;
+  }
+
+  private createJornada(ini = '09:00', fin = '17:00', overnight = false): FormGroup {
     return this.fb.group({
-      activo: [!esDomingo],                       // domingo: inactivo
-      ini: [esDomingo ? '' : '09:00'],            // domingo: vacío
-      fin: [esDomingo ? '' : '17:00']             // domingo: vacío
+      ini: [ini, Validators.required],
+      fin: [fin, Validators.required],
+      overnight: [overnight]
     });
   }
 
-private configurarValidadoresDia(g: FormGroup): void {
-  const activo = g.get('activo')!;
-  const ini = g.get('ini')!;
-  const fin = g.get('fin')!;
+  crearDia(esDomingo = false): FormGroup {
+    return this.fb.group({
+      activo: [!esDomingo],
+      // si es domingo, empieza sin jornadas; si no, con una por defecto
+      jornadas: this.fb.array(esDomingo ? [] : [this.createJornada()])
+    });
+  }
 
-  const aplicar = (on: boolean) => {
-    if (on) {
-      // Validadores cuando el día está activo
-      ini.setValidators([Validators.required]);
-      fin.setValidators([Validators.required]);
+  // ====== ACTUALIZA validadores por “activo” ======
+  private configurarValidadoresDia(g: FormGroup): void {
+    const activo = g.get('activo')!;
+    const jornadasFA = g.get('jornadas') as FormArray<FormGroup>;
 
-      // Habilitar los controles de hora
-      ini.enable({ emitEvent: false });
-      fin.enable({ emitEvent: false });
+    const aplicar = (on: boolean) => {
+      // habilita/deshabilita todos los controles según estado
+      jornadasFA.controls.forEach(j => {
+        const ini = j.get('ini')!;
+        const fin = j.get('fin')!;
+        if (on) {
+          ini.setValidators([Validators.required]);
+          fin.setValidators([Validators.required]);
+          ini.enable({ emitEvent: false });
+          fin.enable({ emitEvent: false });
+        } else {
+          ini.clearValidators();
+          fin.clearValidators();
+          ini.disable({ emitEvent: false });
+          fin.disable({ emitEvent: false });
+        }
+        ini.updateValueAndValidity({ emitEvent: false });
+        fin.updateValueAndValidity({ emitEvent: false });
+      });
 
-      // Defaults cómodos si están vacíos
-      if (!ini.value) ini.setValue('09:00', { emitEvent: false });
-      if (!fin.value) fin.setValue('17:00', { emitEvent: false });
-    } else {
-      // Quitar validadores y deshabilitar cuando no está activo
-      ini.clearValidators();
-      fin.clearValidators();
-      ini.disable({ emitEvent: false });
-      fin.disable({ emitEvent: false });
+      // si se activa y no hay jornadas, crea una por defecto
+      if (on && jornadasFA.length === 0) {
+        jornadasFA.push(this.createJornada());
+      }
+      // si se desactiva, opcionalmente limpia
+      if (!on) {
+        jornadasFA.clear();
+      }
+    };
+
+    aplicar(!!activo.value);
+    activo.valueChanges.subscribe(aplicar);
+  }
+
+  // atajos
+  get dias(): FormArray<FormGroup> {
+    return this.form.get('dias') as FormArray<FormGroup>;
+  }
+
+// atajo
+  getJornadas(i: number): FormArray<FormGroup> {
+    return this.dias.at(i).get('jornadas') as FormArray<FormGroup>;
+  }
+
+  get ni(): FormGroup {
+  return this.form.get('nuevoIngreso') as FormGroup;
+  }
+
+  get niJornadas(): FormArray<FormGroup> {
+  return this.ni.get('jornadas') as FormArray<FormGroup>;
+  }
+
+  addNIJornada() { this.niJornadas.push(this.createJornada()); }
+  removeNIJornada(idx: number) { this.niJornadas.removeAt(idx); }
+
+
+  addJornada(i: number) {
+    const dia = this.dias.at(i) as FormGroup;
+    if (!dia.value.activo) dia.patchValue({ activo: true });
+    this.getJornadas(i).push(this.createJornada());
+  }
+
+  removeJornada(i: number, jIdx: number) {
+    const dia = this.dias.at(i) as FormGroup;                // 👈 ahora sí existe
+    const jornadasFA = this.getJornadas(i);
+    jornadasFA.removeAt(jIdx);
+
+    // si ya no queda ninguna jornada, marcamos el día como inactivo (opcional)
+    if (jornadasFA.length === 0) {
+      dia.patchValue({ activo: false });
     }
 
-    ini.updateValueAndValidity({ emitEvent: false });
-    fin.updateValueAndValidity({ emitEvent: false });
-  };
-
-  // Estado inicial (ej: domingo inactivo)
-  aplicar(!!activo.value);
-
-  // Reaccionar al slide toggle
-  activo.valueChanges.subscribe(aplicar);
-}
-
-get dias(): FormArray<FormGroup> {
-  return this.form.get('dias') as FormArray<FormGroup>;
-}
-
-
+    dia.markAsDirty();
+    dia.markAsTouched();
+  }
 
   obtenerSede(id: number): void {
     this.sedeService.obtenerSedePorId(id).subscribe({
@@ -389,61 +454,113 @@ get dias(): FormArray<FormGroup> {
     });
   }
 
+  // ====== COPIAR primer día a todos (deep copy) ======
   aplicarATodos(): void {
-  const base = this.dias.at(0).value; // copia el primer día
-  this.dias.controls.forEach((g: any, idx) => {
-    if (idx > 0) g.patchValue({ ini: base.ini, fin: base.fin, activo: base.activo });
-  });
+    const base = this.dias.at(0).value as { activo: boolean; jornadas: any[] };
+    this.dias.controls.forEach((g: FormGroup, idx) => {
+      if (idx === 0) return;
+      const fa = g.get('jornadas') as FormArray;
+      fa.clear();
+      if (base.activo && base.jornadas?.length) {
+        base.jornadas.forEach(j => fa.push(this.createJornada(j.ini, j.fin, j.overnight)));
+        g.patchValue({ activo: true });
+      } else {
+        g.patchValue({ activo: false });
+      }
+    });
   }
 
+  // ====== LIMPIAR ======
   limpiar(): void {
-    this.dias.controls.forEach((g: any) =>
-      g.patchValue({ activo: false, ini: '', fin: '' })
-    );
+    this.dias.controls.forEach((g: FormGroup) => {
+      g.patchValue({ activo: false });
+      const fa = g.get('jornadas') as FormArray;
+      fa.clear();
+    });
     this.form.markAsPristine();
     this.form.markAsUntouched();
   }
 
   cargarHorarioBaseExistente(horario: any) {
     if (!horario) return;
+    // 🛡️ soporta si vino como {horarioBase:{...}} o ya plano
+    const hb = horario?.horarioBase ? horario.horarioBase : horario;
 
     try {
-      if (horario.desde) {
-        // Si viene ISO (UTC) lo llevamos a Date local
-        const d = DateTime.fromISO(horario.desde).toJSDate();
+      if (hb.desde) {
+        const d = DateTime.fromISO(hb.desde).toJSDate();
         this.form.patchValue({ desde: d });
       }
-
-      // Desactiva todos primero
-      this.dias.controls.forEach((g: any) => g.patchValue({ activo: false }));
-
-      // Aplica reglas existentes
-      (horario.reglas || []).forEach((r: any) => {
-        const i = (r.dow ?? 1) - 1;  // 1..7 → 0..6
-        const j = r.jornadas?.[0];
-        if (this.dias.at(i) && j) {
-          this.dias.at(i).patchValue({
-            activo: true, ini: j.ini, fin: j.fin
-          });
-        }
+      // reset días
+      this.dias.controls.forEach((g: FormGroup) => {
+        g.patchValue({ activo: false });
+        (g.get('jornadas') as FormArray).clear();
       });
-    } catch {
-      // Si algo llega chueco, no truenes la pantalla 🙂
-    }
+
+      const toIndex = (dow: number) => (dow === 0 ? 6 : dow - 1);
+      (hb.reglas || []).forEach((r: any) => {
+        const i = toIndex(Number(r.dow ?? 0));
+        const fa = this.getJornadas(i);
+        (r.jornadas || []).forEach((j: any) => fa.push(this.createJornada(j.ini, j.fin, !!j.overnight)));
+        if (fa.length) this.dias.at(i).patchValue({ activo: true });
+      });
+
+      if (hb.nuevoIngreso) {
+        this.ni.patchValue({
+          activo: !!hb.nuevoIngreso.activo,
+          duracionDias: Number(hb.nuevoIngreso.duracionDias) || 30,
+          aplicarSoloDiasActivosBase: hb.nuevoIngreso.aplicarSoloDiasActivosBase !== false
+        });
+        this.niJornadas.clear();
+        (hb.nuevoIngreso.jornadas || []).forEach((j: any) =>
+          this.niJornadas.push(this.createJornada(j.ini, j.fin, !!j.overnight))
+        );
+        if (this.ni.value.activo && this.niJornadas.length === 0) {
+          this.niJornadas.push(this.createJornada('08:00','17:00'));
+        }
+      }
+    } catch {}
   }
 
+  // 🔁 Reemplaza tu buildHorarioPayload por este
   private buildHorarioPayload(): any {
-    const desdeISO = DateTime.fromJSDate(this.form.value.desde).toUTC().startOf('day').toISO();
+    const desdeISO = DateTime.fromJSDate(this.form.value.desde)
+      .toUTC().startOf('day').toISO();
 
+    // Reglas base (Lun..Dom = 0..6 → dow 1..6,0)
     const reglas = this.dias.controls
-      .map((g: any, idx: number) => ({ idx, ...g.value }))
-      .filter(d => d.activo)
-      .map(d => ({
-        dow: d.idx + 1, // 1..7 (Lun..Dom)
-        jornadas: [{ ini: d.ini, fin: d.fin, overnight: false }]
-      }));
+      .map((g: FormGroup, idx: number) => {
+        const activo = g.value.activo;
+        const fa = g.get('jornadas') as FormArray<FormGroup>;
+        const jornadas = (fa?.controls || []).map(j => ({
+          ini: this.toHHMM(j.value.ini),
+          fin: this.toHHMM(j.value.fin),
+          overnight: !!j.value.overnight
+        })).filter(j => j.ini && j.fin);
+        return { dow: (idx + 1) % 7, jornadas: activo ? jornadas : [] };
+      })
+      .filter(r => r.jornadas.length > 0);
 
-    return { horarioBase: { desde: desdeISO, reglas } };
+    // Bloque nuevo ingreso
+    const niVal = this.ni.value;
+    let nuevoIngreso: any = undefined;
+    if (niVal?.activo) {
+      const niJ = (this.niJornadas?.controls || []).map(j => ({
+        ini: this.toHHMM(j.value.ini),
+        fin: this.toHHMM(j.value.fin),
+        overnight: !!j.value.overnight
+      })).filter(j => j.ini && j.fin);
+
+      nuevoIngreso = {
+        activo: true,
+        duracionDias: Number(niVal.duracionDias) > 0 ? Number(niVal.duracionDias) : 30,
+        aplicarSoloDiasActivosBase: niVal.aplicarSoloDiasActivosBase !== false,
+        jornadas: niJ
+      };
+    }
+
+    // 👇 anidado en horarioBase (forma más segura)
+    return { horarioBase: { desde: desdeISO, reglas, ...(nuevoIngreso ? { nuevoIngreso } : {}) } };
   }
 
   async guardar() {
@@ -455,6 +572,7 @@ get dias(): FormArray<FormGroup> {
     this.guardando = true;
     try {
       const payload = this.buildHorarioPayload();
+      console.log('▶ payload', JSON.stringify(payload, null, 2)); // 👀 debug
       await firstValueFrom(
         this.sedeService.actualizarHorarioBaseDeSede(this.sede.id, payload)
       );
@@ -479,9 +597,20 @@ get dias(): FormArray<FormGroup> {
     this.router.navigate(['/trabajadores', id]);
   }
 
-  toggleSidebar(): void {
-    this.sidebarAbierto = !this.sidebarAbierto;
+  blurActivo() {
+    (document.activeElement as HTMLElement)?.blur();
   }
+
+toggleSidebar() {
+  this.blurActivo();
+  this.sidebarAbierto = !this.sidebarAbierto;
+  document.body.classList.toggle('no-scroll', this.sidebarAbierto);
+}
+
+  onDatepickerOpened() {
+  // por si el input recupera foco por algo del navegador
+  setTimeout(() => (document.activeElement as HTMLElement)?.blur(), 0);
+}
 
   cerrarSesion(): void {
     localStorage.clear();

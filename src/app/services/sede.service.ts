@@ -14,8 +14,14 @@ export class SedeService {
   constructor(private http: HttpClient) {}
 
   // ✅ Obtener headers con token
+  // sede.service.ts
   private getAuthHeaders() {
-    const token = localStorage.getItem('token');
+    let token = localStorage.getItem('token') || '';
+    token = token.replace(/^"|"$/g, ''); // quita comillas si las tuviera
+    if (!token) {
+      // opcional: redirige a login o lanza error controlado
+      console.warn('⚠️ No hay token. Redirigiendo a login...');
+    }
     return {
       headers: new HttpHeaders({
         Authorization: `Bearer ${token}`,
