@@ -75,8 +75,9 @@ export class SedeService {
     return this.http.put(`${this.apiUrl}/sedes/cancelar-eliminacion/${id}`, {}, this.getAuthHeaders());
   }
 
-    actualizarSede(id: number, body: any) {        // 👈 para tu guardarCambios()
-    return this.http.put(`${this.apiUrl}/sedes/actualizar/${id}`, body);
+  // SedeService
+  actualizarSede(id: number, body: any) {
+    return this.http.put(`${this.apiUrl}/sedes/${id}`, body, this.getAuthHeaders());
   }
 
 }
