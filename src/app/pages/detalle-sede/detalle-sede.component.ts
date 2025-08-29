@@ -210,6 +210,101 @@ nombresDias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
   addNIJornada() { this.niJornadas.push(this.createJornada()); }
   removeNIJornada(idx: number) { this.niJornadas.removeAt(idx); }
 
+  private getDomingosEnRango(inicio: Date, fin: Date): Date[] {
+    const out: Date[] = [];
+    const cur = new Date(inicio);
+    while (cur.getDay() !== 0) cur.setDate(cur.getDate() + 1);
+    while (cur <= fin) { out.push(new Date(cur)); cur.setDate(cur.getDate() + 7); }
+    return out;
+  }
+  private isSameDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  abrirAsistenteDomingoSede(): void {
+    Swal.fire({
+      title: '🕊️ Asistente de Domingo',
+      html: `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+          <div>
+            <label style="font-weight:bold">Inicio</label>
+            <input type="date" id="ad-inicio" class="swal2-input" style="width:180px;margin:0"/>
+          </div>
+          <div>
+            <label style="font-weight:bold">Fin</label>
+            <input type="date" id="ad-fin" class="swal2-input" style="width:180px;margin:0"/>
+          </div>
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Vista previa',
+      didOpen: () => {
+        const y = this.anioActual;
+        (document.getElementById('ad-inicio') as HTMLInputElement).value = `${y}-01-01`;
+        (document.getElementById('ad-fin') as HTMLInputElement).value    = `${y}-12-31`;
+      },
+      preConfirm: () => {
+        const ini = (document.getElementById('ad-inicio') as HTMLInputElement).value;
+        const fin = (document.getElementById('ad-fin') as HTMLInputElement).value;
+        if (!ini || !fin) { Swal.showValidationMessage('Selecciona ambas fechas'); return; }
+        if (ini > fin) { Swal.showValidationMessage('Inicio no puede ser mayor a fin'); return; }
+        return { ini, fin };
+      }
+    }).then(prev => {
+      if (!prev.isConfirmed || !prev.value) return;
+
+      const ini = new Date(`${prev.value.ini}T00:00:00`);
+      const fin = new Date(`${prev.value.fin}T00:00:00`);
+
+      // Cargar calendario de esta sede y año actual (simple)
+      this.calendarioService.obtenerPorSedeYAnio(this.sede.id, this.anioActual).subscribe({
+        next: (res: any) => {
+          const existentes = (res?.diasEspeciales || []).map((e: any) => new Date(e.fecha?.$date ?? e.fecha));
+          const domingos = this.getDomingosEnRango(ini, fin);
+
+          let aCrear = 0, conEvento = 0;
+          const crear: Date[] = [];
+          for (const d of domingos) {
+            const ya = existentes.some((x: Date) => this.isSameDay(x, d));
+            if (ya) conEvento++; else { aCrear++; crear.push(d); }
+          }
+
+          Swal.fire({
+            title: 'Vista previa',
+            text: `Domingos: ${domingos.length} | A crear: ${aCrear} | Ya ocupados: ${conEvento}`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Aplicar'
+          }).then(goal => {
+            if (!goal.isConfirmed || aCrear === 0) return;
+
+            const batch = 12;
+            const run = async () => {
+              for (let i = 0; i < crear.length; i += batch) {
+                const slice = crear.slice(i, i + batch);
+                await Promise.all(slice.map(f => new Promise<void>(resolve => {
+                  this.calendarioService.agregarDia({
+                    año: this.anioActual,
+                    sede: this.sede.id,
+                    fecha: f,
+                    tipo: 'descanso',
+                    descripcion: 'Asistente de Domingo'
+                  }).subscribe({ next: () => resolve(), error: () => resolve() });
+                })));
+              }
+            };
+
+            run().then(() => {
+              Swal.fire('Listo', 'Se aplicaron los domingos como "Descanso".', 'success');
+              this.obtenerEventos(this.sede.id, this.anioActual);
+            }).catch(() => Swal.fire('Error', 'No se pudieron aplicar los cambios.', 'error'));
+          });
+        },
+        error: () => Swal.fire('Error', 'No se pudo consultar el calendario.', 'error')
+      });
+    });
+  }
 
   addJornada(i: number) {
     const dia = this.dias.at(i) as FormGroup;

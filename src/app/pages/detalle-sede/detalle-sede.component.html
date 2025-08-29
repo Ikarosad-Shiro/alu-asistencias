@@ -344,9 +344,17 @@
         [anio]="anioActual"
         [eventos]="eventos"
         [todasLasSedes]="todasLasSedes"
+        [asistenteDomingoActivo]="true"
         (eventoGuardado)="guardarEventoDesdeCalendario($event)"
         (eventoEliminado)="eliminarEventoDesdeCalendario($event)">
       </app-calendario-sede>
+
+          <div class="toolbar" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:8px">
+  <button mat-stroked-button color="primary" *ngIf="!esSoloRevisor()"
+          (click)="abrirAsistenteDomingoSede()">
+    🕊️ Asistente de Domingo (sede)
+  </button>
+</div>
 
       <button class="btn btn--primary btn--block" routerLink="/calendario-laboral" *ngIf="!esSoloRevisor()">
         <i class="bi bi-calendar-plus"></i> Modificar en Calendario Laboral

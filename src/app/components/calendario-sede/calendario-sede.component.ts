@@ -31,6 +31,8 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   }
 
   @Input() todasLasSedes: { id: number, nombre: string, seleccionada?: boolean }[] = [];
+  @Input() asistenteDomingoActivo: boolean = false;
+
 
   @Output() eventoGuardado = new EventEmitter<any>();
   @Output() eventoEliminado = new EventEmitter<any>();
@@ -71,6 +73,10 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
       this.definirMesInicial();
     }
   }
+
+  esDomingo(fecha: Date | null | undefined): boolean {
+  return !!fecha && fecha.getDay() === 0;
+}
 
   definirMesInicial(): void {
     const hoy = new Date();
@@ -121,7 +127,6 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     if (!dia.fecha) return;
 
     this.fechaSeleccionada = dia.fecha;
-
     // ❌ Si no puede editar (es Revisor), muestra alerta y se sale
     if (!this.puedeEditar) {
       Swal.fire({
@@ -157,6 +162,13 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
         ...s,
         seleccionada: s.seleccionada ?? false
       }));
+    }
+
+    // Si es domingo, no hay evento y el asistente está activo → sugerir Descanso
+    if (this.asistenteDomingoActivo && this.esDomingo(dia.fecha) && !eventoExistente) {
+      this.modoEdicion = false;
+      this.eventoExistente = null;
+      this.nuevoEvento = { tipo: 'descanso', descripcion: 'Sugerido por Asistente de Domingo' };
     }
 
     this.mostrarModal = true;

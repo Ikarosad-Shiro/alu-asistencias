@@ -51,6 +51,71 @@
         </div>
       </div>
 
+      <!-- 🕊️ Asistente de Domingo -->
+      <div class="asistente-card mat-elevation-z2">
+        <div class="asistente-row">
+          <mat-slide-toggle [(ngModel)]="asistenteDomingoActivo" [disabled]="!esAdmin()">
+            🕊️ Asistente de Domingo (marcar domingos como Descanso)
+          </mat-slide-toggle>
+
+          <span class="muted" *ngIf="!esAdmin()">Solo Dios/Administrador</span>
+          <span class="grow"></span>
+
+          <div class="asistente-actions">
+            <button mat-stroked-button color="primary"
+                    (click)="simularAsistenteDomingo()"
+                    [disabled]="!asistenteDomingoActivo || !esAdmin()">
+              👀 Vista previa
+            </button>
+
+            <button mat-flat-button color="accent"
+                    (click)="aplicarAsistenteDomingo()"
+                    [disabled]="!asistenteDomingoActivo || !esAdmin() || !previewAsistente || previewAsistente.aCrear === 0">
+              ✅ Aplicar
+            </button>
+          </div>
+        </div>
+
+        <div class="asistente-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Inicio</mat-label>
+            <input matInput type="date" [(ngModel)]="rangoDomingoInicio" (change)="limpiarPreviewAsistente()">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fin</mat-label>
+            <input matInput type="date" [(ngModel)]="rangoDomingoFin" (change)="limpiarPreviewAsistente()">
+          </mat-form-field>
+        </div>
+
+        <p class="asistente-tip">
+          ⚠️ Advertencia: Para no saturar el servidor, configura rangos cortos (ej. 1–2 meses) si aplicas a varias sedes.
+        </p>
+
+        <mat-checkbox class="asistente-mas-sedes"
+                      [(ngModel)]="aplicarDomingoMasSedes"
+                      (change)="onToggleAplicarDomingoMasSedes()"
+                      [disabled]="!asistenteDomingoActivo || !esAdmin()">
+          ¿Aplicar a más sedes?
+        </mat-checkbox>
+
+        <div *ngIf="aplicarDomingoMasSedes && sedesExtrasAsistente?.length" class="asistente-sedes-grid">
+          <mat-checkbox *ngFor="let s of sedesExtrasAsistente"
+                        [(ngModel)]="s.seleccionada"
+                        [disabled]="!asistenteDomingoActivo || !esAdmin()">
+            {{ s.nombre }}
+          </mat-checkbox>
+        </div>
+
+        <div *ngIf="previewAsistente" class="asistente-preview">
+          <b>Vista previa:</b>
+          <div>• Domingos en rango: {{ previewAsistente.totalDomingos }}</div>
+          <div>• A crear (Descanso): <b>{{ previewAsistente.aCrear }}</b></div>
+          <div>• Ya ocupados (no se tocan): {{ previewAsistente.conEvento }}</div>
+          <div>• Sedes procesadas: {{ previewAsistente.sedesProcesadas }}</div>
+        </div>
+      </div>
+
       <!-- 📆 Calendario visual -->
       <app-calendario-sede
         *ngIf="busquedaRealizada && sedeSeleccionada !== null && sedes.length"

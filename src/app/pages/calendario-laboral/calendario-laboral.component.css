@@ -1,4 +1,6 @@
 /* calendario-laboral.component.css */
+
+/* ===== Layout general ===== */
 .admin-dashboard-container {
   display: flex;
   font-family: Arial, sans-serif;
@@ -30,10 +32,7 @@
   font-weight: bold;
 }
 
-.nav-item {
-  width: 100%;
-  margin-bottom: 15px;
-}
+.nav-item { width: 100%; margin-bottom: 15px; }
 
 .btn-sidebar {
   width: 100%;
@@ -46,11 +45,7 @@
   font-size: 1rem;
   transition: 0.3s;
 }
-
-.btn-sidebar:hover {
-  background-color: #007bff;
-  color: white;
-}
+.btn-sidebar:hover { background-color: #007bff; color: white; }
 
 .btn-logout {
   background-color: #dc3545;
@@ -89,11 +84,7 @@
   background: rgba(0, 0, 0, 0.5);
   z-index: 999;
 }
-
-.sidebar-overlay.active,
-.sidebar.active {
-  display: block;
-}
+.sidebar-overlay.active, .sidebar.active { display: block; }
 
 .main-content {
   flex-grow: 1;
@@ -108,13 +99,14 @@
 .contenedor-calendario {
   width: 100%;
   max-width: 960px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(182, 173, 173, 0.671);
   padding: 40px;
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   text-align: center;
 }
 
+/* ===== Filtros (formulario de búsqueda) ===== */
 .filtros {
   display: flex;
   justify-content: center;
@@ -122,9 +114,8 @@
   margin: 20px 0;
 }
 
-mat-form-field {
-  width: 200px;
-}
+/* antes tenías: mat-form-field { width: 200px; } — ahora lo limitamos al bloque de filtros */
+.campos-filtros mat-form-field { width: 200px; }
 
 .mensaje-vacio {
   margin-top: 30px;
@@ -135,6 +126,7 @@ mat-form-field {
   color: #555;
 }
 
+/* ===== Responsive ===== */
 @media (max-width: 1024px) {
   .sidebar {
     left: -280px;
@@ -143,36 +135,18 @@ mat-form-field {
     position: fixed;
     transition: left 0.3s ease-in-out;
   }
-
-  .sidebar.active {
-    left: 0;
-  }
-
-  .menu-toggle {
-    display: block;
-  }
-
-  .main-content {
-    margin-left: 0;
-    width: 100%;
-    padding: 15px;
-  }
+  .sidebar.active { left: 0; }
+  .menu-toggle { display: block; }
+  .main-content { margin-left: 0; width: 100%; padding: 15px; }
 }
 
 @media (min-width: 1025px) {
-  .sidebar {
-    left: 0 !important;
-  }
-  .sidebar-overlay {
-    display: none !important;
-  }
-  .main-content {
-    margin-left: 250px;
-    width: calc(100% - 250px);
-  }
+  .sidebar { left: 0 !important; }
+  .sidebar-overlay { display: none !important; }
+  .main-content { margin-left: 250px; width: calc(100% - 250px); }
 
   .formulario-busqueda {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(214, 211, 211, 0.959);
     padding: 25px;
     border-radius: 12px;
     max-width: 700px;
@@ -190,19 +164,73 @@ mat-form-field {
     align-items: center;
   }
 
-  .campo {
-    flex: 1;
-    min-width: 220px;
-  }
-
-  .boton-buscar {
-    height: 56px;
-    margin-top: 5px;
-    min-width: 120px;
-  }
+  .campo { flex: 1; min-width: 220px; }
+  .boton-buscar { height: 56px; margin-top: 5px; min-width: 120px; }
 
   ::ng-deep .mat-form-field .mat-icon {
     vertical-align: middle;
     margin-right: 4px;
   }
+}
+
+/* =========================================================
+   Asistente de Domingo — card propio (no hereda del buscador)
+   ========================================================= */
+.asistente-card{
+  max-width:700px;
+  margin:0 auto 30px;
+  border-radius:12px;
+  background:rgba(214, 211, 211, 0.959);
+  padding:20px;
+}
+
+/* Fila superior */
+.asistente-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.asistente-row .grow{ flex:1; }
+.asistente-actions{ display:flex; gap:8px; }
+
+/* Fechas */
+.asistente-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(220px,1fr));
+  gap:12px;
+  margin-top:6px;
+}
+
+/* Inputs del asistente a ancho completo */
+.asistente-card mat-form-field{ width:100%; }
+
+/* Textos y extras */
+.asistente-tip{
+  margin:6px 0 0;
+  color:#6b7280;
+  font-size:.92rem;
+  text-align:left;
+}
+.asistente-mas-sedes{ display:block; margin-top:6px; color:#374151; }
+
+.asistente-sedes-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:8px 16px;
+  margin-top:6px;
+}
+
+.asistente-preview{
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px dashed #e5e7eb;
+  color:#374151;
+  line-height:1.35;
+}
+
+/* Responsive asistente */
+@media (max-width:1024px){
+  .asistente-grid{ grid-template-columns:1fr; }
+  .asistente-actions{ width:100%; justify-content:flex-end; }
 }
