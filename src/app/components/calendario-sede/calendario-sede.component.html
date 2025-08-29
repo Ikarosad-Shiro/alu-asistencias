@@ -21,7 +21,7 @@
       <div
         *ngFor="let dia of diasMes"
         class="dia-calendario"
-        [matTooltip]="dia.evento ? (dia.evento.tipo | titlecase) + (dia.evento.descripcion ? ': ' + dia.evento.descripcion : '') : (asistenteDomingoActivo && esDomingo(dia.fecha) ? 'Descanso (domingo)' : '')"
+        [matTooltip]="getTooltip(dia)"
         matTooltipPosition="above"
         [class.dia-actual]="esHoy(dia.fecha)"
         [class.dia-seleccionado]="dia.seleccionado"
@@ -66,6 +66,29 @@
             <mat-label>Descripción</mat-label>
             <input matInput [(ngModel)]="nuevoEvento.descripcion">
           </mat-form-field>
+
+                    <!-- Horario de Media Jornada -->
+          <div *ngIf="nuevoEvento.tipo === 'media jornada'" class="media-jornada-horas" style="display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;">
+            <mat-form-field appearance="fill">
+              <mat-label>Hora inicio</mat-label>
+              <input matInput [(ngModel)]="nuevoEvento.horaInicio"
+                    [ngxMatTimepicker]="tpMjIni" [format]="12" placeholder="hh:mm AM/PM" readonly>
+              <button type="button" mat-icon-button matSuffix (click)="tpMjIni.open()">
+                <mat-icon>schedule</mat-icon>
+              </button>
+              <ngx-mat-timepicker #tpMjIni></ngx-mat-timepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Hora fin</mat-label>
+              <input matInput [(ngModel)]="nuevoEvento.horaFin"
+                    [ngxMatTimepicker]="tpMjFin" [format]="12" placeholder="hh:mm AM/PM" readonly>
+              <button type="button" mat-icon-button matSuffix (click)="tpMjFin.open()">
+                <mat-icon>schedule</mat-icon>
+              </button>
+              <ngx-mat-timepicker #tpMjFin></ngx-mat-timepicker>
+            </mat-form-field>
+          </div>
 
           <!-- Más sedes -->
           <div class="form-group">

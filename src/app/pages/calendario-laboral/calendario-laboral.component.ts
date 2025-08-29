@@ -308,10 +308,14 @@ export class CalendarioLaboralComponent implements OnInit {
   }
 
   onEventoGuardado(evento: any) {
-    const eventoCompleto = {
-      ...evento,
-      año: this.anioSeleccionado
-    };
+  const eventoCompleto = {
+    ...evento,
+    año: this.anioSeleccionado,
+    ...(evento.tipo === 'media jornada' ? {
+      horaInicio: evento.horaInicio,
+      horaFin: evento.horaFin
+    } : {})
+  };
 
     if (evento.editar) {
       // Llamamos al servicio de edición

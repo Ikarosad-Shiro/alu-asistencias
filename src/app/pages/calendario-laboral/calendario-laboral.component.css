@@ -146,7 +146,7 @@
   .main-content { margin-left: 250px; width: calc(100% - 250px); }
 
   .formulario-busqueda {
-    background: rgba(214, 211, 211, 0.959);
+    background: rgba(255, 255, 255, 0.945);
     padding: 25px;
     border-radius: 12px;
     max-width: 700px;

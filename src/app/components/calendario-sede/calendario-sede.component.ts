@@ -45,7 +45,9 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
 
   nuevoEvento = {
     tipo: '',
-    descripcion: ''
+    descripcion: '',
+    horaInicio: '',
+    horaFin: ''
   };
 
   aplicarAMasSedes: boolean = false;
@@ -123,60 +125,64 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     ];
   }
 
-  seleccionarDia(dia: any): void {
-    if (!dia.fecha) return;
+seleccionarDia(dia: any): void {
+  if (!dia.fecha) return;
 
-    this.fechaSeleccionada = dia.fecha;
-    // ❌ Si no puede editar (es Revisor), muestra alerta y se sale
-    if (!this.puedeEditar) {
-      Swal.fire({
-        title: this.fechaSeleccionada.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-        text: 'Solo los usuarios con rol Dios o Administrador pueden modificar el calendario.',
-        icon: 'info',
-        confirmButtonText: 'Entendido',
-        timer: 4000,
-        timerProgressBar: true
-      });
-      return;
-    }
+  this.fechaSeleccionada = dia.fecha;
 
-    const eventoExistente = this._eventos.find(e =>
-      e?.fecha && isSameDay(new Date(e.fecha), dia.fecha)
-    );
-
-    if (eventoExistente) {
-      this.modoEdicion = true;
-      this.eventoExistente = eventoExistente;
-      this.nuevoEvento = {
-        tipo: eventoExistente.tipo,
-        descripcion: eventoExistente.descripcion
-      };
-    } else {
-      this.modoEdicion = false;
-      this.eventoExistente = null;
-      this.nuevoEvento = { tipo: '', descripcion: '' };
-    }
-
-    if (this.todasLasSedes) {
-      this.todasLasSedes = this.todasLasSedes.map(s => ({
-        ...s,
-        seleccionada: s.seleccionada ?? false
-      }));
-    }
-
-    // Si es domingo, no hay evento y el asistente está activo → sugerir Descanso
-    if (this.asistenteDomingoActivo && this.esDomingo(dia.fecha) && !eventoExistente) {
-      this.modoEdicion = false;
-      this.eventoExistente = null;
-      this.nuevoEvento = { tipo: 'descanso', descripcion: 'Sugerido por Asistente de Domingo' };
-    }
-
-    this.mostrarModal = true;
+  if (!this.puedeEditar) {
+    Swal.fire({ /* ... */ });
+    return;
   }
 
-  esHoy(fecha: Date): boolean {
-    return isToday(fecha);
+  const eventoExistente = this._eventos.find(e =>
+    e?.fecha && isSameDay(new Date(e.fecha), dia.fecha)
+  );
+
+  if (eventoExistente) {
+    this.modoEdicion = true;
+    this.eventoExistente = eventoExistente;
+    this.nuevoEvento = {
+      tipo: eventoExistente.tipo,
+      descripcion: eventoExistente.descripcion,
+      horaInicio: eventoExistente.horaInicio || '',
+      horaFin: eventoExistente.horaFin || ''
+    };
+  } else {
+    this.modoEdicion = false;
+    this.eventoExistente = null;
+    this.nuevoEvento = { tipo: '', descripcion: '', horaInicio: '', horaFin: '' };
+
+    // sugerencia de domingo (si activaste el asistente)
+    if (this.asistenteDomingoActivo && this.esDomingo(dia.fecha)) {
+      this.nuevoEvento = { tipo: 'descanso', descripcion: 'Sugerido por Asistente de Domingo', horaInicio: '', horaFin: '' };
+    }
   }
+
+  if (this.todasLasSedes) {
+    this.todasLasSedes = this.todasLasSedes.map(s => ({ ...s, seleccionada: s.seleccionada ?? false }));
+  }
+
+  this.mostrarModal = true;
+}
+
+    private to24h(s: string): string {
+    if (!s) return '';
+    const m = s.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+    if (!m) return s; // ya viene "HH:mm"
+    let h = +m[1], min = m[2], ap = (m[3]||'').toUpperCase();
+    if (ap === 'AM' && h === 12) h = 0;
+    if (ap === 'PM' && h !== 12) h += 12;
+    return `${String(h).padStart(2,'0')}:${min}`;
+  }
+  private minutes(v: string): number {
+    const m = v.match(/^(\d{1,2}):(\d{2})$/); if(!m) return NaN;
+    return (+m[1])*60 + (+m[2]);
+  }
+
+esHoy(fecha: Date | null | undefined): boolean {
+  return !!fecha && isToday(fecha);
+}
 
   mesAnterior(): void {
     this.mesActual = subMonths(this.mesActual, 1);
@@ -194,33 +200,42 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     }
   }
 
-  guardarEvento(): void {
-    const eventoBase = {
-      fecha: this.fechaSeleccionada,
-      tipo: this.nuevoEvento.tipo,
-      descripcion: this.nuevoEvento.descripcion
-    };
+guardarEvento(): void {
+  const isMJ = this.nuevoEvento.tipo === 'media jornada';
+  let ini = '', fin = '';
 
-    if (this.aplicarAMasSedes && this.todasLasSedes) {
-      const sedesSeleccionadas = this.todasLasSedes.filter(s => s.seleccionada);
-      sedesSeleccionadas.forEach(sedeExtra => {
-        this.eventoGuardado.emit({
-          ...eventoBase,
-          sede: sedeExtra.id,
-          editar: false
-        });
-      });
-    }
-
-    this.eventoGuardado.emit({
-      ...eventoBase,
-      sede: this.sede,
-      editar: this.modoEdicion
-    });
-
-    this.cerrarModal();
-    this.generarDiasMes();
+  if (isMJ) {
+    ini = this.to24h(this.nuevoEvento.horaInicio);
+    fin = this.to24h(this.nuevoEvento.horaFin);
+    if (!ini || !fin) { Swal.fire('Falta horario','Indica inicio y fin','warning'); return; }
+    if (this.minutes(fin) <= this.minutes(ini)) { Swal.fire('Horario inválido','Fin > inicio','warning'); return; }
   }
+
+  const eventoBase = {
+    fecha: this.fechaSeleccionada,
+    tipo: this.nuevoEvento.tipo,
+    descripcion: this.nuevoEvento.descripcion,
+    ...(isMJ ? { horaInicio: ini, horaFin: fin } : {})
+  };
+
+  // aplicar a sedes extra (incluyendo horas si es MJ)
+  if (this.aplicarAMasSedes && this.todasLasSedes) {
+    const sedesSeleccionadas = this.todasLasSedes.filter(s => s.seleccionada);
+    sedesSeleccionadas.forEach(sedeExtra => {
+      this.eventoGuardado.emit({ ...eventoBase, sede: sedeExtra.id, editar: false });
+    });
+  }
+
+  // emitir para la sede actual (solo una vez)
+  this.eventoGuardado.emit({
+    ...eventoBase,
+    sede: this.sede,
+    editar: this.modoEdicion
+  });
+
+  this.cerrarModal();
+  this.generarDiasMes();
+}
 
   eliminarEvento(): void {
     Swal.fire({
@@ -263,10 +278,27 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     this.aplicarAMasSedes = false;
     this.modoEdicion = false;
     this.eventoExistente = null;
-    this.nuevoEvento = { tipo: '', descripcion: '' };
+    this.nuevoEvento = { tipo: '', descripcion: '', horaInicio: '', horaFin: '' };
   }
 
   trackBySede(index: number, sede: any): number {
     return sede.id;
   }
+
+  getTooltip(d: any): string {
+  const e = d?.evento;
+  if (!e) return '';
+  const desc = e.descripcion ? ` — ${e.descripcion}` : '';
+  if ((e.tipo || '') === 'media jornada') {
+    const hi = e.horaInicio || '';
+    const hf = e.horaFin || '';
+    const rango = (hi && hf) ? `: ${hi}–${hf}` : '';
+    return `Media Jornada${rango}${desc}`;
+  }
+  // default
+  const tipo = (e.tipo || '');
+  return `${tipo.charAt(0).toUpperCase()}${tipo.slice(1)}${desc}`;
+}
+
+
 }
