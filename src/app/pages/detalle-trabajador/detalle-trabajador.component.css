@@ -466,3 +466,37 @@ mat-expansion-panel-header.mat-expanded {
     padding: 10px;
   }
 }
+
+.sedes-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: #eceff1;
+  border: 1px solid transparent;
+}
+
+.chip-principal {
+  background: #e8f5e9;
+  border-color: #43a04755;
+}
+
+.chip-foranea {
+  background: #e3f2fd;
+  border-color: #1e88e555;
+}
+
+.chip-ico { line-height: 1; }
+.chip-text { white-space: nowrap; }
+

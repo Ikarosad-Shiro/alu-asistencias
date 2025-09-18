@@ -34,7 +34,7 @@
         <button class="btn-buscar" (click)="filtrarTrabajadores()">🔍 Buscar</button>
       </div>
 
-      <!-- 🟢 Nuevo: Filtro por estado con instrucción -->
+      <!-- 🟢 Filtro por estado -->
       <div class="search-container">
         <label for="estado-select" style="font-weight: bold; margin-right: 8px;">
           Filtrar por estatus del trabajador:
@@ -46,14 +46,85 @@
         </select>
       </div>
 
-      <!-- 📌 Formulario para agregar trabajador -->
-      <div class="add-worker-form" *ngIf="rolUsuario !== 'Revisor'">
-        <input type="text" placeholder="Nombre del trabajador" #nombre />
-        <select #sede>
-          <option *ngFor="let sedeItem of sedes" [value]="sedeItem.id">{{ sedeItem.nombre }}</option>
-        </select>
-        <button class="btn-agregar" (click)="abrirModalAgregar(nombre.value, sede.value)">➕ Agregar</button>
-      </div>
+      <!-- 🔻 Acordeón: Formulario de alta (inicia cerrado) -->
+      <mat-accordion class="add-worker-accordion">
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>➕ Agregar trabajador (multisede)</mat-panel-title>
+            <mat-panel-description>Alta, sede principal y sedes foráneas</mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <!-- 📌 Formulario para agregar trabajador (Multisede con casillas) -->
+          <div class="add-worker-form card" *ngIf="rolUsuario !== 'Revisor'">
+            <div class="form-grid">
+              <!-- 1) Identidad -->
+              <input type="text" class="full" [(ngModel)]="formAdd.nombre" placeholder="Nombre completo*" />
+
+
+              <!-- 2) Sede principal / Foráneo -->
+              <select [(ngModel)]="formAdd.sedePrincipal" (change)="onPrincipalChange()">
+                <option [ngValue]="null" disabled>Seleccione sede principal*</option>
+                <option *ngFor="let sedeItem of sedes" [ngValue]="sedeItem.id">{{ sedeItem.nombre }}</option>
+              </select>
+
+              <label class="inline right">
+                <input type="checkbox" [(ngModel)]="formAdd.esForaneo" (change)="onToggleForaneo()" />
+                Empleado foráneo
+              </label>
+
+              <!-- 3) Sedes foráneas -->
+              <div *ngIf="formAdd.esForaneo" class="full">
+                <label class="label">Sedes foráneas</label>
+
+                <div class="foraneas-row">
+                  <button type="button" class="btn-secondary" (click)="openSelectorForaneas()">Seleccionar sedes…</button>
+                  <span class="contador">{{ formAdd.sedesForaneas.length }}/∞</span>
+                </div>
+
+                <div class="chips">
+                  <span class="chip" *ngFor="let id of formAdd.sedesForaneas">
+                    {{ obtenerNombreSede(+id) }}
+                    <button class="chip-x" (click)="removerForanea(+id)">×</button>
+                  </span>
+                  <span *ngIf="!formAdd.sedesForaneas.length" class="hint">Ninguna seleccionada.</span>
+                </div>
+              </div>
+
+              <!-- 4) Nuevo ingreso / Fecha -->
+              <label class="inline">
+                <input type="checkbox" [(ngModel)]="formAdd.nuevoIngreso" (change)="onNuevoIngresoChange()" />
+                Nuevo ingreso
+              </label>
+              <input
+                type="date"
+                [(ngModel)]="formAdd.fechaAlta"
+                [disabled]="!formAdd.nuevoIngreso"
+                [class.disabled-input]="!formAdd.nuevoIngreso" />
+
+              <!-- 5) Teléfonos -->
+              <input type="text" [(ngModel)]="formAdd.telefono" placeholder="Teléfono (opcional)" />
+              <input type="text" [(ngModel)]="formAdd.telefonoEmergencia" placeholder="Tel. emergencia (opcional)" />
+
+              <!-- 6) Correo (AHORA ABAJO y a lo ancho) -->
+              <input type="email" class="full" [(ngModel)]="formAdd.correo" placeholder="Correo (opcional)" />
+
+              <!-- 7) Dirección -->
+              <input type="text" class="full" [(ngModel)]="formAdd.direccion" placeholder="Dirección (opcional)" />
+
+              <!-- 8) Puesto -->
+              <input type="text" [(ngModel)]="formAdd.puesto" placeholder="Puesto (opcional)" />
+              <div class="spacer"></div>
+            </div>
+
+            <div *ngIf="errorForm" class="error-banner">⚠️ {{ errorForm }}</div>
+
+            <div class="acciones">
+              <button class="btn-agregar" (click)="abrirModalAgregar()">➕ Agregar</button>
+              <button class="btn-cancelar" (click)="resetFormAdd()">Limpiar</button>
+            </div>
+          </div>
+        </mat-expansion-panel>
+      </mat-accordion>
 
       <!-- 📌 Mat-card transparente para botón actualizar -->
       <div class="search-container transparente" style="justify-content: flex-end;">
@@ -62,84 +133,123 @@
         </div>
       </div>
 
-<!-- 📌 Tabla de trabajadores -->
-<div class="user-table">
-  <table>
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Sede</th>
-        <th>Estado</th>
-        <th>Estatus</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let trabajador of trabajadoresFiltrados">
-        <td>{{ trabajador.nombre }}</td>
-        <td>{{ obtenerNombreSede(trabajador.sede) }}</td>
-        <td>
-          <ng-container *ngIf="rolUsuario === 'Dios' || rolUsuario === 'Administrador'; else soloLectura">
-            <select
-              class="select-estado"
-              [value]="trabajador.sincronizado ? 'Sincronizado' : 'Pendiente'"
-              (focus)="guardarValorOriginal(trabajador)"
-              (change)="cambiarSincronizacion(trabajador, $event)">
-              <option value="Sincronizado">✅ Sincronizado</option>
-              <option value="Pendiente">⏳ Pendiente</option>
-            </select>
-          </ng-container>
+      <!-- 📌 Tabla de trabajadores -->
+      <div class="user-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Sede</th>
+              <th>Estado</th>
+              <th>Estatus</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let trabajador of trabajadoresFiltrados">
+              <td>{{ trabajador.nombre }}</td>
+              <td>{{ obtenerNombreSede(trabajador.sede) }}</td>
+              <td>
+                <ng-container *ngIf="rolUsuario === 'Dios' || rolUsuario === 'Administrador'; else soloLectura">
+                  <select
+                    class="select-estado"
+                    [value]="trabajador.sincronizado ? 'Sincronizado' : 'Pendiente'"
+                    (focus)="guardarValorOriginal(trabajador)"
+                    (change)="cambiarSincronizacion(trabajador, $event)">
+                    <option value="Sincronizado">✅ Sincronizado</option>
+                    <option value="Pendiente">⏳ Pendiente</option>
+                  </select>
+                </ng-container>
 
-          <ng-template #soloLectura>
-            <span [ngClass]="{ 'activo': trabajador.sincronizado, 'pendiente': !trabajador.sincronizado }">
-              {{ trabajador.sincronizado ? '✅ Sincronizado' : '⏳ Pendiente' }}
-            </span>
-          </ng-template>
-        </td>
+                <ng-template #soloLectura>
+                  <span [ngClass]="{ 'activo': trabajador.sincronizado, 'pendiente': !trabajador.sincronizado }">
+                    {{ trabajador.sincronizado ? '✅ Sincronizado' : '⏳ Pendiente' }}
+                  </span>
+                </ng-template>
+              </td>
 
-        <td>
-          <span [ngClass]="trabajador.estado === 'inactivo' ? 'text-danger' : 'text-success'">
-            {{ trabajador.estado === 'inactivo' ? '🔴 Inactivo' : '🟢 Activo' }}
-          </span>
-        </td>
-        <td class="btn-actions">
-          <button class="btn-view" (click)="verTrabajador(trabajador._id!)">
-            <i class="fas fa-eye"></i> Ver
-          </button>
-        </td>
-      </tr>
-      <tr *ngIf="trabajadoresFiltrados.length === 0">
-        <td colspan="5">😢 No se encontraron trabajadores con esos criterios.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-
-  <!-- 📌 Modal contraseña agregar -->
-  <div class="modal" *ngIf="mostrarModalContrasena">
-    <div class="modal-content">
-      <h3>🔒 Ingresa tu contraseña</h3>
-      <input type="password" [(ngModel)]="contrasena" placeholder="Contraseña" class="input-contraseña" />
-      <div class="modal-buttons">
-        <button class="btn-confirmar" (click)="confirmarAgregarTrabajador()">Confirmar</button>
-        <button class="btn-cancelar" (click)="cerrarModalContrasena()">Cancelar</button>
+              <td>
+                <span [ngClass]="trabajador.estado === 'inactivo' ? 'text-danger' : 'text-success'">
+                  {{ trabajador.estado === 'inactivo' ? '🔴 Inactivo' : '🟢 Activo' }}
+                </span>
+              </td>
+              <td class="btn-actions">
+                <button class="btn-view" (click)="verTrabajador(trabajador._id!)">
+                  <i class="fas fa-eye"></i> Ver
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="trabajadoresFiltrados.length === 0">
+              <td colspan="5">😢 No se encontraron trabajadores con esos criterios.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
-  </div>
 
-  <!-- 📌 Modal de mensajes -->
-  <div class="modal" *ngIf="mostrarModalMensaje">
-    <div class="modal-content" [ngClass]="{
-      'modal-exito': tipoMensajeModal === 'exito',
-      'modal-error': tipoMensajeModal === 'error',
-      'modal-advertencia': tipoMensajeModal === 'advertencia'
-    }">
-      <h3 *ngIf="tipoMensajeModal === 'exito'">🟢 Éxito</h3>
-      <h3 *ngIf="tipoMensajeModal === 'error'">🔴 Error</h3>
-      <h3 *ngIf="tipoMensajeModal === 'advertencia'">🟡 Advertencia</h3>
-      <p>{{ mensajeModal }}</p>
-      <button class="btn-cerrar" (click)="cerrarModalMensaje()">Aceptar</button>
+      <!-- =========================
+           Selector Foráneas (panel fijo)
+           ========================= -->
+      <div class="selector-overlay" *ngIf="showSelectorForaneas" (click)="closeSelectorForaneas()"></div>
+
+      <div class="selector-panel" *ngIf="showSelectorForaneas" role="dialog" aria-modal="true">
+        <div class="selector-header">
+          <h4>Seleccionar sedes foráneas</h4>
+          <button class="close-x" (click)="closeSelectorForaneas()">×</button>
+        </div>
+
+        <div class="selector-tools">
+          <input
+            type="text"
+            [(ngModel)]="searchForanea"
+            (input)="applyFilterForaneas()"
+            placeholder="Buscar sede…" />
+          <button class="btn-mini" (click)="selectAllFiltered()" [disabled]="!filteredSedesForaneas.length">Seleccionar visibles</button>
+          <button class="btn-mini" (click)="clearAllForaneas()" [disabled]="!formAdd.sedesForaneas.length">Limpiar</button>
+        </div>
+
+        <div class="selector-list">
+          <label class="check-item" *ngFor="let s of filteredSedesForaneas">
+            <input type="checkbox"
+                   [checked]="isForaneaSelected(s.id)"
+                   (change)="toggleForanea(s.id, $event)"
+                   [disabled]="s.id === formAdd.sedePrincipal" />
+            <span>{{ s.nombre }}</span>
+            <small *ngIf="s.id === formAdd.sedePrincipal" class="muted">(principal)</small>
+          </label>
+        </div>
+
+        <div class="selector-footer">
+          <span class="muted">{{ formAdd.sedesForaneas.length }}/{{ maxForaneas }} seleccionadas</span>
+          <button class="btn-primary" (click)="closeSelectorForaneas()">Listo</button>
+        </div>
+      </div>
+
+      <!-- 📌 Modal contraseña agregar -->
+      <div class="modal" *ngIf="mostrarModalContrasena">
+        <div class="modal-content">
+          <h3>🔒 Ingresa tu contraseña</h3>
+          <input type="password" [(ngModel)]="contrasena" placeholder="Contraseña" class="input-contraseña" />
+          <div class="modal-buttons">
+            <button class="btn-confirmar" (click)="confirmarAgregarTrabajador()">Confirmar</button>
+            <button class="btn-cancelar" (click)="cerrarModalContrasena()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📌 Modal de mensajes -->
+      <div class="modal" *ngIf="mostrarModalMensaje">
+        <div class="modal-content" [ngClass]="{
+          'modal-exito': tipoMensajeModal === 'exito',
+          'modal-error': tipoMensajeModal === 'error',
+          'modal-advertencia': tipoMensajeModal === 'advertencia'
+        }">
+          <h3 *ngIf="tipoMensajeModal === 'exito'">🟢 Éxito</h3>
+          <h3 *ngIf="tipoMensajeModal === 'error'">🔴 Error</h3>
+          <h3 *ngIf="tipoMensajeModal === 'advertencia'">🟡 Advertencia</h3>
+          <p>{{ mensajeModal }}</p>
+          <button class="btn-cerrar" (click)="cerrarModalMensaje()">Aceptar</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

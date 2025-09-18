@@ -1,17 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TrabajadoresService } from 'src/app/services/trabajadores.service';
+import { TrabajadoresService, TrabajadorUI } from 'src/app/services/trabajadores.service';
 import { SedeService } from 'src/app/services/sede.service';
 import Swal from 'sweetalert2';
 import { ChangeDetectorRef } from '@angular/core';
-
-interface Trabajador {
-  _id?: string;
-  nombre: string;
-  sede: number;
-  sincronizado: boolean;
-  estado?: 'activo' | 'inactivo'; // ← ❗️opcional
-}
 
 @Component({
   selector: 'app-trabajadores',
@@ -19,39 +11,71 @@ interface Trabajador {
   styleUrls: ['./trabajadores.component.css']
 })
 export class TrabajadoresComponent implements OnInit {
-  trabajadores: Trabajador[] = [];
-  trabajadoresFiltrados: Trabajador[] = [];
+  // 🔄 Ahora usamos el tipo del service
+  trabajadores: TrabajadorUI[] = [];
+  trabajadoresFiltrados: TrabajadorUI[] = [];
   sedes: { id: number, nombre: string }[] = [];
 
-  filtroNombre: string = '';
-  filtroSede: string = '';
-  rolUsuario: string = '';
+  filtroNombre = '';
+  filtroSede = '';
+  rolUsuario = '';
+
+  // 📌 Formulario (sin apellido)
+  formAdd: {
+    nombre: string;               // nombre completo
+    sedePrincipal: number | null;
+    esForaneo: boolean;
+    sedesForaneas: number[];
+    nuevoIngreso: boolean;
+    fechaAlta: string | null;
+    correo?: string;
+    telefono?: string;
+    telefonoEmergencia?: string;
+    direccion?: string;
+    puesto?: string;
+  } = {
+    nombre: '',
+    sedePrincipal: null,
+    esForaneo: false,
+    sedesForaneas: [],
+    nuevoIngreso: false,
+    fechaAlta: null,
+    correo: '',
+    telefono: '',
+    telefonoEmergencia: '',
+    direccion: '',
+    puesto: ''
+  };
+
+  errorForm = '';
 
   // 📌 Modales
-  mostrarModalContrasena: boolean = false;
-  mostrarModalMensaje: boolean = false;
-  contrasena: string = '';
-  nombreTrabajador: string = '';
-  sedeTrabajador: string = '';
-  mensajeModal: string = '';
+  mostrarModalContrasena = false;
+  mostrarModalMensaje = false;
+  contrasena = '';
+  mensajeModal = '';
   tipoMensajeModal: 'exito' | 'error' | 'advertencia' = 'exito';
 
-  estadoFiltro: string = 'todos'; // ✅ Aquí sí va
-
-  // Guardamos el estado anterior antes de cambiar
+  estadoFiltro: string = 'todos';
   valorOriginal: { [id: string]: string } = {};
+
+  // Selector de foráneas (sin límite)
+  showSelectorForaneas = false;
+  searchForanea = '';
+  filteredSedesForaneas: { id: number, nombre: string }[] = [];
+  maxForaneas = Number.POSITIVE_INFINITY;
+  maxForaneasLabel = '∞';
 
   constructor(
     private router: Router,
     private trabajadoresService: TrabajadoresService,
     private sedeService: SedeService,
-    private cdRef: ChangeDetectorRef // ← aquí
+    private cdRef: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.rolUsuario = localStorage.getItem('rol') || '';
     if (!this.rolUsuario) {
-      console.warn('⚠️ Rol de usuario no encontrado. Redirigiendo a login...');
       this.router.navigate(['/login']);
       return;
     }
@@ -59,6 +83,9 @@ export class TrabajadoresComponent implements OnInit {
     this.obtenerTrabajadores();
   }
 
+  // =========================
+  // Sidebar (móviles)
+  // =========================
   toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
@@ -68,35 +95,39 @@ export class TrabajadoresComponent implements OnInit {
     }
   }
 
+  // =========================
+  // Cargas iniciales
+  // =========================
   obtenerSedes() {
     this.sedeService.obtenerSedes().subscribe({
-      next: (res) => this.sedes = res,
+      next: (res) => { this.sedes = res; this.applyFilterForaneas(); },
       error: (err) => console.error('❌ Error al obtener sedes:', err)
     });
   }
 
-  obtenerNombreSede(id: number): string {
-    const sede = this.sedes.find(s => s.id === id);
-    return sede ? sede.nombre : 'Desconocida';
-  }
-
   obtenerTrabajadores() {
-    this.trabajadoresService.obtenerTrabajadores().subscribe(
-      (data: Trabajador[]) => {
-        this.trabajadores = data;
+    this.trabajadoresService.obtenerTrabajadores().subscribe({
+      next: (data) => {
+        this.trabajadores = data;          // data: TrabajadorUI[]
         this.filtrarTrabajadores();
       },
-      (error) => {
-        console.error('Error al obtener trabajadores', error);
-      }
-    );
+      error: (error) => console.error('Error al obtener trabajadores', error)
+    });
+  }
 
+  // =========================
+  // Helpers UI
+  // =========================
+  obtenerNombreSede(id: number | null): string {
+    if (id == null) return '—';
+    const sede = this.sedes.find(s => s.id === id);
+    return sede ? sede.nombre : 'Desconocida';
   }
 
   filtrarTrabajadores() {
     this.trabajadoresFiltrados = this.trabajadores.filter(trabajador => {
       const coincideNombre = this.filtroNombre
-        ? trabajador.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase())
+        ? (trabajador.nombre || '').toLowerCase().includes(this.filtroNombre.toLowerCase())
         : true;
 
       const coincideSede = this.filtroSede
@@ -111,14 +142,95 @@ export class TrabajadoresComponent implements OnInit {
     });
   }
 
-  abrirModalAgregar(nombre: string, sede: string) {
-    if (!nombre || !sede) {
-      this.mostrarMensaje('Debes ingresar un nombre y seleccionar una sede.', 'advertencia');
-      return;
+  // =========================
+  // Formulario (alta)
+  // =========================
+  onPrincipalChange() {
+    if (this.formAdd.sedePrincipal != null) {
+      this.formAdd.sedesForaneas = this.formAdd.sedesForaneas.filter(
+        id => id !== this.formAdd.sedePrincipal
+      );
     }
-    this.nombreTrabajador = nombre;
-    this.sedeTrabajador = sede;
-    this.mostrarModalContrasena = true;
+  }
+
+  onToggleForaneo() {
+    if (!this.formAdd.esForaneo) this.formAdd.sedesForaneas = [];
+  }
+
+  onForaneasChange() {
+    const principal = this.formAdd.sedePrincipal;
+    const set = new Set(this.formAdd.sedesForaneas.filter(id => id !== principal));
+    this.formAdd.sedesForaneas = Array.from(set);
+  }
+
+  onNuevoIngresoChange() {
+    if (this.formAdd.nuevoIngreso && !this.formAdd.fechaAlta) {
+      this.formAdd.fechaAlta = new Date().toISOString().split('T')[0];
+    }
+  }
+
+  removerForanea(id: number) {
+    this.formAdd.sedesForaneas = this.formAdd.sedesForaneas.filter(x => +x !== +id);
+  }
+
+  private validarFormularioAlta(): string | null {
+    if (!this.formAdd.nombre || this.formAdd.nombre.trim().length < 2) {
+      return 'El nombre es obligatorio.';
+    }
+    if (this.formAdd.sedePrincipal == null) {
+      return 'Debes seleccionar una sede principal.';
+    }
+    if (this.formAdd.esForaneo && this.formAdd.sedesForaneas.includes(this.formAdd.sedePrincipal)) {
+      return 'La sede principal no puede estar en las foráneas.';
+    }
+    if (this.formAdd.nuevoIngreso && !this.formAdd.fechaAlta) {
+      return 'Debes seleccionar la fecha de alta.';
+    }
+    return null;
+  }
+
+  resetFormAdd() {
+    this.formAdd = {
+      nombre: '',
+      sedePrincipal: null,
+      esForaneo: false,
+      sedesForaneas: [],
+      nuevoIngreso: false,
+      fechaAlta: null,
+      correo: '',
+      telefono: '',
+      telefonoEmergencia: '',
+      direccion: '',
+      puesto: ''
+    };
+    this.errorForm = '';
+  }
+
+  abrirModalAgregar() {
+    const error = this.validarFormularioAlta();
+    if (error) { this.errorForm = error; this.mostrarMensaje(error, 'advertencia'); return; }
+    this.errorForm = '';
+
+    const principalNombre = this.obtenerNombreSede(this.formAdd.sedePrincipal!);
+    const foraneasNombres = (this.formAdd.esForaneo && this.formAdd.sedesForaneas.length)
+      ? this.formAdd.sedesForaneas.map(id => this.obtenerNombreSede(+id)).join(', ')
+      : 'Ninguna';
+
+    Swal.fire({
+      title: 'Confirmar alta',
+      html: `
+        <div style="text-align:left">
+          <b>Nombre:</b> ${this.formAdd.nombre}<br>
+          <b>Sede principal:</b> ${principalNombre}<br>
+          <b>Foráneas:</b> ${foraneasNombres}<br>
+          <b>Nuevo ingreso:</b> ${this.formAdd.nuevoIngreso ? 'Sí' : 'No'}
+          ${this.formAdd.nuevoIngreso && this.formAdd.fechaAlta ? ` (${this.formAdd.fechaAlta})` : ''}<br>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Continuar'
+    }).then(res => { if (res.isConfirmed) this.mostrarModalContrasena = true; });
   }
 
   cerrarModalContrasena() {
@@ -127,55 +239,87 @@ export class TrabajadoresComponent implements OnInit {
   }
 
   confirmarAgregarTrabajador() {
-    if (!this.contrasena) {
-      this.mostrarMensaje('Debes ingresar una contraseña.', 'advertencia');
-      return;
+    if (!this.contrasena) { this.mostrarMensaje('Debes ingresar una contraseña.', 'advertencia'); return; }
+
+    this.trabajadoresService.verificarContraseña(this.contrasena).subscribe({
+      next: (valido) => {
+        if (valido) { this.agregarTrabajador(); this.cerrarModalContrasena(); }
+        else this.mostrarMensaje('⚠️ Contraseña incorrecta. Inténtalo de nuevo.', 'advertencia');
+      },
+      error: () => this.mostrarMensaje('❌ Hubo un error al verificar la contraseña.', 'error')
+    });
+  }
+
+  agregarTrabajador() {
+    const sedePrincipal = this.formAdd.sedePrincipal!;
+    const sedesForaneas = this.formAdd.esForaneo ? this.formAdd.sedesForaneas : [];
+
+    // Mandamos payload en formato UI; el service lo normaliza a API
+    const payload: Partial<TrabajadorUI> = {
+      nombre: this.formAdd.nombre,
+      sede: sedePrincipal,               // compat con back actual
+      sedePrincipal,
+      sedesForaneas,
+      nuevoIngreso: !!this.formAdd.nuevoIngreso,
+      fechaAlta: this.formAdd.nuevoIngreso ? this.formAdd.fechaAlta : null,
+      estado: 'activo',
+      sincronizado: false,
+      correo: this.formAdd.correo || undefined,
+      telefono: this.formAdd.telefono || undefined,
+      telefonoEmergencia: this.formAdd.telefonoEmergencia || undefined,
+      direccion: this.formAdd.direccion || undefined,
+      puesto: this.formAdd.puesto || undefined
+    };
+
+    this.trabajadoresService.agregarTrabajador(payload).subscribe({
+      next: () => { this.mostrarMensaje('Trabajador agregado correctamente.', 'exito'); this.obtenerTrabajadores(); this.resetFormAdd(); },
+      error: () => this.mostrarMensaje('❌ Error al agregar trabajador.', 'error')
+    });
+  }
+
+  // =========================
+  // Selector de foráneas (panel)
+  // =========================
+  openSelectorForaneas() { this.applyFilterForaneas(); this.showSelectorForaneas = true; }
+  closeSelectorForaneas() { this.showSelectorForaneas = false; this.searchForanea = ''; this.applyFilterForaneas(); }
+  applyFilterForaneas() {
+    const q = (this.searchForanea || '').toLowerCase();
+    this.filteredSedesForaneas = this.sedes
+      .filter(s => s.nombre.toLowerCase().includes(q))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+  isForaneaSelected(id: number) { return this.formAdd.sedesForaneas.includes(id); }
+  toggleForanea(id: number, ev: Event) {
+    const checked = (ev.target as HTMLInputElement).checked;
+    if (id === this.formAdd.sedePrincipal) return;
+    if (checked) {
+      if (!this.formAdd.sedesForaneas.includes(id)) this.formAdd.sedesForaneas.push(id);
+    } else {
+      this.formAdd.sedesForaneas = this.formAdd.sedesForaneas.filter(x => x !== id);
     }
-
-    this.trabajadoresService.verificarContraseña(this.contrasena).subscribe(
-      (valido) => {
-        if (valido) {
-          this.agregarTrabajador(this.nombreTrabajador, this.sedeTrabajador);
-          this.cerrarModalContrasena();
-        } else {
-          this.mostrarMensaje('⚠️ Contraseña incorrecta. Inténtalo de nuevo.', 'advertencia');
-        }
-      },
-      (error) => {
-        console.error('Error al verificar contraseña', error);
-        this.mostrarMensaje('❌ Hubo un error al verificar la contraseña.', 'error');
+  }
+  selectAllFiltered() {
+    for (const s of this.filteredSedesForaneas) {
+      if (s.id !== this.formAdd.sedePrincipal && !this.formAdd.sedesForaneas.includes(s.id)) {
+        this.formAdd.sedesForaneas.push(s.id);
       }
-    );
+    }
   }
+  clearAllForaneas() { this.formAdd.sedesForaneas = []; }
 
-  agregarTrabajador(nombre: string, sede: string) {
-    const sedeNumero = Number(sede);
-    const nuevoTrabajador: Trabajador = { nombre, sede: sedeNumero, sincronizado: false, estado: 'activo' };
+  // =========================
+  // Tabla: acciones
+  // =========================
+  verTrabajador(trabajadorId: string) { this.router.navigate(['/trabajadores', trabajadorId]); }
 
-    this.trabajadoresService.agregarTrabajador(nuevoTrabajador).subscribe(
-      () => {
-        this.mostrarMensaje('Trabajador agregado correctamente.', 'exito');
-        this.obtenerTrabajadores();
-      },
-      (error) => {
-        console.error('Error al agregar trabajador', error);
-        this.mostrarMensaje('❌ Error al agregar trabajador.', 'error');
-      }
-    );
-  }
-
-  verTrabajador(trabajadorId: string) {
-    this.router.navigate(['/trabajadores', trabajadorId]);
-  }
-
-  guardarValorOriginal(trabajador: any) {
+  guardarValorOriginal(trabajador: TrabajadorUI) {
+    if (!trabajador?._id) return;
     this.valorOriginal[trabajador._id] = trabajador.sincronizado ? 'Sincronizado' : 'Pendiente';
   }
 
-  cambiarSincronizacion(trabajador: any, event: Event) {
+  cambiarSincronizacion(trabajador: TrabajadorUI, event: Event) {
     const selectElement = event.target as HTMLSelectElement;
-    const nuevoEstado = selectElement.value;
-    const sincronizadoNuevo = nuevoEstado === 'Sincronizado';
+    const sincronizadoNuevo = selectElement.value === 'Sincronizado';
 
     const advertencia = sincronizadoNuevo
       ? '⚠️ Al marcarlo como "Sincronizado", el sistema del checador lo ignorará y no lo registrará automáticamente.'
@@ -190,8 +334,7 @@ export class TrabajadoresComponent implements OnInit {
       cancelButtonText: 'Cancelar'
     }).then((res: any) => {
       if (!res.isConfirmed) {
-        // ❌ Restaurar valor anterior visualmente
-        selectElement.value = this.valorOriginal[trabajador._id];
+        if (trabajador._id) selectElement.value = this.valorOriginal[trabajador._id];
         return;
       }
 
@@ -199,56 +342,39 @@ export class TrabajadoresComponent implements OnInit {
         title: '🔒 Ingresa tu contraseña',
         input: 'password',
         inputPlaceholder: 'Contraseña',
-        inputAttributes: {
-          autocapitalize: 'off',
-          autocorrect: 'off'
-        },
+        inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
         showCancelButton: true,
         confirmButtonText: 'Confirmar'
       }).then((confirmacion: any) => {
         if (confirmacion.isConfirmed && confirmacion.value) {
-          const contraseña = confirmacion.value;
-
-          this.trabajadoresService.verificarContraseña(contraseña).subscribe(valido => {
+          this.trabajadoresService.verificarContraseña(confirmacion.value).subscribe(valido => {
             if (valido) {
               this.trabajadoresService.actualizarSincronizacion(trabajador._id!, sincronizadoNuevo).subscribe(
                 () => {
                   trabajador.sincronizado = sincronizadoNuevo;
                   Swal.fire('✅ Éxito', 'Estado de sincronización actualizado.', 'success');
                 },
-                err => {
-                  console.error('Error al actualizar sincronización', err);
-                  Swal.fire('❌ Error', 'No se pudo actualizar el estado.', 'error');
-                }
+                () => Swal.fire('❌ Error', 'No se pudo actualizar el estado.', 'error')
               );
             } else {
               Swal.fire('❌ Contraseña incorrecta', 'La contraseña no es válida.', 'error');
             }
           });
         } else {
-          // ❌ Cancelado al ingresar contraseña
-          selectElement.value = this.valorOriginal[trabajador._id];
+          if (trabajador._id) selectElement.value = this.valorOriginal[trabajador._id];
         }
       });
     });
   }
 
-  actualizarTabla() {
-    this.obtenerTrabajadores();
-  }
+  actualizarTabla() { this.obtenerTrabajadores(); }
 
-  cerrarSesion() {
-    localStorage.clear();
-    this.router.navigate(['/login']);
-  }
-
-  cerrarModalMensaje() {
-    this.mostrarModalMensaje = false;
-  }
-
+  // =========================
+  // Sesión y modales de mensaje
+  // =========================
+  cerrarSesion() { localStorage.clear(); this.router.navigate(['/login']); }
+  cerrarModalMensaje() { this.mostrarModalMensaje = false; }
   mostrarMensaje(mensaje: string, tipo: 'exito' | 'error' | 'advertencia') {
-    this.mensajeModal = mensaje;
-    this.tipoMensajeModal = tipo;
-    this.mostrarModalMensaje = true;
+    this.mensajeModal = mensaje; this.tipoMensajeModal = tipo; this.mostrarModalMensaje = true;
   }
 }

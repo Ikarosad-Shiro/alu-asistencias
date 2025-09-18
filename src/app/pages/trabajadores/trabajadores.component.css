@@ -1,4 +1,5 @@
 /* === Estilos Globales para Trabajadores === */
+* { box-sizing: border-box; }
 
 .admin-dashboard-container {
   display: flex;
@@ -32,14 +33,8 @@
   font-weight: bold;
 }
 
-.nav {
-  width: 100%;
-}
-
-.nav-item {
-  width: 100%;
-  margin-bottom: 15px;
-}
+.nav { width: 100%; }
+.nav-item { width: 100%; margin-bottom: 15px; }
 
 .btn-sidebar {
   width: 100%;
@@ -51,10 +46,7 @@
   border-radius: 5px;
   font-size: 1rem;
 }
-
-.btn-sidebar:hover {
-  background-color: #007bff;
-}
+.btn-sidebar:hover { background-color: #007bff; }
 
 .btn-logout {
   background-color: #dc3545;
@@ -86,11 +78,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   margin-bottom: 20px;
   width: 100%;
-  max-width: 900px; /* Aumentado */
+  max-width: 900px;
   text-align: center;
 }
 
-/* === Estilos para Filtros === */
+/* === Estilos para Filtros y Form === */
 .search-container, .add-worker-form {
   display: flex;
   flex-wrap: wrap;
@@ -100,7 +92,7 @@
   padding: 15px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  max-width: 900px; /* Aumentado */
+  max-width: 900px;
   width: 100%;
 }
 
@@ -109,10 +101,9 @@
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
-  max-width: 900px; /* Aumentado */
+  max-width: 900px;
   width: 100%;
 }
-
 
 .search-container input,
 .add-worker-form input,
@@ -138,249 +129,245 @@
   cursor: pointer;
   font-weight: bold;
 }
+.btn-buscar:hover, .btn-agregar:hover { background-color: #90409b; }
 
-.btn-buscar:hover,
-.btn-agregar:hover {
-  background-color: #90409b;
-}
-
+/* ========== Tabla ========== */
 .user-table {
   width: 100%;
-  max-width: 900px; /* Aumentado */
+  max-width: 900px;
   background: rgba(255, 255, 255, 0.95);
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow-x: auto;
 }
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+th { background-color: #460f66; color: white; }
 
-th, td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
+.activo { color: green; font-weight: bold; }
+.pendiente { color: orange; font-weight: bold; }
 
-th {
-  background-color: #460f66;
-  color: white;
-}
-
-/* Estado */
-.activo {
-  color: green;
-  font-weight: bold;
-}
-
-.pendiente {
-  color: orange;
-  font-weight: bold;
-}
-
-/* Botones de acción */
-.btn-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
+.btn-actions { display: flex; gap: 10px; justify-content: center; }
 .btn-view {
-  background-color: #6a1275;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 5px;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  border: none;
-  cursor: pointer;
+  background-color: #6a1275; color: white; padding: 6px 12px; border-radius: 5px;
+  font-size: 0.9rem; display: flex; align-items: center; gap: 5px; border: none; cursor: pointer;
 }
+.btn-view:hover { background-color: #460f66; }
+.btn-delete { background: transparent; border: none; color: #dc3545; font-size: 1.4rem; cursor: pointer; }
+.btn-delete:hover { color: #a71d2a; }
 
-.btn-view:hover {
-  background-color: #460f66;
-}
-
-.btn-delete {
-  background: transparent;
-  border: none;
-  color: #dc3545;
-  font-size: 1.4rem;
-  cursor: pointer;
-}
-
-.btn-delete:hover {
-  color: #a71d2a;
-}
-
-/* Botón actualizar */
 .update-table-container {
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
-  max-width: 900px; /* Aumentado */
-  margin-bottom: 20px;
+  display: flex; justify-content: flex-end; width: 100%; max-width: 900px; margin-bottom: 20px;
 }
-
 .btn-update {
-  background-color: #6a1d97;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  background-color: #6a1d97; color: white; border: none; padding: 8px 16px; border-radius: 10px;
+  font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 5px;
 }
-
-.btn-update:hover {
-  background-color: #460f66;
-}
+.btn-update:hover { background-color: #460f66; }
 
 .select-estado {
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  background-color: #f8f8f8;
-  font-weight: bold;
+  padding: 4px 8px; border-radius: 6px; border: 1px solid #ccc; background-color: #f8f8f8; font-weight: bold;
 }
 
-/* filtro para activos he inactivo*/
-
+/* filtro activos/inactivos */
 .estado-select {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 10px;
-  background-color: rgba(255, 255, 255, 0.85);
-  font-weight: 500;
-  color: #333;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.2s ease-in-out;
+  padding: 8px 12px; border: none; border-radius: 10px; background-color: rgba(255, 255, 255, 0.85);
+  font-weight: 500; color: #333; box-shadow: 0 0 4px rgba(0, 0, 0, 0.1); transition: background-color 0.2s ease-in-out;
 }
+.estado-select:hover { background-color: rgba(255, 255, 255, 0.95); cursor: pointer; }
 
-.estado-select:hover {
-  background-color: rgba(255, 255, 255, 0.95);
-  cursor: pointer;
-}
-
-/* Modales */
+/* ====== Modales genéricos ====== */
 .modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1300; /* > sidebar */
 }
-
 .modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 400px;
-  width: 90%;
-  text-align: center;
+  background: white; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center;
 }
-
-.input-contraseña {
-  width: 90%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin-bottom: 15px;
-}
-
-.modal-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-.btn-confirmar, .btn-cancelar {
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  color: white;
-  cursor: pointer;
-}
-
-.btn-confirmar {
-  background-color: #6f42c1;
-}
-
-.btn-cancelar {
-  background-color: #6c757d;
-}
-
-.modal-content button:hover {
-  opacity: 0.9;
-}
+.input-contraseña { width: 90%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 15px; }
+.modal-buttons { display: flex; justify-content: center; gap: 10px; }
+.btn-confirmar, .btn-cancelar { padding: 8px 16px; border-radius: 6px; border: none; color: white; cursor: pointer; }
+.btn-confirmar { background-color: #6f42c1; }
+.btn-cancelar { background-color: #6c757d; }
+.modal-content button:hover { opacity: 0.9; }
 
 /* Mensajes personalizados */
-.modal-content.exito {
-  background-color: #d4edda;
-  color: #155724;
+.modal-content.exito { background-color: #d4edda; color: #155724; }
+.modal-content.error { background-color: #f8d7da; color: #721c24; }
+.modal-content.advertencia { background-color: #fff3cd; color: #856404; }
+
+/* ====== BLOQUE NUEVO: Selector Foráneas (overlay fijo) ====== */
+.selector-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(2px);
+  z-index: 1200; /* encima del contenido y debajo de .modal (1300) */
 }
 
-.modal-content.error {
-  background-color: #f8d7da;
-  color: #721c24;
+.selector-panel{
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, 92vw);
+  max-height: min(80vh, 720px);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  z-index: 1210;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.modal-content.advertencia {
-  background-color: #fff3cd;
-  color: #856404;
+.selector-header{
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid #eee;
+}
+.close-x{ border:none; background:transparent; font-size:22px; line-height:1; cursor:pointer; }
+
+.selector-tools{
+  display: flex; gap: 8px; align-items: center;
+  padding: 10px 14px; border-bottom: 1px solid #f3f4f6;
+}
+.selector-tools input{
+  flex: 1; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px;
+}
+.btn-mini{
+  padding: 6px 10px; border: 1px solid #e5e7eb; background: #f9fafb; border-radius: 8px; cursor: pointer;
+}
+.btn-primary{
+  padding: 8px 12px; background: #4f46e5; color: #fff; border: none; border-radius: 8px; cursor: pointer;
+}
+.btn-secondary{
+  padding: 6px 10px; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; cursor: pointer;
 }
 
-/* Responsivo */
+.selector-list{
+  padding: 8px 14px;
+  overflow: auto;
+  flex: 1; /* ocupa el espacio y permite scroll sin empujar el layout */
+}
+.check-item{
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 4px; border-bottom: 1px dashed #f1f5f9;
+}
+.selector-footer{
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-top: 1px solid #eee;
+}
+.muted{ color:#6b7280; font-size:12px; }
+.foraneas-row{ display:flex; align-items:center; gap:8px; margin:6px 0 }
+.contador{ font-size:12px; color:#6b7280 }
+.hint { color: #6b7280; font-size: 12px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 8px; border-radius: 999px; background: #eef2ff; font-size: 12px;
+}
+.chip-x { border: none; background: transparent; cursor: pointer; font-weight: bold; }
+
+/* ====== Grid del formulario ====== */
+.add-worker-form.card {
+  padding: 12px;
+  background: #ffffffcc;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  margin-bottom: 12px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 10px;
+  align-items: center;
+}
+.form-grid .full { grid-column: 1 / -1; }
+.inline { display: flex; align-items: center; gap: 8px; }
+
+.error-banner {
+  margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+  background: #fff7ed; color: #b45309; border: 1px solid #fdba74;
+}
+.acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+
+/* ====== Responsivo ====== */
 @media (max-width: 1024px) {
-  .main-content {
-    margin-left: 0;
-    padding: 20px;
-    width: 100%;
-  }
+  .main-content { margin-left: 0; padding: 20px; width: 100%; }
 
   .sidebar {
-    left: -260px;
-    width: 70%;
-    max-width: 280px;
-    transition: left 0.3s ease-in-out;
+    left: -260px; width: 70%; max-width: 280px; transition: left 0.3s ease-in-out;
   }
-
-  .sidebar.active {
-    left: 0;
-  }
+  .sidebar.active { left: 0; }
 
   .menu-toggle {
-    display: block;
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    font-size: 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    z-index: 1100;
+    display: block; position: fixed; top: 15px; left: 15px;
+    background-color: #007bff; color: white; border: none; padding: 10px 15px;
+    font-size: 20px; border-radius: 5px; cursor: pointer; z-index: 1100;
   }
+  .menu-toggle:hover { background-color: #0056b3; }
 
-  .menu-toggle:hover {
-    background-color: #0056b3;
+  /* Panel: ocupa más ancho en móviles */
+  .selector-panel{
+    width: min(96vw, 560px);
+    max-height: 85vh;
   }
 }
 
 @media (min-width: 1025px) {
-  .sidebar {
-    left: 0 !important;
-  }
-  .sidebar-overlay {
-    display: none !important;
-  }
+  .sidebar { left: 0 !important; }
+  .sidebar-overlay { display: none !important; }
 }
+
+/* Acordeón del formulario de alta */
+.add-worker-accordion{
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: 20px;
+}
+
+/* Mejora visual del header del accordion */
+.add-worker-accordion .mat-expansion-panel-header{
+  background: rgba(255,255,255,0.92);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+.add-worker-accordion .mat-expansion-panel-header.mat-expanded{
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Quitar padding interno para que use el card del form */
+.add-worker-accordion .mat-expansion-panel-body{
+  padding: 12px !important;
+}
+
+/* Mantener look de tu card dentro del panel */
+.add-worker-form.card{
+  margin: 0;
+}
+
+/* Grid más cómodo */
+.form-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(260px,1fr));
+  gap:12px;
+  align-items:center;
+}
+.form-grid .full{ grid-column:1 / -1; }
+.inline{ display:flex; align-items:center; gap:8px; }
+.inline.right{ justify-content:flex-end; }
+
+/* Mejor feedback del date cuando está deshabilitado */
+.disabled-input{
+  background:#f3f4f6;
+  cursor:not-allowed;
+}
+
+/* Separador para equilibrar la última fila cuando hay solo 1 campo */
+.spacer{ height:1px; }
+
+/* Mantén tus estilos existentes de chips/botones */

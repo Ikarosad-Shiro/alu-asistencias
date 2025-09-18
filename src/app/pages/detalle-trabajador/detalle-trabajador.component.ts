@@ -9,6 +9,9 @@ import { AuthService } from 'src/app/services/auth.service';
 import { AsistenciaService } from 'src/app/services/asistencia.service';
 import { CalendarioService } from 'src/app/services/calendario.service';
 
+// + añade esto
+import { TrabajadorUI } from 'src/app/services/trabajadores.service';
+
 import { forkJoin, Observable, lastValueFrom, throwError, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { DateTime } from 'luxon';
@@ -74,6 +77,8 @@ interface Trabajador {
   historialSedes?: HistorialSede[];
 }
 
+type SedeChip = { id: number; nombre: string; tipo: 'principal' | 'foranea' };
+
 @Component({
   selector: 'app-detalle-trabajador',
   templateUrl: './detalle-trabajador.component.html',
@@ -89,6 +94,10 @@ export class DetalleTrabajadorComponent implements OnInit {
   diasProcesados: DiaProcesado[] = [];
   fechaInicio!: Date;
   fechaFin!: Date;
+
+  sedesChips: SedeChip[] = [];
+  // para *ngFor trackBy en el template
+  trackById = (_: number, item: SedeChip) => item.id;
 
   // 📌 Calendario unificado
   eventosSede: EventoEspecial[] = [];
@@ -112,11 +121,11 @@ export class DetalleTrabajadorComponent implements OnInit {
 
     // 🔥 Obtener lista de sedes
     this.sedeService.obtenerSedes().subscribe({
-      next: (sedes: any[]) => this.sedes = sedes,
-      error: (error: HttpErrorResponse) => {
-        console.error('❌ Error al obtener sedes:', error);
-        this.mostrarMensaje('Error al cargar las sedes', 'error');
-      }
+      next: (sedes: any[]) => {
+        this.sedes = sedes;
+        this.buildSedesChips();   // 👈 añade esto
+      },
+      error: (error: HttpErrorResponse) => { /* ... */ }
     });
 
     const trabajadorId = this.route.snapshot.paramMap.get('id');
@@ -129,8 +138,10 @@ export class DetalleTrabajadorComponent implements OnInit {
     // 🔥 Paso 1: obtener el trabajador
     this.trabajadoresService.obtenerTrabajador(trabajadorId).subscribe({
       next: (trabajador: any) => {
-        this.trabajador = trabajador;
-        this.trabajadorOriginal = JSON.parse(JSON.stringify(trabajador));
+      this.trabajador = trabajador;
+      this.trabajadorOriginal = JSON.parse(JSON.stringify(trabajador));
+      this.normalizarYOrdenarHistorialEnTrabajador(); // ← AÑADE ESTA LÍNEA
+      this.buildSedesChips();  // 👈 añade esto
 
         // 🔥 Paso 2: obtener en paralelo asistencias + eventos
         forkJoin({
@@ -183,11 +194,55 @@ export class DetalleTrabajadorComponent implements OnInit {
     });
   }
 
+  // 👉 Ordena y normaliza el historial para la tabla (activo arriba, luego por fechaInicio DESC)
+get historialOrdenado(): HistorialSede[] {
+  const sedesCat = this.sedes || [];
+  const nombrePorId = (id: any) => {
+    const n = Number(id);
+    const s = sedesCat.find((x: any) => x.id === n);
+    return s?.nombre || this.obtenerNombreSede(n) || '';
+  };
+
+  const h: HistorialSede[] = Array.isArray(this.trabajador?.historialSedes)
+    ? this.trabajador.historialSedes.map((r: any) => ({
+        idSede: (typeof r.idSede === 'number' ? String(r.idSede) : r.idSede) ?? '',
+        nombre: r.nombre || nombrePorId(r.idSede),
+        fechaInicio: r.fechaInicio ? new Date(r.fechaInicio) : null,
+        fechaFin: r.fechaFin ? new Date(r.fechaFin) : null
+      }))
+    : [];
+
+  return h.sort((a, b) => {
+    // activo (fechaFin null) primero
+    const aActivo = a.fechaFin === null || a.fechaFin === undefined;
+    const bActivo = b.fechaFin === null || b.fechaFin === undefined;
+    if (aActivo && !bActivo) return -1;
+    if (!aActivo && bActivo) return 1;
+
+    const ai = a.fechaInicio ? a.fechaInicio.getTime() : 0;
+    const bi = b.fechaInicio ? b.fechaInicio.getTime() : 0;
+    return bi - ai; // más reciente primero
+  });
+}
+
+// 👉 Normaliza y asegura que el campo nombre esté si faltara
+private normalizarYOrdenarHistorialEnTrabajador(): void {
+  if (!Array.isArray(this.trabajador?.historialSedes)) return;
+  // solo reasigna para asegurar tipos Date en el objeto base
+  this.trabajador.historialSedes = this.trabajador.historialSedes.map((r: any) => ({
+    idSede: (typeof r.idSede === 'number' ? String(r.idSede) : r.idSede) ?? '',
+    nombre: r.nombre || this.obtenerNombreSede(r.idSede),
+    fechaInicio: r.fechaInicio ? new Date(r.fechaInicio) : null,
+    fechaFin: r.fechaFin ? new Date(r.fechaFin) : null
+  }));
+}
+
   cargarTrabajadorPorId(id: string) {
     this.trabajadoresService.obtenerTrabajador(id).subscribe({
       next: (trabajador: any) => {
         this.trabajador = trabajador;
         this.trabajadorOriginal = JSON.parse(JSON.stringify(trabajador));
+        this.buildSedesChips();  // 👈 añade esto
 
         forkJoin({
           asistencias: this.trabajadoresService.obtenerAsistencias(id),
@@ -1162,7 +1217,7 @@ exportarExcelConEstilo(nombreArchivo: string = 'Reporte_Asistencias.xlsx'): void
                   ultimoRegistro.fechaFin = ahora;
                 }
 
-                const dataActualizada = {
+                const dataActualizada: Partial<TrabajadorUI> & { historialSedes: HistorialSede[] } = {
                   estado: 'inactivo',
                   sede: null,
                   sincronizado: false,
@@ -1187,86 +1242,260 @@ exportarExcelConEstilo(nombreArchivo: string = 'Reporte_Asistencias.xlsx'): void
     });
   }
 
-  cambiarSede() {
-    const opciones = this.sedes.map(s => ({
-      value: s.id,
-      text: s.nombre
-    }));
+cambiarSede() {
+  const sedes = this.sedes || [];
+  const principalActual: number | null =
+    this.trabajador?.sedePrincipal ?? this.trabajador?.sede ?? null;
+  const foraneasActuales: number[] = Array.isArray(this.trabajador?.sedesForaneas)
+    ? this.trabajador.sedesForaneas.map((x: any) => Number(x))
+    : [];
 
-    Swal.fire({
-      title: 'Selecciona la nueva sede',
-      input: 'select',
-      inputOptions: this.sedes.reduce((acc, sede) => {
-        acc[sede.id] = sede.nombre;
-        return acc;
-      }, {} as any),
-      inputPlaceholder: 'Selecciona una sede',
-      showCancelButton: true,
-      confirmButtonText: 'Continuar'
-    }).then(result => {
-      if (result.isConfirmed && result.value) {
-        const nuevaSede = Number(result.value);
+  const optionsHtml = sedes
+    .map((s: any) => `<option value="${s.id}" ${s.id === principalActual ? 'selected' : ''}>${s.nombre}</option>`)
+    .join('');
 
-        Swal.fire({
-          title: '🔒 Ingresa tu contraseña',
-          input: 'password',
-          inputPlaceholder: 'Contraseña',
-          inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
-          showCancelButton: true,
-          confirmButtonText: 'Confirmar'
-        }).then(confirm => {
-          if (confirm.isConfirmed && confirm.value) {
-            const contraseña = confirm.value;
+  const checksHtml = sedes
+    .map((s: any) => {
+      const checked = foraneasActuales.includes(s.id) ? 'checked' : '';
+      return `
+        <label class="sw-item" style="display:flex;align-items:center;gap:6px;margin:4px 0;">
+          <input type="checkbox" value="${s.id}" ${checked}/>
+          <span>${s.nombre}</span>
+        </label>`;
+    })
+    .join('');
 
-            this.trabajadoresService.verificarContraseña(contraseña).subscribe(valido => {
-              if (valido) {
-                const ahora = new Date();
+  Swal.fire({
+    title: 'Cambiar sede (principal y foráneas)',
+    html: `
+      <div style="text-align:left">
+        <label style="font-weight:600;display:block;margin-bottom:6px;">Sede principal</label>
+        <select id="sw-sede-principal" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0 0 12px 0;">
+          ${optionsHtml}
+        </select>
 
-                const historial = this.trabajador.historialSedes || [];
+        <label style="font-weight:600;display:block;margin:6px 0;">Sedes foráneas</label>
+        <div id="sw-foraneas" style="max-height:220px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:8px;">
+          ${checksHtml}
+        </div>
 
-                // 🧠 1. Cerrar el último historial abierto (si existe)
-                const ultimoRegistro = historial.find((h: HistorialSede) => !h.fechaFin);
-                if (ultimoRegistro) {
-                  ultimoRegistro.fechaFin = ahora;
-                }
+        <small class="muted" style="display:block;margin-top:8px;color:#666;">
+          La sede principal no puede estar marcada como foránea.
+        </small>
+      </div>
+    `,
+    width: 600,
+    showCancelButton: true,
+    confirmButtonText: 'Guardar',
+    cancelButtonText: 'Cancelar',
+    focusConfirm: false,
+    didOpen: () => {
+      const principalSel = document.getElementById('sw-sede-principal') as HTMLSelectElement;
+      const forasDiv = document.getElementById('sw-foraneas') as HTMLDivElement;
 
-                // 🧠 2. Crear nuevo historial para la nueva sede
-                const nuevaSedeObj = this.sedes.find(s => s.id === nuevaSede);
-                if (nuevaSedeObj) {
-                  historial.push({
-                    idSede: nuevaSede.toString(),
-                    nombre: nuevaSedeObj.nombre,
-                    fechaInicio: ahora,
-                    fechaFin: null
-                  });
-                }
-
-                // 🧠 3. Preparar nuevo estado
-                const nuevoEstado = this.trabajador.estado === 'inactivo' ? 'activo' : this.trabajador.estado;
-
-                // 🧠 4. Enviar actualización
-                const dataActualizada = {
-                  sede: nuevaSede,
-                  estado: nuevoEstado,
-                  sincronizado: false,
-                  historialSedes: historial
-                };
-
-                this.trabajadoresService.actualizarTrabajador(this.trabajador._id!, dataActualizada).subscribe(() => {
-                  Swal.fire('✅ Sede actualizada correctamente');
-                  this.cargarTrabajadorPorId(this.trabajador._id!); // Refrescar
-                }, err => {
-                  console.error(err);
-                  Swal.fire('❌ Error al cambiar de sede');
-                });
-              } else {
-                Swal.fire('⚠️ Contraseña incorrecta');
-              }
-            });
-          }
+      const updateDisabled = () => {
+        const principal = Number(principalSel.value);
+        forasDiv.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach(chk => {
+          chk.disabled = Number(chk.value) === principal;
+          if (chk.disabled) chk.checked = false;
         });
+      };
+
+      principalSel.addEventListener('change', updateDisabled);
+      updateDisabled();
+    },
+    preConfirm: () => {
+      const principalSel = document.getElementById('sw-sede-principal') as HTMLSelectElement;
+      const forasDiv = document.getElementById('sw-foraneas') as HTMLDivElement;
+
+      const principal = Number(principalSel.value);
+      if (!principal || isNaN(principal)) {
+        Swal.showValidationMessage('Selecciona una sede principal válida');
+        return;
       }
+
+      const foraneas = Array.from(
+        forasDiv.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked')
+      )
+        .map(chk => Number(chk.value))
+        .filter(v => v !== principal);
+
+      return { principal, foraneas };
+    }
+  }).then(result => {
+    if (!result.isConfirmed || !result.value) return;
+    const { principal, foraneas } = result.value as { principal: number; foraneas: number[] };
+
+    // Confirmar contraseña
+    Swal.fire({
+      title: '🔒 Ingresa tu contraseña',
+      input: 'password',
+      inputPlaceholder: 'Contraseña',
+      inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar'
+    }).then(confirm => {
+      if (!confirm.isConfirmed || !confirm.value) return;
+      const contraseña = confirm.value;
+
+      this.trabajadoresService.verificarContraseña(contraseña).subscribe(valido => {
+        if (!valido) {
+          Swal.fire('❌ Contraseña incorrecta', '', 'error');
+          return;
+        }
+
+        // 🔁 Construir historial solo si cambió la principal
+        const ahora = new Date();
+        const historial: HistorialSede[] = Array.isArray(this.trabajador.historialSedes)
+          ? [...this.trabajador.historialSedes]
+          : [];
+
+        const principalAnterior = Number(this.trabajador?.sedePrincipal ?? this.trabajador?.sede);
+        if (!isNaN(principalAnterior) && principalAnterior !== principal) {
+          const abierto = historial.find(h => !h.fechaFin);
+          if (abierto) abierto.fechaFin = ahora;
+          const sedeObj = sedes.find((s: any) => s.id === principal);
+          historial.push({
+            idSede: String(principal),
+            nombre: sedeObj?.nombre || this.obtenerNombreSede(principal),
+            fechaInicio: ahora,
+            fechaFin: null
+          });
+        }
+
+        const body: any = {
+          sede: principal,              // compatibilidad
+          sedePrincipal: principal,
+          sedesForaneas: foraneas,
+          sincronizado: false,
+          historialSedes: historial
+        };
+
+        this.enviarCambiosSedes(this.trabajador._id!, body);
+      });
     });
+  });
+}
+
+// Normaliza y ordena historial en el front (por si llega legacy)
+private normalizarHistorialLocal(hist: any[] = []) {
+  const arr = (Array.isArray(hist) ? hist : []).map(h => ({
+    idSede: typeof h.idSede === 'string' ? Number(h.idSede) : h.idSede,
+    nombre: h.nombre || '',
+    fechaInicio: h.fechaInicio ? new Date(h.fechaInicio) : null,
+    fechaFin: h.fechaFin ? new Date(h.fechaFin) : null,
+  }));
+
+  arr.sort((a, b) => {
+    const ai = a.fechaInicio ? a.fechaInicio.getTime() : 0;
+    const bi = b.fechaInicio ? b.fechaInicio.getTime() : 0;
+    return ai - bi;
+  });
+
+  // fusionar consecutivos misma sede
+  const fusionados: any[] = [];
+  for (const item of arr) {
+    const last = fusionados[fusionados.length - 1];
+    if (last && last.idSede === item.idSede) {
+      if (!last.fechaInicio || (item.fechaInicio && item.fechaInicio < last.fechaInicio)) {
+        last.fechaInicio = item.fechaInicio;
+      }
+      if (item.fechaFin && (!last.fechaFin || item.fechaFin > last.fechaFin)) {
+        last.fechaFin = item.fechaFin;
+      }
+    } else {
+      fusionados.push({ ...item });
+    }
   }
+
+  return fusionados;
+}
+
+// Acción de UI para reparar servidor y refrescar
+repararHistorial() {
+  if (!this.trabajador?._id) return;
+
+  // (Opcional) pedir contraseña como en cambiarSede/desactivar
+  Swal.fire({
+    title: '🔒 Ingresa tu contraseña',
+    input: 'password',
+    inputPlaceholder: 'Contraseña',
+    showCancelButton: true,
+    confirmButtonText: 'Reparar'
+  }).then(confirm => {
+    if (!confirm.isConfirmed || !confirm.value) return;
+
+    this.trabajadoresService.verificarContraseña(confirm.value).subscribe(valido => {
+      if (!valido) {
+        Swal.fire('⚠️ Contraseña incorrecta');
+        return;
+      }
+
+      this.trabajadoresService.repararHistorial(this.trabajador._id!).subscribe({
+        next: (t) => {
+          this.trabajador = t;
+          // asegura normalización local
+          this.trabajador.historialSedes = this.normalizarHistorialLocal(t.historialSedes || []);
+          Swal.fire('✅ Historial reparado');
+        },
+        error: (e) => {
+          console.error(e);
+          Swal.fire('❌ Error al reparar historial');
+        }
+      });
+    });
+  });
+}
+
+// 👉 Usa /:id/sedes si existe; si no, cae a actualizarTrabajador
+private enviarCambiosSedes(id: string, body: any) {
+  const svc: any = this.trabajadoresService as any;
+  const req: Observable<any> =
+    typeof svc.actualizarSedes === 'function'
+      ? svc.actualizarSedes(id, {
+          sedePrincipal: body.sedePrincipal,
+          sedesForaneas: body.sedesForaneas
+        })
+      : this.trabajadoresService.actualizarTrabajador(id, body);
+
+  req.subscribe({
+    next: () => {
+      Swal.fire('✅ Guardado', 'Sedes actualizadas correctamente', 'success');
+      this.cargarTrabajadorPorId(id);
+    },
+    error: (err) => {
+      console.error(err);
+      Swal.fire('❌ Error', 'No se pudieron actualizar las sedes', 'error');
+    }
+  });
+}
+
+private buildSedesChips(): void {
+  if (!this.trabajador) { this.sedesChips = []; return; }
+
+  const principalRaw = this.trabajador?.sedePrincipal ?? this.trabajador?.sede;
+  const principal = Number(principalRaw);
+
+  const foras: number[] = Array.isArray(this.trabajador?.sedesForaneas)
+    ? Array.from(new Set((this.trabajador.sedesForaneas as any[]).map(x => Number(x))))
+    : [];
+
+  const nombre = (id: number) => {
+    const s = (this.sedes || []).find((x: any) => Number(x.id) === Number(id) || x._id === id);
+    return s?.nombre ?? `Sede ${id}`;
+  };
+
+  const chips: SedeChip[] = [];
+  if (!Number.isNaN(principal)) {
+    chips.push({ id: principal, nombre: nombre(principal), tipo: 'principal' });
+  }
+  for (const f of foras) {
+    if (!Number.isNaN(f) && f !== principal) {
+      chips.push({ id: f, nombre: nombre(f), tipo: 'foranea' });
+    }
+  }
+
+  this.sedesChips = chips;
+}
 
 }
