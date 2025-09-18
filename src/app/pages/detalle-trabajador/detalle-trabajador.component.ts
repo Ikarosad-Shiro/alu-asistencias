@@ -143,13 +143,16 @@ export class DetalleTrabajadorComponent implements OnInit {
       this.normalizarYOrdenarHistorialEnTrabajador(); // ← AÑADE ESTA LÍNEA
       this.buildSedesChips();  // 👈 añade esto
 
+      const sedeBase = Number(trabajador.sedePrincipal ?? trabajador.sede);
+
         // 🔥 Paso 2: obtener en paralelo asistencias + eventos
         forkJoin({
           asistencias: this.trabajadoresService.obtenerAsistencias(trabajadorId),
           calendarioSede: this.sedeService.obtenerEventosCalendario(
-            trabajador.sede,
+            sedeBase,
             new Date().getFullYear()
           ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>,
+
           calendarioTrabajador: this.trabajadoresService.obtenerEventosCalendarioTrabajador(
             trabajadorId,
             new Date().getFullYear()
@@ -493,21 +496,22 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
         try {
           const datos = await lastValueFrom(
             this.asistenciaService.obtenerDatosUnificados(this.trabajador._id, fechaInicio, fechaFin).pipe(
-              map(({ asistencias, eventosTrabajador, eventosSede }) => {
-                const asistenciasValidas = asistencias.filter((a: Asistencia) =>
-                  (a?.detalle?.length ?? 0) > 0 || a?.estado !== undefined
-                );
-                const dias = this.generarDias(fechaInicio, fechaFin);
-                const procesados = this.procesarDias(
-                  dias,
-                  asistenciasValidas,
-                  eventosTrabajador || [],
-                  eventosSede || []
-                );
+            map(({ asistencias, eventosTrabajador /* , eventosSede */ }) => {
+              const eventosSedeBase = this.eventosSede; // ← el de sede principal ya cargado
+              const asistenciasValidas = asistencias.filter(
+                (a: Asistencia) => (a?.detalle?.length ?? 0) > 0 || a?.estado !== undefined);
 
-                this.diasProcesados = procesados;
-                return procesados;
-              }),
+              const dias = this.generarDias(fechaInicio, fechaFin);
+              const procesados = this.procesarDias(
+                dias,
+                asistenciasValidas,
+                eventosTrabajador || [],
+                eventosSedeBase || []   // ← aquí usas el de la sede principal
+              );
+
+              this.diasProcesados = procesados;
+              return procesados;
+            }),
               catchError((error: unknown) => {
                 console.error('❌ Error al procesar datos para Excel:', error);
                 throw error;
@@ -554,28 +558,23 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
       // ✅ Nueva forma unificada usando solo una llamada al backend
       const datos = await lastValueFrom(
         this.asistenciaService.obtenerDatosUnificados(this.trabajador._id, fechaInicio, fechaFin).pipe(
-          map(({ asistencias, eventosTrabajador, eventosSede }) => {
-            if (!Array.isArray(asistencias)) {
-              throw new Error('Formato de asistencias inválido');
-            }
-
-            const asistenciasValidas = asistencias.filter(a => a?.detalle?.length > 0 || a?.estado !== undefined);
-            console.log('🔍 Asistencias válidas:', asistenciasValidas.length, '/', asistencias.length);
+          map(({ asistencias, eventosTrabajador /* , eventosSede */ }) => {
+            const asistenciasValidas = asistencias.filter(
+              (a: Asistencia) => (a?.detalle?.length ?? 0) > 0 || a?.estado !== undefined
+            );
 
             const dias = this.generarDias(fechaInicio, fechaFin);
             const datosProcesados = this.procesarDias(
               dias,
               asistenciasValidas,
               eventosTrabajador || [],
-              eventosSede || []
+              this.eventosSede || []   // 👉 usa el de sede principal ya cargado
             );
-
             this.diasProcesados = datosProcesados;
 
             if (!datosProcesados || !Array.isArray(datosProcesados)) {
               throw new Error('No se pudieron procesar los datos para el reporte');
             }
-
             return datosProcesados;
           }),
           catchError((error: unknown) => {
@@ -637,7 +636,9 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
         { text: 'Reporte de Asistencias', style: 'header', alignment: 'center' },
         { text: `Nombre: ${this.trabajador.nombre || ''} ${this.trabajador.apellido || ''}` },
         { text: `ID: ${this.trabajador._id}` },
-        { text: `Sede: ${this.obtenerNombreSede(this.trabajador.sede)}` },
+        { text: `Sede principal: ${this.obtenerNombreSede(this.sedePrincipalId)}` },
+        { text: `Sedes foráneas: ${(this.sedesForaneasLimpias || []).map(id => this.obtenerNombreSede(id)).join(', ') || '—'}` },
+
         { text: `Periodo: ${this.formatearFecha(fechaInicio)} al ${this.formatearFecha(fechaFin)}` },
         { text: `Fecha de generación: ${this.formatearFecha(new Date())}` },
         { text: ' ', margin: [0, 10] },
@@ -1115,7 +1116,8 @@ exportarExcelConEstilo(nombreArchivo: string = 'Reporte_Asistencias.xlsx'): void
 
   // 🧾 Encabezado con datos del trabajador (sanitizado)
   worksheet.addRow([ excelSanitize('👤 Nombre:'), excelSanitize(`${this.trabajador.nombre || ''} ${this.trabajador.apellido || ''}`) ]);
-  worksheet.addRow([ excelSanitize('🏢 Sede:'),   excelSanitize(this.obtenerNombreSede(this.trabajador.sede)) ]);
+  worksheet.addRow([ excelSanitize('🏢 Sede principal:'), excelSanitize(this.obtenerNombreSede(this.sedePrincipalId)) ]);
+  worksheet.addRow([ excelSanitize('🏷️ Sedes foráneas:'), excelSanitize((this.sedesForaneasLimpias || []).map(id => this.obtenerNombreSede(id)).join(', ') || '—') ]);
   worksheet.addRow([ excelSanitize('📅 Periodo:'), excelSanitize(`${this.formatearFecha(this.fechaInicio)} a ${this.formatearFecha(this.fechaFin)}`) ]);
   worksheet.addRow([]); // Separación
 
@@ -1376,6 +1378,26 @@ cambiarSede() {
     });
   });
 }
+
+// Id de sede principal (soporta legacy this.trabajador.sede)
+get sedePrincipalId(): number | null {
+  const v = this.trabajador?.sedePrincipal ?? this.trabajador?.sede ?? null;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n;
+}
+
+// Foráneas normalizadas: números, únicas y sin la principal
+get sedesForaneasLimpias(): number[] {
+  const principal = this.sedePrincipalId;
+
+  const arr: number[] = Array.isArray(this.trabajador?.sedesForaneas)
+    ? (this.trabajador.sedesForaneas as any[]).map((x) => Number(x))
+    : [];
+
+  const unicos: number[] = Array.from(new Set<number>(arr.filter((n) => !Number.isNaN(n))));
+  return unicos.filter((id) => (principal === null ? true : id !== principal));
+}
+
 
 // Normaliza y ordena historial en el front (por si llega legacy)
 private normalizarHistorialLocal(hist: any[] = []) {
