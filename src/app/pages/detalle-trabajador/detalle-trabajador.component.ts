@@ -94,6 +94,8 @@ export class DetalleTrabajadorComponent implements OnInit {
   diasProcesados: DiaProcesado[] = [];
   fechaInicio!: Date;
   fechaFin!: Date;
+  // 📌 Asistencias que verá el calendario (mezcladas de todas las sedes)
+  asistenciasCalendario: Asistencia[] = [];
 
   sedesChips: SedeChip[] = [];
   // para *ngFor trackBy en el template
@@ -114,88 +116,123 @@ export class DetalleTrabajadorComponent implements OnInit {
     private calendarioService: CalendarioService  // ✅ y este
   ) {}
 
-  ngOnInit(): void {
-    const datosUsuario = this.authService.obtenerDatosDesdeToken();
-    this.rolUsuario = datosUsuario?.rol || '';
-    console.log('🎯 Rol cargado correctamente desde el token:', this.rolUsuario);
+ngOnInit(): void {
+  const datosUsuario = this.authService.obtenerDatosDesdeToken();
+  this.rolUsuario = datosUsuario?.rol || '';
+  console.log('🎯 Rol cargado correctamente desde el token:', this.rolUsuario);
 
-    // 🔥 Obtener lista de sedes
-    this.sedeService.obtenerSedes().subscribe({
-      next: (sedes: any[]) => {
-        this.sedes = sedes;
-        this.buildSedesChips();   // 👈 añade esto
-      },
-      error: (error: HttpErrorResponse) => { /* ... */ }
-    });
+  // 🔥 Obtener lista de sedes
+  this.sedeService.obtenerSedes().subscribe({
+    next: (sedes: any[]) => {
+      this.sedes = sedes;
+      this.buildSedesChips();   // 👈 chips para UI
+    },
+    error: (error: HttpErrorResponse) => { /* manejar error si quieres */ }
+  });
 
-    const trabajadorId = this.route.snapshot.paramMap.get('id');
-    if (!trabajadorId) {
-      this.mostrarMensaje('No se encontró ID de trabajador', 'error');
-      this.router.navigate(['/trabajadores']);
-      return;
-    }
+  const trabajadorId = this.route.snapshot.paramMap.get('id');
+  if (!trabajadorId) {
+    this.mostrarMensaje('No se encontró ID de trabajador', 'error');
+    this.router.navigate(['/trabajadores']);
+    return;
+  }
 
-    // 🔥 Paso 1: obtener el trabajador
-    this.trabajadoresService.obtenerTrabajador(trabajadorId).subscribe({
-      next: (trabajador: any) => {
+  // 🔥 Paso 1: obtener el trabajador
+  this.trabajadoresService.obtenerTrabajador(trabajadorId).subscribe({
+    next: (trabajador: any) => {
       this.trabajador = trabajador;
       this.trabajadorOriginal = JSON.parse(JSON.stringify(trabajador));
-      this.normalizarYOrdenarHistorialEnTrabajador(); // ← AÑADE ESTA LÍNEA
-      this.buildSedesChips();  // 👈 añade esto
+      this.normalizarYOrdenarHistorialEnTrabajador(); // ← normaliza historial
+      this.buildSedesChips();  // 👈 actualiza chips con datos del trabajador
 
       const sedeBase = Number(trabajador.sedePrincipal ?? trabajador.sede);
 
-        // 🔥 Paso 2: obtener en paralelo asistencias + eventos
-        forkJoin({
-          asistencias: this.trabajadoresService.obtenerAsistencias(trabajadorId),
-          calendarioSede: this.sedeService.obtenerEventosCalendario(
-            sedeBase,
-            new Date().getFullYear()
-          ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>,
+      // 🔥 Paso 2: obtener en paralelo asistencias (legacy para otras vistas) + eventos
+      forkJoin({
+        asistencias: this.trabajadoresService.obtenerAsistencias(trabajadorId),
+        calendarioSede: this.sedeService.obtenerEventosCalendario(
+          sedeBase,
+          new Date().getFullYear()
+        ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>,
+        calendarioTrabajador: this.trabajadoresService.obtenerEventosCalendarioTrabajador(
+          trabajadorId,
+          new Date().getFullYear()
+        ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>
+      }).subscribe({
+        next: ({ asistencias, calendarioSede, calendarioTrabajador }) => {
+          // 📅 Procesar asistencias (las dejamos para otras funciones/PDF/Excel)
+          this.trabajador.asistencias = (asistencias || []).map((a: any) => ({
+            ...a,
+            fecha: this.normalizarFecha(a.fecha),
+            detalle: (a.detalle || []).map((d: any) => ({
+              ...d,
+              fechaHora: this.normalizarFechaHora(d.fechaHora)
+            }))
+          }));
 
-          calendarioTrabajador: this.trabajadoresService.obtenerEventosCalendarioTrabajador(
-            trabajadorId,
-            new Date().getFullYear()
-          ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>
-        }).subscribe({
-          next: ({ asistencias, calendarioSede, calendarioTrabajador }) => {
-            // 📅 Procesar asistencias
-            this.trabajador.asistencias = asistencias.map((a: any) => ({
-              ...a,
-              fecha: this.normalizarFecha(a.fecha),
-              detalle: a.detalle?.map((d: any) => ({
-                ...d,
-                fechaHora: this.normalizarFechaHora(d.fechaHora)
-              }))
-            }));
+          // 📅 Procesar eventos sede
+          this.eventosSede = (calendarioSede?.diasEspeciales || []).map((e: EventoEspecial) => ({
+            ...e,
+            fecha: this.normalizarFecha(e.fecha),
+            descripcion: e.descripcion || e.tipo || ''
+          }));
 
-            // 📅 Procesar eventos sede
-            this.eventosSede = (calendarioSede?.diasEspeciales || []).map((e: EventoEspecial) => ({
-              ...e,
-              fecha: this.normalizarFecha(e.fecha),
-              descripcion: e.descripcion || e.tipo || ''
-            }));
+          // 📅 Procesar eventos trabajador
+          this.eventosTrabajador = (calendarioTrabajador?.diasEspeciales || []).map((e: EventoEspecial) => ({
+            ...e,
+            fecha: this.normalizarFecha(e.fecha),
+            descripcion: e.descripcion || e.tipo || ''
+          }));
 
-            // 📅 Procesar eventos trabajador
-            this.eventosTrabajador = (calendarioTrabajador?.diasEspeciales || []).map((e: EventoEspecial) => ({
-              ...e,
-              fecha: this.normalizarFecha(e.fecha),
-              descripcion: e.descripcion || e.tipo || ''
-            }));
-          },
-          error: (error: HttpErrorResponse) => {
-            console.error('❌ Error al obtener información relacionada:', error);
-            this.mostrarMensaje('Error al cargar asistencias o calendarios', 'error');
-          }
-        });
-      },
-      error: (error: HttpErrorResponse) => {
-        console.error('❌ Error al obtener trabajador:', error);
-        this.mostrarMensaje('Error al cargar datos del trabajador', 'error');
-        this.router.navigate(['/trabajadores']);
-      }
-    });
-  }
+          // ✅ SOLO para el CALENDARIO del detalle:
+          //    traemos asistencias unificadas IGNORANDO sede (mezcladas)
+          const start = DateTime.now().set({ day: 1 }).toJSDate();
+          const end   = DateTime.now().endOf('month').toJSDate();
+
+          this.asistenciaService
+            .obtenerDatosUnificadosParaCalendario(trabajadorId, start, end)
+            .subscribe({
+              next: ({ asistencias: asistUnificadas }) => {
+                const asistenciasNorm = (asistUnificadas || []).map((a: any) => ({
+                  ...a,
+                  fecha: this.normalizarFecha(a.fecha),
+                  detalle: (a.detalle || []).map((d: any) => ({
+                    ...d, fechaHora: this.normalizarFechaHora(d.fechaHora)
+                  }))
+                }));
+
+                // 👇 lo importante para el componente visual
+                this.asistenciasCalendario = asistenciasNorm;
+
+                // (si quieres seguir generando diasProcesados para PDF/Excel, lo dejas)
+                const dias = this.generarDias(start, end);
+                this.diasProcesados = this.procesarDias(
+                  dias,
+                  asistenciasNorm,
+                  this.eventosTrabajador,
+                  this.eventosSede
+                );
+              },
+              error: (err) => {
+                console.error('❌ Error cargando calendario unificado:', err);
+                this.asistenciasCalendario = []; // fallback
+                this.diasProcesados = [];
+              }
+            });
+        },
+        error: (error: HttpErrorResponse) => {
+          console.error('❌ Error al obtener información relacionada:', error);
+          this.mostrarMensaje('Error al cargar asistencias o calendarios', 'error');
+        }
+      });
+    },
+    error: (error: HttpErrorResponse) => {
+      console.error('❌ Error al obtener trabajador:', error);
+      this.mostrarMensaje('Error al cargar datos del trabajador', 'error');
+      this.router.navigate(['/trabajadores']);
+    }
+  });
+}
 
   // 👉 Ordena y normaliza el historial para la tabla (activo arriba, luego por fechaInicio DESC)
 get historialOrdenado(): HistorialSede[] {
@@ -364,7 +401,6 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
       });
     }
   }
-
 
   obtenerNombreSede(idSede: any): string {
     let sede = this.sedes.find(s => s.id === Number(idSede));
@@ -1397,7 +1433,6 @@ get sedesForaneasLimpias(): number[] {
   const unicos: number[] = Array.from(new Set<number>(arr.filter((n) => !Number.isNaN(n))));
   return unicos.filter((id) => (principal === null ? true : id !== principal));
 }
-
 
 // Normaliza y ordena historial en el front (por si llega legacy)
 private normalizarHistorialLocal(hist: any[] = []) {

@@ -12,17 +12,20 @@ export class AsistenciaService {
 
   constructor(private http: HttpClient) {}
 
+  // Helper para asegurar YYYY-MM-DD
+  private toYmd(d: Date): string {
+    return d.toISOString().split('T')[0];
+  }
+
   obtenerPorTrabajadorYRango(idTrabajador: string, inicio: Date, fin: Date): Observable<any[]> {
-    // Usamos solo la parte de la fecha (YYYY-MM-DD) para la consulta
     const params = new HttpParams()
-      .set('inicio', inicio.toISOString().split('T')[0])
-      .set('fin', fin.toISOString().split('T')[0]);
+      .set('inicio', this.toYmd(inicio))
+      .set('fin', this.toYmd(fin));
 
     return this.http.get<any[]>(
       `${this.apiUrl}/reporte/trabajador/${idTrabajador}`,
       { params }
     ).pipe(
-      // Normalizamos la respuesta para asegurar consistencia
       map(response => {
         if (!response || !Array.isArray(response)) {
           console.warn('La respuesta del servidor no es un array válido:', response);
@@ -31,27 +34,21 @@ export class AsistenciaService {
 
         return response.map(item => ({
           ...item,
-          // Aseguramos formato YYYY-MM-DD para la fecha principal
           fecha: item.fecha ? item.fecha.split('T')[0] : '',
-          // Normalizamos los detalles de asistencia
           detalle: (item.detalle || []).map((d: any) => ({
             ...d,
-            // Convertimos fechaHora a string ISO si no lo está
-            fechaHora: d.fechaHora ?
-              (typeof d.fechaHora === 'string' ? d.fechaHora : new Date(d.fechaHora).toISOString()) :
-              null,
-            // Preservamos flags especiales
+            fechaHora: d.fechaHora
+              ? (typeof d.fechaHora === 'string' ? d.fechaHora : new Date(d.fechaHora).toISOString())
+              : null,
             ...(d.salida_automatica && { salida_automatica: true }),
             ...(d.sincronizado && { sincronizado: true })
           })),
-          // Preservamos el estado si existe
           ...(item.estado && { estado: item.estado })
         }));
       }),
-      // Manejo de errores robusto
       catchError(error => {
         console.error('Error al obtener asistencias:', error);
-        return of([]); // Retornamos array vacío en caso de error
+        return of([]); // array vacío en caso de error
       })
     );
   }
@@ -64,12 +61,34 @@ export class AsistenciaService {
     );
   }
 
+  // === Uso general (PDF/Excel/otros): SIN ignorar sede ===
   obtenerDatosUnificados(trabajadorId: string, inicio: Date, fin: Date): Observable<any> {
     const params = new HttpParams()
-      .set('inicio', inicio.toISOString().split('T')[0])
-      .set('fin', fin.toISOString().split('T')[0]);
+      .set('inicio', this.toYmd(inicio))
+      .set('fin', this.toYmd(fin));
 
-      return this.http.get(`${this.apiUrl}/unificado/${trabajadorId}`, { params });
+    return this.http.get(`${this.apiUrl}/unificado/${trabajadorId}`, { params }).pipe(
+      catchError(err => {
+        console.error('Error en obtenerDatosUnificados:', err);
+        // Forma segura para consumidores que esperan estas llaves
+        return of({ asistencias: [], eventosTrabajador: [], eventosSede: [] });
+      })
+    );
+  }
+
+  // === SOLO para el CALENDARIO del detalle: IGNORA sede ===
+  obtenerDatosUnificadosParaCalendario(trabajadorId: string, inicio: Date, fin: Date): Observable<any> {
+    const params = new HttpParams()
+      .set('inicio', this.toYmd(inicio))
+      .set('fin', this.toYmd(fin))
+      .set('ignorarSede', 'true'); // 👈 clave para mezclar asistencias de todas las sedes
+
+    return this.http.get(`${this.apiUrl}/unificado/${trabajadorId}`, { params }).pipe(
+      catchError(err => {
+        console.error('Error en obtenerDatosUnificadosParaCalendario:', err);
+        return of({ asistencias: [], eventosTrabajador: [], eventosSede: [] });
+      })
+    );
   }
 
   obtenerUnificadoPorSede(sedeId: number, inicio: string, fin: string) {
@@ -81,6 +100,7 @@ export class AsistenciaService {
     return this.http.get<any[]>(`${this.apiUrl}/hoy`);
   }
 
+  // Compat heredada (si en algún lado la usas con strings)
   obtenerUnificadoPorTrabajador(id: string, inicio: string, fin: string) {
     return this.http.get(`${environment.apiUrl}/asistencias/unificado/${id}?inicio=${inicio}&fin=${fin}`);
   }

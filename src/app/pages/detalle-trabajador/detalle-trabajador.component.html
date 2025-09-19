@@ -25,7 +25,7 @@
 
       <!-- Título con nombre y sede -->
       <h2 class="titulo-nombre">👤 {{ trabajador.nombre }}</h2>
-      <div class="sedes-line" *ngIf="sedesChips?.length">
+      <div class="sedes-line" *ngIf="sedesChips.length > 0">
         <ng-container *ngFor="let s of sedesChips; trackBy: trackById">
           <span class="chip" [ngClass]="{ 'chip-principal': s.tipo === 'principal', 'chip-foranea': s.tipo === 'foranea' }">
             <span class="chip-ico">{{ s.tipo === 'principal' ? '⭐' : '🏷️' }}</span>
@@ -133,12 +133,11 @@
      <!-- 📅 Calendario del Trabajador -->
       <div class="calendario-container">
         <h3>📅 Calendario del Trabajador</h3>
-         <app-calendario-unificado
-           *ngIf="trabajador.asistencias"
-           [asistencias]="trabajador.asistencias"
-           [eventosSede]="eventosSede"
-           [eventosTrabajador]="eventosTrabajador">
-        </app-calendario-unificado>
+          <app-calendario-unificado
+            [asistencias]="asistenciasCalendario?.length ? asistenciasCalendario : trabajador.asistencias"
+            [eventosSede]="eventosSede"
+            [eventosTrabajador]="eventosTrabajador">
+          </app-calendario-unificado>
       </div>
 
       <mat-card class="card-info mt-4">
