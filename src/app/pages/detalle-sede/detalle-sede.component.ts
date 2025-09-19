@@ -119,8 +119,7 @@ nombresDias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
         this.dias.controls.forEach(ctrl => this.configurarValidadoresDia(ctrl as FormGroup));
       }
 
-
-          // ✅ Pon esto en la clase (junto a tus helpers)
+  // ✅ Pon esto en la clase (junto a tus helpers)
   private toHHMM(v: any): string {
       if (!v) return '';
       if (/^\d{2}:\d{2}$/.test(v)) return v;           // ya viene 24h
@@ -133,6 +132,45 @@ nombresDias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
       if (ampm === 'AM') { if (h === 12) h = 0; } else { if (h !== 12) h += 12; }
       return `${String(h).padStart(2,'0')}:${min}`;
   }
+
+  private toYmdSafe(x: any): string {
+    const raw = (typeof x === 'string') ? x : (x?.$date ?? x);
+    return DateTime.fromJSDate(new Date(raw)).toFormat('yyyy-MM-dd');
+  }
+
+// Día YYYY-MM-DD en CDMX partiendo de ISO/string/Date
+private ymdMX(x: any): string {
+  try {
+    const raw = (typeof x === 'string') ? x : (x?.$date ?? x);
+    const dt = (raw instanceof Date)
+      ? DateTime.fromJSDate(raw)
+      : DateTime.fromISO(String(raw));
+    return dt.setZone('America/Mexico_City').toFormat('yyyy-MM-dd');
+  } catch {
+    return '';
+  }
+}
+
+
+// Normaliza "sede" a string para comparar sin dramas (number, string, ObjectId, nested, etc.)
+private sedeIdToString(x: any): string | null {
+  const raw = (x && (x.sede ?? x.sedeId ?? x.sede_id ?? x.sede?.id ?? x.sede?._id)) ?? x;
+  if (raw === undefined || raw === null) return null;
+  try { return String(raw); } catch { return null; }
+}
+
+private esEstadoInerte(estado: any): boolean {
+  if (!estado) return true;
+  const s = String(estado).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  return s === '' || s === '—' || s === 'falta' || s === 'pendiente';
+}
+
+private esCeldaVaciaOInerte(celda: any): boolean {
+  if (!celda) return true;
+  const entradaV = !celda.entrada || celda.entrada === '—';
+  const salidaV  = !celda.salida  || celda.salida  === '—';
+  return (entradaV && salidaV && this.esEstadoInerte(celda.estado));
+}
 
   private createJornada(ini = '09:00', fin = '17:00', overnight = false): FormGroup {
     return this.fb.group({
@@ -217,6 +255,7 @@ nombresDias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
     while (cur <= fin) { out.push(new Date(cur)); cur.setDate(cur.getDate() + 7); }
     return out;
   }
+
   private isSameDay(a: Date, b: Date): boolean {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
@@ -696,11 +735,11 @@ nombresDias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
     (document.activeElement as HTMLElement)?.blur();
   }
 
-toggleSidebar() {
-  this.blurActivo();
-  this.sidebarAbierto = !this.sidebarAbierto;
-  document.body.classList.toggle('no-scroll', this.sidebarAbierto);
-}
+  toggleSidebar() {
+    this.blurActivo();
+    this.sidebarAbierto = !this.sidebarAbierto;
+    document.body.classList.toggle('no-scroll', this.sidebarAbierto);
+  }
 
   onDatepickerOpened() {
   // por si el input recupera foco por algo del navegador
@@ -820,20 +859,28 @@ toggleSidebar() {
       const { inicio, fin, modo, formato } = value;
 
       this.asistenciaService.obtenerUnificadoPorSede(this.sede.id, inicio, fin).subscribe({
-        next: (res: any) => {
-          const trabajadores = res.trabajadores as any[];
-          if (!trabajadores?.length) {
+        next: async (res: any) => {
+          const trabajadores = (res?.trabajadores || []) as any[];
+          if (!trabajadores.length) {
             Swal.fire('⚠️ Sin datos', 'No se encontraron asistencias en ese rango.', 'info');
             return;
           }
 
-          const fechas = Object.keys(trabajadores[0].datosPorDia);
+          // ✅ Fechas del rango completo, no solo las que vienen en el payload
+          const fechas = this.rangoFechasYmd(inicio, fin);
 
-          // Marcar explícitamente los días vacíos como Faltas
-          fechas.forEach((fecha) => {
-            trabajadores.forEach((trabajador) => {
-              if (!trabajador.datosPorDia[fecha]) {
-                trabajador.datosPorDia[fecha] = { estado: 'Falta' };
+          // ✅ Marca “Otra Sede” usando el unificado por trabajador
+          await this.marcarOtrasSedesEnMatriz(trabajadores, fechas, inicio, fin);
+
+          // ✅ Completa faltantes: si sigue vacío (y no es futuro) = Falta
+          const hoy = DateTime.now().toFormat('yyyy-MM-dd');
+          fechas.forEach((f) => {
+            trabajadores.forEach((t) => {
+              const c = t.datosPorDia?.[f];
+              const vacio = !c || (!c.entrada && !c.salida && !c.estado);
+              if (vacio && f <= hoy) {
+                if (!t.datosPorDia) t.datosPorDia = {};
+                t.datosPorDia[f] = { estado: 'Falta' };
               }
             });
           });
@@ -843,30 +890,30 @@ toggleSidebar() {
           const obtenerColorPorEstado = (estado: string = '', entrada: string = '', salida: string = ''): string => {
             const coloresPorEstado: { [key: string]: string } = {
               'Asistencia Completa': '#d9f99d',
-              'Asistencia Manual': '#bbf7d0',
-              'Salida Automática': '#99f6e4',
-              'Pendiente': '#fef9c3',
-              'Falta': '#fecaca',
-              'Vacaciones': '#bae6fd',
-              'Vacaciones Pagadas': '#ddd6fe',
-              'Permiso': '#fde68a',
-              'Permiso con Goce': '#fef3c7',
-              'Incapacidad': '#fbcfe8',
-              'Descanso': '#e2e8f0',
-              'Festivo': '#fae8ff',
-              'Puente': '#f5f5f4',
-              'Evento': '#ccfbf1',
-              'Capacitación': '#ecfccb',
-              'Media Jornada': '#fef08a',
-              'Suspensión': '#fca5a5'
+              'Asistencia Manual':   '#bbf7d0',
+              'Salida Automática':   '#99f6e4',
+              'Pendiente':           '#fef9c3',
+              'Falta':               '#fecaca',
+              'Vacaciones':          '#bae6fd',
+              'Vacaciones Pagadas':  '#ddd6fe',
+              'Permiso':             '#fde68a',
+              'Permiso con Goce':    '#fef3c7',
+              'Incapacidad':         '#fbcfe8',
+              'Descanso':            '#e2e8f0',
+              'Festivo':             '#fae8ff',
+              'Puente':              '#f5f5f4',
+              'Evento':              '#ccfbf1',
+              'Capacitación':        '#ecfccb',
+              'Media Jornada':       '#fef08a',
+              'Suspensión':          '#fca5a5',
+              // 👇 NUEVO
+              'Otra Sede':           '#c7d2fe'
             };
 
             if (estado && estado !== '—') {
               const estN = estado
                 .replace(/[^\w\sáéíóúÁÉÍÓÚ]/g, '')
-                .trim()
-                .toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                .trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
               for (const [k, color] of Object.entries(coloresPorEstado)) {
                 const kN = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                 if (estN.includes(kN)) return color;
@@ -877,6 +924,9 @@ toggleSidebar() {
             }
             return '';
           };
+
+          // …(el resto de tu función sigue igual usando "fechas", "trabajadores" y createTabla)…
+
 
           const crearTabla = (subFechas: string[], trabajadores: any[]): PdfTableNode => {
             const body: any[][] = [];
@@ -1226,30 +1276,108 @@ toggleSidebar() {
           Swal.showValidationMessage('⚠️ Ambas fechas son necesarias');
           return;
         }
+        if (inicio > fin) {
+          Swal.showValidationMessage('⚠️ La fecha de inicio no puede ser mayor a la de fin');
+          return;
+        }
 
         return { inicio, fin };
       }
     }).then(async (result) => {
-      if (result.isConfirmed && result.value) {
-        const { inicio, fin } = result.value;
-        this.fechaInicio = new Date(`${inicio}T00:00:00`);
-        this.fechaFin = new Date(`${fin}T00:00:00`);
-        const nombreArchivo = `Reporte_Asistencias_Sede_${this.sede?.nombre || 'SinNombre'}_${inicio}_a_${fin}.xlsx`;
+      if (!result.isConfirmed || !result.value) return;
 
-        try {
-          const res: any = await lastValueFrom(this.asistenciaService.obtenerUnificadoPorSede(this.sede.id, inicio, fin));
-          const trabajadoresUnificados = res.trabajadores || [];
+      const { inicio, fin } = result.value;
+      this.fechaInicio = new Date(`${inicio}T00:00:00`);
+      this.fechaFin   = new Date(`${fin}T00:00:00`);
 
-          const fechasFormateadas = this.generarDias(this.fechaInicio, this.fechaFin).map(d =>
-            DateTime.fromJSDate(d).toFormat('yyyy-MM-dd')
-          );
+      // Lista de YYYY-MM-DD del rango
+      const fechas: string[] = this.generarDias(this.fechaInicio, this.fechaFin)
+        .map(d => DateTime.fromJSDate(d).toFormat('yyyy-MM-dd'));
 
-          this.exportarExcelPorSede(nombreArchivo, trabajadoresUnificados, fechasFormateadas);
-          Swal.fire('✅ ¡Listo!', 'Se generó el archivo Excel correctamente', 'success');
-        } catch (error) {
-          console.error('❌ Error al generar Excel:', error);
-          Swal.fire('❌ Error', 'No se pudieron obtener las asistencias.', 'error');
-        }
+      try {
+        // 1) Base de la SEDE (solo lo que pasó en esta sede)
+        const base: any = await lastValueFrom(
+          this.asistenciaService.obtenerUnificadoPorSede(this.sede.id, inicio, fin)
+        );
+
+        const trabajadoresBase: any[] = (base?.trabajadores || []).map((t: any) => ({
+          ...t,
+          datosPorDia: t.datosPorDia || {}
+        }));
+
+        // 2) Por cada trabajador, traer su unificado (todas las sedes)
+        const sedeActualStr = String(this.sede.id);
+
+        const trabajadoresFusionados = await Promise.all(
+          trabajadoresBase.map(async (t: any) => {
+            const tid = this.getTrabId(t);
+            if (!tid) {
+              console.warn('⚠️ Trabajador sin _id usable para unificado:', t);
+              return t; // seguimos sin cruce
+            }
+
+            let unificado: any = null;
+            try {
+              // 👇 mezcla TODAS las sedes (ignoraSede=true en el service)
+              unificado = await lastValueFrom(
+                this.asistenciaService.obtenerDatosUnificadosParaCalendario(tid, this.fechaInicio, this.fechaFin)
+              );
+              console.log('[unificado-cal]', t?.nombre, tid, 'asistencias:', (unificado?.asistencias || []).length);
+            } catch (e) {
+              console.warn('⚠️ unificado-cal falló para', tid, e);
+            }
+
+            // fecha -> Set<string> de sedes con marcas ese día
+            const sedesPorFecha = new Map<string, Set<string>>();
+            (unificado?.asistencias || []).forEach((a: any) => {
+              if (a?.fecha) {
+                const ymd = (typeof a.fecha === 'string' ? a.fecha : new Date(a.fecha).toISOString()).split('T')[0];
+                if (ymd) {
+                  const set = sedesPorFecha.get(ymd) || new Set<string>();
+                  const sId = this.sedeIdToString(a);
+                  if (sId) set.add(sId);
+                  sedesPorFecha.set(ymd, set);
+                }
+              }
+              (a?.detalle || []).forEach((d: any) => {
+                if (!d?.fechaHora) return;
+                const ymd = (typeof d.fechaHora === 'string' ? d.fechaHora : new Date(d.fechaHora).toISOString()).split('T')[0];
+                if (!ymd) return;
+                const set = sedesPorFecha.get(ymd) || new Set<string>();
+                const sId = this.sedeIdToString(d);
+                if (sId) set.add(sId);
+                sedesPorFecha.set(ymd, set);
+              });
+            });
+
+            // Rellena “Otra Sede”
+            fechas.forEach(f => {
+              const celda = t.datosPorDia[f];
+              if (!this.esCeldaVaciaOInerte(celda)) return;
+
+              const setSedes = sedesPorFecha.get(f) || new Set<string>();
+              const hayEsta  = setSedes.has(sedeActualStr);
+              const hayOtra  = [...setSedes].some(s => s !== sedeActualStr);
+
+              if (!hayEsta && hayOtra) {
+                if (!t.datosPorDia) t.datosPorDia = {};
+                t.datosPorDia[f] = { entrada: '—', salida: '—', estado: 'Otra Sede' };
+              }
+            });
+
+            return t;
+          })
+        );
+        // 4) Exportar
+        const nombreArchivo =
+          `Reporte_Asistencias_Sede_${this.sede?.nombre || 'SinNombre'}_${inicio}_a_${fin}.xlsx`;
+
+        this.exportarExcelPorSede(nombreArchivo, trabajadoresFusionados, fechas);
+
+        await Swal.fire('✅ ¡Listo!', 'Se generó el archivo Excel correctamente', 'success');
+      } catch (error) {
+        console.error('❌ Error al generar Excel:', error);
+        await Swal.fire('❌ Error', 'No se pudieron obtener las asistencias.', 'error');
       }
     });
   }
@@ -1264,130 +1392,237 @@ toggleSidebar() {
     return dias;
   }
 
-exportarExcelPorSede(nombreArchivo: string, trabajadores: any[], fechas: string[]) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Asistencias por sede');
+  exportarExcelPorSede(nombreArchivo: string, trabajadores: any[], fechas: string[]) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Asistencias por sede');
 
-  const eventosSede = this.eventos.filter(evento => {
-    const fechaEvento = new Date(evento.fecha);
-    return fechaEvento >= this.fechaInicio && fechaEvento <= this.fechaFin;
-  });
+    const eventosSede = this.eventos.filter(evento => {
+      const fechaEvento = new Date(evento.fecha);
+      return fechaEvento >= this.fechaInicio && fechaEvento <= this.fechaFin;
+    });
 
-  // 🧩 Cabecera (sanitizada)
-  worksheet.addRow([ excelSanitize(`Sede: ${this.sede?.nombre || ''}`) ]);
-  worksheet.addRow([ excelSanitize(`Periodo: ${this.fechaInicio.toLocaleDateString()} - ${this.fechaFin.toLocaleDateString()}`) ]);
-  worksheet.addRow([]);
+    // 🧩 Cabecera (sanitizada)
+    worksheet.addRow([ excelSanitize(`Sede: ${this.sede?.nombre || ''}`) ]);
+    worksheet.addRow([ excelSanitize(`Periodo: ${this.fechaInicio.toLocaleDateString()} - ${this.fechaFin.toLocaleDateString()}`) ]);
+    worksheet.addRow([]);
 
-  // 🧱 Encabezados (sanitizados)
-  const encabezados: string[] = ['Nombre Completo'];
-  fechas.forEach(f => {
-    encabezados.push(`${f} Entrada`, `${f} Salida`);
-  });
-  const headerRow = worksheet.addRow(encabezados.map(excelSanitize));
+    // 🧱 Encabezados (sanitizados)
+    const encabezados: string[] = ['Nombre Completo'];
+    fechas.forEach(f => {
+      encabezados.push(`${f} Entrada`, `${f} Salida`);
+    });
+    const headerRow = worksheet.addRow(encabezados.map(excelSanitize));
 
-  worksheet.columns = [
-    { width: 35 },
-    ...fechas.flatMap(() => [{ width: 17 }, { width: 17 }])
-  ];
+    worksheet.columns = [
+      { width: 35 },
+      ...fechas.flatMap(() => [{ width: 17 }, { width: 17 }])
+    ];
 
-  headerRow.eachCell(cell => {
-    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF343A40' } };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-    cell.border = this.bordeCelda;
-  });
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF343A40' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = this.bordeCelda;
+    });
 
-  const normalizarEstado = (estado: string): { clave: string; texto: string } => {
-    if (!estado || estado === '—') return { clave: 'falta', texto: 'Falta' };
-    const textoMostrar = estado
-      .replace(/\b\w/g, l => l.toUpperCase())
-      .replace(/([a-z])([A-Z])/g, '$1 $2');
+    const normalizarEstado = (estado: string): { clave: string; texto: string } => {
+      if (!estado || estado === '—') return { clave: 'falta', texto: 'Falta' };
+      const textoMostrar = estado
+        .replace(/\b\w/g, l => l.toUpperCase())
+        .replace(/([a-z])([A-Z])/g, '$1 $2');
 
-    const clave = estado
-      .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^\w\s]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+      const clave = estado
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-    const mapaVariantes: { [key: string]: string } = {
-      'capacitacion': 'capacitación',
-      'dia festivo': 'festivo',
-      'dia puente': 'puente',
-      'descanso laboral': 'descanso',
-      'permiso con goce': 'permiso con goce de sueldo',
-      'media jornada': 'media jornada',
-      'suspension': 'suspensión'
+      const mapaVariantes: { [key: string]: string } = {
+        'capacitacion': 'capacitación',
+        'dia festivo': 'festivo',
+        'dia puente': 'puente',
+        'descanso laboral': 'descanso',
+        'permiso con goce': 'permiso con goce de sueldo',
+        'media jornada': 'media jornada',
+        'suspension': 'suspensión'
+      };
+
+      return { clave: mapaVariantes[clave] || clave, texto: textoMostrar };
     };
 
-    return { clave: mapaVariantes[clave] || clave, texto: textoMostrar };
-  };
+    const hoy = DateTime.now().toFormat('yyyy-MM-dd');
 
-  const hoy = DateTime.now().toFormat('yyyy-MM-dd');
+    trabajadores.forEach(t => {
+      const row = worksheet.addRow([ excelSanitize(`${t.nombre || ''} ${t.apellido || ''}`.trim() || '—') ]);
+      let colIndex = 2;
 
-  trabajadores.forEach(t => {
-    const row = worksheet.addRow([ excelSanitize(`${t.nombre || ''} ${t.apellido || ''}`.trim() || '—') ]);
-    let colIndex = 2;
+      fechas.forEach(f => {
+        const esFuturo = f > hoy;
+        const datos = t.datosPorDia?.[f] || {};
+        const tipo = (datos?.tipo || '').toLowerCase();
+        let entrada = datos?.entrada || '—';
+        let salida = datos?.salida || '—';
+        let estado = datos?.estado || '';
 
-    fechas.forEach(f => {
-      const esFuturo = f > hoy;
-      const datos = t.datosPorDia?.[f] || {};
-      const tipo = (datos?.tipo || '').toLowerCase();
-      let entrada = datos?.entrada || '—';
-      let salida = datos?.salida || '—';
-      let estado = datos?.estado || '';
+        const eventoDia = eventosSede.find(e => this.toYmdSafe(e.fecha) === f);
 
-      const eventoDia = eventosSede.find(e => DateTime.fromISO(e.fecha).toFormat('yyyy-MM-dd') === f);
+        // 🕒 Día futuro: celda en blanco sin color
+        if (esFuturo) {
+          const c1 = row.getCell(colIndex++); c1.value = ''; c1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+          c1.border = this.bordeCelda; c1.alignment = { horizontal: 'center', vertical: 'middle' };
+          const c2 = row.getCell(colIndex++); c2.value = ''; c2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+          c2.border = this.bordeCelda; c2.alignment = { horizontal: 'center', vertical: 'middle' };
+          return;
+        }
 
-      // 🕒 Día futuro: celda en blanco sin color
-      if (esFuturo) {
-        const c1 = row.getCell(colIndex++); c1.value = ''; c1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
-        c1.border = this.bordeCelda; c1.alignment = { horizontal: 'center', vertical: 'middle' };
-        const c2 = row.getCell(colIndex++); c2.value = ''; c2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
-        c2.border = this.bordeCelda; c2.alignment = { horizontal: 'center', vertical: 'middle' };
-        return;
-      }
+        // 🧠 Jerarquía de estado
+        if (eventoDia) {
+          estado = eventoDia.tipo || eventoDia.descripcion || '';
+          entrada = salida = '—';
+        } else if (tipo === 'asistencia' && datos?.horaEntrada && datos?.horaSalida) {
+          estado = 'Asistencia Manual';
+          entrada = datos.horaEntrada;
+          salida = datos.horaSalida;
+        } else if (!estado && entrada !== '—' && salida !== '—') {
+          estado = 'Asistencia Completa';
+        } else if (!estado || estado === '—') {
+          estado = 'Falta';
+        }
 
-      // 🧠 Jerarquía de estado
-      if (eventoDia) {
-        estado = eventoDia.tipo || eventoDia.descripcion || '';
-        entrada = salida = '—';
-      } else if (tipo === 'asistencia' && datos?.horaEntrada && datos?.horaSalida) {
-        estado = 'Asistencia Manual';
-        entrada = datos.horaEntrada;
-        salida = datos.horaSalida;
-      } else if (!estado && entrada !== '—' && salida !== '—') {
-        estado = 'Asistencia Completa';
-      } else if (!estado || estado === '—') {
-        estado = 'Falta';
-      }
+        const { clave: claveColor, texto: textoEstado } = normalizarEstado(estado);
+        const color = this.coloresEstados[claveColor] || this.coloresEstados['—'];
 
-      const { clave: claveColor, texto: textoEstado } = normalizarEstado(estado);
-      const color = this.coloresEstados[claveColor] || this.coloresEstados['—'];
+        const entradaTexto = excelSanitize(entrada === '—' && salida === '—' && estado ? textoEstado : entrada);
+        const salidaTexto  = excelSanitize(entrada === '—' && salida === '—' && estado ? '' : salida);
 
-      const entradaTexto = excelSanitize(entrada === '—' && salida === '—' && estado ? textoEstado : entrada);
-      const salidaTexto  = excelSanitize(entrada === '—' && salida === '—' && estado ? '' : salida);
+        const celdaEntrada = row.getCell(colIndex++);
+        celdaEntrada.value = entradaTexto;
+        celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
+        celdaEntrada.border = this.bordeCelda;
+        celdaEntrada.alignment = { horizontal: 'center', vertical: 'middle' };
 
-      const celdaEntrada = row.getCell(colIndex++);
-      celdaEntrada.value = excelSanitize(entradaTexto);
-      celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
-      celdaEntrada.border = this.bordeCelda;
-      celdaEntrada.alignment = { horizontal: 'center', vertical: 'middle' };
-
-      const celdaSalida = row.getCell(colIndex++);
-      celdaSalida.value  = excelSanitize(salidaTexto);
-      celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
-      celdaSalida.border = this.bordeCelda;
-      celdaSalida.alignment = { horizontal: 'center', vertical: 'middle' };
+        const celdaSalida = row.getCell(colIndex++);
+        celdaSalida.value  = salidaTexto;
+        celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
+        celdaSalida.border = this.bordeCelda;
+        celdaSalida.alignment = { horizontal: 'center', vertical: 'middle' };
+      });
     });
-  });
 
-  // 💾 Guardar con MIME correcto
-  workbook.xlsx.writeBuffer().then((buffer: ArrayBuffer) => {
-    const blob = new Blob([buffer], { type: EXCEL_MIME });
-    FileSaver.saveAs(blob, nombreArchivo);
-  });
-}
+    // 💾 Guardar con MIME correcto
+    workbook.xlsx.writeBuffer().then((buffer: ArrayBuffer) => {
+      const blob = new Blob([buffer], { type: EXCEL_MIME });
+      FileSaver.saveAs(blob, nombreArchivo);
+    });
+  }
+
+  // 👉 Genera fechas YYYY-MM-DD (inclusive) sin usar toISOString()
+  private rangoFechasYmd(inicio: string, fin: string): string[] {
+    const out: string[] = [];
+    const d0 = new Date(inicio + 'T00:00:00');
+    const d1 = new Date(fin    + 'T00:00:00');
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    const cur = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate());
+    const end = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
+    while (cur <= end) {
+      out.push(`${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`);
+      cur.setDate(cur.getDate() + 1);
+    }
+    return out;
+  }
+
+  // 👉 Marca "Otra Sede" SOLO si hubo ENTRADA en otra sede ese día.
+  //    Toma además la primera Entrada y la última Salida de ese mismo día (en CDMX).
+  private async marcarOtrasSedesEnMatriz(
+    trabajadores: any[],
+    fechas: string[],
+    inicio: string,
+    fin: string
+  ): Promise<void> {
+    const ini = new Date(`${inicio}T00:00:00`);
+    const finD = new Date(`${fin}T00:00:00`);
+    const sedeActualStr = String(this.sede.id);
+
+    await Promise.all(
+      (trabajadores || []).map(async (t: any) => {
+        const tid = this.getTrabId(t);
+        if (!tid) return;
+
+        try {
+          const full = await lastValueFrom(
+            this.asistenciaService.obtenerDatosUnificadosParaCalendario(tid, ini, finD)
+          );
+
+          // fecha -> { entradaISO?, salidaISO? } (solo de otras sedes)
+          const otrasPorDia = new Map<string, { entradaISO?: string; salidaISO?: string }>();
+
+          (full?.asistencias || []).forEach((a: any) => {
+            (a?.detalle || []).forEach((d: any) => {
+              if (!d?.fechaHora) return;
+              const ymd = this.ymdMX(d.fechaHora);
+              if (!ymd) return;
+
+              const sedeReg = (d?.sede ?? a?.sede ?? null);
+              if (sedeReg == null) return;
+              if (String(sedeReg) === sedeActualStr) return;  // solo “otras” sedes
+
+              const cur = otrasPorDia.get(ymd) || {};
+              const tipo = String(d?.tipo || '');
+
+              if (tipo === 'Entrada') {
+                if (!cur.entradaISO || new Date(d.fechaHora) < new Date(cur.entradaISO)) {
+                  cur.entradaISO = d.fechaHora;
+                }
+              }
+              if (tipo.startsWith('Salida')) {
+                if (!cur.salidaISO || new Date(d.fechaHora) > new Date(cur.salidaISO)) {
+                  cur.salidaISO = d.fechaHora;
+                }
+              }
+              otrasPorDia.set(ymd, cur);
+            });
+          });
+
+          // Solo si la celda está vacía/inerta y hubo ENTRADA en otra sede ese día
+          fechas.forEach((f) => {
+            const celda = t.datosPorDia?.[f];
+            if (!this.esCeldaVaciaOInerte(celda)) return;
+
+            const otras = otrasPorDia.get(f);
+            if (otras?.entradaISO) {
+              if (!t.datosPorDia) t.datosPorDia = {};
+              t.datosPorDia[f] = {
+                estado: 'Otra Sede',
+                entrada: otras.entradaISO, // el PDF ya lo formatea a HH:mm CDMX
+                salida:  otras.salidaISO ?? '—'
+              };
+            }
+          });
+        } catch (e) {
+          console.warn('⚠️ cruzar otras sedes falló para', tid, e);
+        }
+      })
+    );
+  }
+
+    // Convierte cualquier "id" (ObjectId, objeto, etc.) a string utilizable en la URL /unificado/:id
+  private getTrabId(t: any): string | null {
+    if (!t) return null;
+    const cand = [t.id, t._id, t.trabajadorId, t?.id?.$oid, t?._id?.$oid];
+    for (const c of cand) {
+      if (!c) continue;
+      try {
+        if (typeof c === 'string') return c;
+        if (typeof c?.toString === 'function') {
+          const s = c.toString();
+          if (s && s !== '[object Object]') return s;
+        }
+      } catch {}
+    }
+    return null;
+  }
 
   // Colores actualizados con todas las variantes
   coloresEstados: { [estado: string]: string } = {
@@ -1414,6 +1649,7 @@ exportarExcelPorSede(nombreArchivo: string, trabajadores: any[], fechas: string[
     'dia festivo': 'FFFAE8FF',
     'dia puente': 'FFF5F5F4',
     'evento especial': 'FFCCFBF1',
-    'descanso laboral': 'FFE2E8F0'
+    'descanso laboral': 'FFE2E8F0',
+    'otra sede': 'FFC7D2FE', // 💠 (ARGB)
   };
 }

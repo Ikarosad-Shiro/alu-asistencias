@@ -12,10 +12,59 @@ export class AsistenciaService {
 
   constructor(private http: HttpClient) {}
 
-  // Helper para asegurar YYYY-MM-DD
+  // =========================
+  // Helpers
+  // =========================
+
+  // YYYY-MM-DD estable (evita problemas de zona/horario de verano)
   private toYmd(d: Date): string {
-    return d.toISOString().split('T')[0];
+    if (!(d instanceof Date)) d = new Date(d);
+    // construimos un UTC midnight para no "cruzar" de día
+    const iso = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+    return iso.slice(0, 10);
   }
+
+  private normFechaYYYYMMDD(v: any): string {
+    if (!v) return '';
+    if (typeof v === 'string') return v.split('T')[0];
+    try { return new Date(v).toISOString().split('T')[0]; } catch { return ''; }
+  }
+
+  private normISO(v: any): string | null {
+    if (!v) return null;
+    if (typeof v === 'string') return v;
+    try { return new Date(v).toISOString(); } catch { return null; }
+  }
+
+  private normalizeUnificadoPayload(res: any) {
+    const safe = res || {};
+    const asistencias = Array.isArray(safe.asistencias) ? safe.asistencias : [];
+
+    const asistenciasNorm = asistencias.map((a: any) => {
+      const fecha = this.normFechaYYYYMMDD(a?.fecha);
+      const sedeDoc = (a?.sede ?? null);
+      const detalle = Array.isArray(a?.detalle) ? a.detalle.map((d: any) => ({
+        ...d,
+        fechaHora: this.normISO(d?.fechaHora),
+        salida_automatica: !!d?.salida_automatica,
+        sincronizado: !!d?.sincronizado,
+        // 👇 MUY IMPORTANTE para detectar "Otra Sede" en front
+        sede: (d?.sede ?? sedeDoc ?? null)
+      })) : [];
+
+      return { ...a, fecha, detalle };
+    });
+
+    return {
+      asistencias: asistenciasNorm,
+      eventosTrabajador: Array.isArray(safe.eventosTrabajador) ? safe.eventosTrabajador : [],
+      eventosSede: Array.isArray(safe.eventosSede) ? safe.eventosSede : []
+    };
+  }
+
+  // =========================
+  // Endpoints
+  // =========================
 
   obtenerPorTrabajadorYRango(idTrabajador: string, inicio: Date, fin: Date): Observable<any[]> {
     const params = new HttpParams()
@@ -31,19 +80,18 @@ export class AsistenciaService {
           console.warn('La respuesta del servidor no es un array válido:', response);
           return [];
         }
-
         return response.map(item => ({
           ...item,
-          fecha: item.fecha ? item.fecha.split('T')[0] : '',
-          detalle: (item.detalle || []).map((d: any) => ({
+          fecha: this.normFechaYYYYMMDD(item?.fecha),
+          detalle: (item?.detalle || []).map((d: any) => ({
             ...d,
-            fechaHora: d.fechaHora
-              ? (typeof d.fechaHora === 'string' ? d.fechaHora : new Date(d.fechaHora).toISOString())
-              : null,
-            ...(d.salida_automatica && { salida_automatica: true }),
-            ...(d.sincronizado && { sincronizado: true })
+            fechaHora: this.normISO(d?.fechaHora),
+            salida_automatica: !!d?.salida_automatica,
+            sincronizado: !!d?.sincronizado,
+            // fallback de sede a nivel doc
+            sede: (d?.sede ?? item?.sede ?? null)
           })),
-          ...(item.estado && { estado: item.estado })
+          ...(item?.estado && { estado: item.estado })
         }));
       }),
       catchError(error => {
@@ -61,29 +109,30 @@ export class AsistenciaService {
     );
   }
 
-  // === Uso general (PDF/Excel/otros): SIN ignorar sede ===
+  // === Uso general (PDF/Excel/otros): respetando sede (por defecto en backend) ===
   obtenerDatosUnificados(trabajadorId: string, inicio: Date, fin: Date): Observable<any> {
     const params = new HttpParams()
       .set('inicio', this.toYmd(inicio))
       .set('fin', this.toYmd(fin));
 
     return this.http.get(`${this.apiUrl}/unificado/${trabajadorId}`, { params }).pipe(
+      map(res => this.normalizeUnificadoPayload(res)),
       catchError(err => {
         console.error('Error en obtenerDatosUnificados:', err);
-        // Forma segura para consumidores que esperan estas llaves
         return of({ asistencias: [], eventosTrabajador: [], eventosSede: [] });
       })
     );
   }
 
-  // === SOLO para el CALENDARIO del detalle: IGNORA sede ===
+  // === SOLO para el CALENDARIO / cruces multi-sede: ignora sede ===
   obtenerDatosUnificadosParaCalendario(trabajadorId: string, inicio: Date, fin: Date): Observable<any> {
     const params = new HttpParams()
       .set('inicio', this.toYmd(inicio))
       .set('fin', this.toYmd(fin))
-      .set('ignorarSede', 'true'); // 👈 clave para mezclar asistencias de todas las sedes
+      .set('ignorarSede', 'true'); // 👈 mix de todas las sedes
 
     return this.http.get(`${this.apiUrl}/unificado/${trabajadorId}`, { params }).pipe(
+      map(res => this.normalizeUnificadoPayload(res)),
       catchError(err => {
         console.error('Error en obtenerDatosUnificadosParaCalendario:', err);
         return of({ asistencias: [], eventosTrabajador: [], eventosSede: [] });
@@ -91,9 +140,15 @@ export class AsistenciaService {
     );
   }
 
-  obtenerUnificadoPorSede(sedeId: number, inicio: string, fin: string) {
-    const params = new URLSearchParams({ inicio, fin });
-    return this.http.get(`${this.apiUrl}/unificado-sede/${sedeId}?${params.toString()}`);
+  // === Unificado por SEDE (el backend ya calcula "Otra Sede" en datosPorDia) ===
+  obtenerUnificadoPorSede(sedeId: number, inicio: string, fin: string): Observable<any> {
+    const params = new HttpParams().set('inicio', inicio).set('fin', fin);
+    return this.http.get(`${this.apiUrl}/unificado-sede/${sedeId}`, { params }).pipe(
+      catchError(err => {
+        console.error('Error en obtenerUnificadoPorSede:', err);
+        return of({ sede: sedeId, rango: { inicio, fin }, trabajadores: [] });
+      })
+    );
   }
 
   obtenerAsistenciasDeHoy(): Observable<any[]> {
@@ -101,7 +156,14 @@ export class AsistenciaService {
   }
 
   // Compat heredada (si en algún lado la usas con strings)
-  obtenerUnificadoPorTrabajador(id: string, inicio: string, fin: string) {
-    return this.http.get(`${environment.apiUrl}/asistencias/unificado/${id}?inicio=${inicio}&fin=${fin}`);
+  obtenerUnificadoPorTrabajador(id: string, inicio: string, fin: string): Observable<any> {
+    const params = new HttpParams().set('inicio', inicio).set('fin', fin);
+    return this.http.get(`${this.apiUrl}/unificado/${id}`, { params }).pipe(
+      map(res => this.normalizeUnificadoPayload(res)),
+      catchError(err => {
+        console.error('Error en obtenerUnificadoPorTrabajador (compat):', err);
+        return of({ asistencias: [], eventosTrabajador: [], eventosSede: [] });
+      })
+    );
   }
 }
