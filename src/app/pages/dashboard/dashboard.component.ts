@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { SedeService } from 'src/app/services/sede.service';
 import { TrabajadoresService } from 'src/app/services/trabajadores.service';
 import { DateTime } from 'luxon'; // asegúrate de tener esto arriba si usas Luxon
+import { firstValueFrom } from 'rxjs';
 
 interface ResumenHoras {
   nombre: string;
@@ -37,6 +38,12 @@ export class DashboardComponent implements OnInit {
   trabajadoresQueNoHanLlegado: any[] = [];
   trabajadoresQueNoHanLlegadoFiltrados: any[] = []; // 👈 esta línea faltaba
   filtroSedeFaltantes: string = '';
+
+  // 🆕 Nuevo Ingreso (auto-cierre) - config
+  private readonly ZONE = 'America/Mexico_City';
+  private readonly NI_CHECK_KEY = 'niCheckLastRun';
+  private readonly NI_CHECK_COOLDOWN_HOURS = 12;
+  private niRunning = false;
 
   //grafico circular
   chartLabels: string[] = ['Asistieron', 'Ausentes'];
@@ -83,7 +90,7 @@ export class DashboardComponent implements OnInit {
     private router: Router,
     private asistenciaService: AsistenciaService,
     private sedeService: SedeService,
-    private trabajadorService: TrabajadoresService // 👈 agrégalo aquí
+    private trabajadorService: TrabajadoresService,
   ) {
     console.log("📌 Constructor ejecutado.");
     this.obtenerUsuario(); // Intentar obtener usuario al inicio
@@ -97,15 +104,47 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     console.log("📌 ngOnInit ejecutado.");
-
     // **Asegurar que los datos se actualicen después de la carga inicial**
     setTimeout(() => {
       this.obtenerUsuario();
       this.cargarAsistenciasHoy();
       this.obtenerSedes();
       this.cargarTrabajadoresQueNoHanLlegado();
-
+      this.autoCerrarNuevoIngresoDesdeDashboard().catch(() => {});
     }, 500);
+  }
+
+  // 🧹 Auto-cierre de "nuevoIngreso"
+  private async autoCerrarNuevoIngresoDesdeDashboard(force = false): Promise<void> {
+    try {
+      if (!this.esAdmin()) return;
+
+      const lastRunIso = localStorage.getItem(this.NI_CHECK_KEY);
+      if (!force && lastRunIso) {
+        const last = DateTime.fromISO(lastRunIso);
+        if (DateTime.now().diff(last, 'hours').hours < this.NI_CHECK_COOLDOWN_HOURS) return;
+      }
+      if (this.niRunning) return;
+      this.niRunning = true;
+
+      const out = await firstValueFrom(
+        this.trabajadorService.cerrarNuevoIngresoMasivo(false, true) // dryRun=false
+      );
+
+      localStorage.setItem(this.NI_CHECK_KEY, DateTime.now().toISO());
+      this.niRunning = false;
+
+      // feedback rápido
+      if (out?.cerrados > 0) {
+        Swal.fire('Nuevo ingreso actualizado', `Se cerró en ${out.cerrados} trabajador(es).`, 'success');
+      } else {
+        // silencioso si no hubo cambios
+        console.log('NI: sin cambios', out);
+      }
+    } catch (e) {
+      this.niRunning = false;
+      console.warn('NI sweep error:', e);
+    }
   }
 
   // 📌 **Obtener usuario desde localStorage**

@@ -223,4 +223,16 @@ export class TrabajadoresService {
       { headers: this.getAuthHeaders() }
     );
   }
+
+  // 🔥 Cambiar estados de nuevos registros
+// trabajadores.service.ts
+cerrarNuevoIngresoMasivo(dryRun = false, setFechaFin = true) {
+  const params = `?dry=${dryRun ? '1' : '0'}&setFechaFin=${setFechaFin ? '1' : '0'}`;
+  return this.http.post<any>(
+    `${this.apiUrl}/_cron/cerrar-nuevo-ingreso${params}`,
+    {}, // body vacío
+    { headers: this.getAuthHeaders() }
+  );
+}
+
 }
