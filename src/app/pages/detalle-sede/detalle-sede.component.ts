@@ -151,7 +151,6 @@ private ymdMX(x: any): string {
   }
 }
 
-
 // Normaliza "sede" a string para comparar sin dramas (number, string, ObjectId, nested, etc.)
 private sedeIdToString(x: any): string | null {
   const raw = (x && (x.sede ?? x.sedeId ?? x.sede_id ?? x.sede?.id ?? x.sede?._id)) ?? x;
@@ -768,6 +767,175 @@ private esCeldaVaciaOInerte(celda: any): boolean {
     return this.rolUsuario === 'Revisor';
   }
 
+  // ======================
+  // RESUMEN POR TRABAJADOR
+  // ======================
+  // ========= helpers de normalización ya usados =========
+  private _norm(s: any): string {
+    if (!s) return '';
+    return String(s).toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^\w\s]/g,'').trim();
+  }
+
+  private _canonEstado(s: any): string {
+    const k = this._norm(s);
+    if (!k) return 'sin estado';
+    if (k.includes('asistenciamanual')) return 'asistencia manual';
+    if (k.includes('asistenciacompleta')) return 'asistencia completa';
+    if (k.includes('salidaautomatica')) return 'salida automática';
+    if (k.includes('pendiente')) return 'pendiente';
+    if (k.includes('vacacionespagadas')) return 'vacaciones pagadas';
+    if (k.includes('vacaciones')) return 'vacaciones';
+    if (k.includes('permisocongoce')) return 'permiso con goce de sueldo';
+    if (k === 'permiso' || k.startsWith('permiso')) return 'permiso';
+    if (k.includes('incapacidad')) return 'incapacidad';
+    if (k.includes('descanso')) return 'descanso';
+    if (k.includes('dia festivo') || k.includes('festivo')) return 'festivo';
+    if (k.includes('dia puente') || k.includes('puente')) return 'puente';
+    if (k.includes('evento')) return 'evento';
+    if (k.includes('capacitacion')) return 'capacitación';
+    if (k.includes('mediajornada') || k.includes('media jornada')) return 'media jornada';
+    if (k.includes('suspension')) return 'suspensión';
+    if (k.includes('otrasede') || k.includes('otra sede')) return 'otra sede';
+    if (k === 'falta') return 'falta';
+    return s;
+  }
+
+  private _displayEstado(canon: string): string {
+    const map: Record<string,string> = {
+      'asistencia completa':'Asistencia Completa','asistencia manual':'Asistencia Manual',
+      'salida automática':'Salida Automática','pendiente':'Pendiente','falta':'Falta',
+      'vacaciones':'Vacaciones','vacaciones pagadas':'Vacaciones Pagadas','permiso':'Permiso',
+      'permiso con goce de sueldo':'Permiso con Goce','incapacidad':'Incapacidad','descanso':'Descanso',
+      'festivo':'Festivo','puente':'Puente','evento':'Evento','capacitación':'Capacitación',
+      'media jornada':'Media Jornada','suspensión':'Suspensión','otra sede':'Otra Sede','sin estado':'Sin estado'
+    };
+    const k = this._canonEstado(canon);
+    return map[k] || (k ? k[0].toUpperCase()+k.slice(1) : 'Sin estado');
+  }
+
+  private _estadoDelDiaParaResumen(datos: any, fechaYmd: string, hoyYmd: string): string {
+    if (fechaYmd > hoyYmd) return 'sin estado';
+    const tipo = (datos?.tipo || '').toString().trim().toLowerCase();
+    const esManual = (tipo === 'asistencia') && datos?.horaEntrada && datos?.horaSalida;
+    if (esManual) return 'asistencia manual';
+    const entradaVacia = !datos?.entrada || datos.entrada === '—';
+    const salidaVacia  = !datos?.salida  || datos.salida  === '—';
+    const estadoVacio  = !datos?.estado  || datos.estado  === '—';
+    if (estadoVacio && !entradaVacia && !salidaVacia) return 'asistencia completa';
+    if (estadoVacio && entradaVacia && salidaVacia)   return 'falta';
+    return datos.estado || '';
+  }
+
+  /* Construye los nodos del resumen (nombre + bullets) */
+  private _buildResumenPdfNodes(trabajadores: any[], fechas: string[]): any[] {
+    const hoy = DateTime.now().toFormat('yyyy-MM-dd');
+    const nodes: any[] = [];
+    trabajadores.forEach(t => {
+      const nombre = [t.nombre, t.apellido].filter(Boolean).join(' ') || '—';
+      const counts: Record<string, number> = {};
+      fechas.forEach(f => {
+        const datos = t?.datosPorDia?.[f] || {};
+        const est = this._estadoDelDiaParaResumen(datos, f, hoy);
+        const k = this._canonEstado(est);
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      const items = Object.entries(counts)
+        .filter(([,v]) => v>0)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([k,v]) => `${this._displayEstado(k)}: ${v} día(s)`);
+      nodes.push({ text: nombre, style: 'nombreTrabajador', margin: [0, 6, 0, 2] });
+      nodes.push({ ul: items.length ? items : ['Sin estado: 0 día(s)'], margin: [10, 0, 0, 0] });
+    });
+    return nodes;
+  }
+
+/* 💪 Balancea columnas con First-Fit Decreasing (FFD) */
+private _columnsForResumen(nodes: any[], pageWidthGuess?: number, preferredCols?: number): any {
+  type Entry = { nodes: any[]; weight: number };
+
+  // 1) Re-empaquetar: cada "entrada" = [nombre, lista]
+  const entries: Entry[] = [];
+  for (let i = 0; i < nodes.length; ) {
+    const nameNode = nodes[i];
+    const listNode = nodes[i + 1];
+
+    // bullets
+    const items = Array.isArray(listNode?.ul) ? listNode.ul.length : 1;
+
+    // penaliza nombres largos (rompen línea y comen altura)
+    const nameText = typeof nameNode?.text === 'string' ? nameNode.text : '';
+    const extraNameLines = Math.max(0, Math.ceil(nameText.length / 26) - 1);
+
+    // peso ~ líneas aproximadas (nombre + bullets)
+    const weight = 2 + items + extraNameLines * 0.8;
+
+    entries.push({ nodes: [nameNode, listNode], weight });
+    i += 2;
+  }
+
+  if (!entries.length) return { columns: [{ stack: [] }] };
+
+  // 2) ¿Cuántas columnas caben? (según ancho, preferencia y nº de entradas)
+  const W =
+    pageWidthGuess ||
+    792; // LETTER landscape ≈ 792pt; LEGAL ≈ 936pt; custom -> ya lo pasas tú arriba
+
+  // ancho mínimo por columna (texto cómodo)
+  const minColWidth = 180;
+  const maxByWidth = Math.max(2, Math.min(8, Math.floor((W - 80) / minColWidth)));
+  let colsCount = Math.min(
+    preferredCols || maxByWidth,
+    Math.max(2, entries.length) // no más columnas que entradas
+  );
+
+  // 3) First-Fit Decreasing: ordenar por peso DESC y asignar al bucket más liviano
+  entries.sort((a, b) => b.weight - a.weight);
+
+  let placed = false;
+  for (; colsCount >= 2; colsCount--) {
+    const bins: { stack: any[]; sum: number }[] = Array.from({ length: colsCount }, () => ({ stack: [], sum: 0 }));
+    for (const e of entries) {
+      // elige la columna con MENOR peso acumulado
+      let bestIdx = 0;
+      for (let k = 1; k < bins.length; k++) {
+        if (bins[k].sum < bins[bestIdx].sum) bestIdx = k;
+      }
+      bins[bestIdx].stack.push(...e.nodes);
+      bins[bestIdx].sum += e.weight;
+    }
+
+    // 4) Si la diferencia entre la columna más alta y la más baja es razonable, aceptamos
+    const sums = bins.map(b => b.sum).sort((a, b) => a - b);
+    const spread = sums[sums.length - 1] - sums[0];
+
+    // tolerancia (cuanto más contenido, un poco más de spread aceptable)
+    const total = sums.reduce((s, x) => s + x, 0);
+    const tol = Math.max(3, total * 0.08);
+
+    if (spread <= tol) {
+      placed = true;
+      return {
+        columns: bins.map(b => ({ stack: b.stack })),
+        columnGap: 18
+      };
+    }
+
+    // si no aprobó, probamos con UNA columna más (más columnas = menos alto cada stack)
+    // (nota: estamos en loop decremental; si no aprobó, el "return" final usa la mejor que logremos)
+  }
+
+  // 5) Fallback (2 columnas) si no se logró balance “aceptable”
+  const mid = Math.ceil(entries.length / 2);
+  const left = entries.slice(0, mid).flatMap(e => e.nodes);
+  const right = entries.slice(mid).flatMap(e => e.nodes);
+  return {
+    columns: [{ stack: left }, { stack: right }],
+    columnGap: 18
+  };
+}
+
   generarPdfPorSede(): void {
     // Tipo del valor que devuelve el modal
     type RangoReporte = {
@@ -1060,6 +1228,27 @@ private esCeldaVaciaOInerte(celda: any): boolean {
             }
             docDefinition.pageSize = formato === 'carta' ? 'LETTER' : 'LEGAL';
           }
+
+        docDefinition.content.push({
+          text: 'Resumen por trabajador',
+          style: 'header',
+          margin: [0, 10, 0, 8],
+          pageBreak: 'before' // dejamos el resumen en su propia hoja
+        });
+
+        // calcula un “ancho” estimado de página para decidir cuántas columnas
+        const pageWidthGuess =
+          (docDefinition.pageSize && typeof docDefinition.pageSize === 'object')
+            ? (docDefinition.pageSize as any).width
+            : (docDefinition.pageSize === 'LEGAL' ? 936
+              : docDefinition.pageSize === 'LETTER' ? 792
+              : 792);
+
+        const resumenNodes = this._buildResumenPdfNodes(trabajadores, fechas);
+
+        // 🔥 columnas (2–6) para que quepa en una sola página
+        const resumenColumns = this._columnsForResumen(resumenNodes, pageWidthGuess);
+        docDefinition.content.push(resumenColumns);
 
           pdfMake.createPdf(docDefinition).open();
         },
