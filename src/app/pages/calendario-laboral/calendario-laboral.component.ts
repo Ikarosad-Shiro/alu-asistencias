@@ -15,7 +15,7 @@ export class CalendarioLaboralComponent implements OnInit {
   sedeSeleccionada: number | null = null;
   sedeSeleccionadaNombre: string = '';
   anioSeleccionado: number = new Date().getFullYear();
-  diasEspeciales: any[] = [];
+  diasEspeciales: Array<{ fecha: string; tipo: string; descripcion?: string; [k: string]: any }> = [];
   sidebarAbierto: boolean = false;
   usuarioNombre: string = '';
   usuarioRol: string = '';
@@ -34,8 +34,8 @@ export class CalendarioLaboralComponent implements OnInit {
     aCrear: number;
     conEvento: number;
     sedesProcesadas: number;
-    // detalle opcional si luego quieres mostrar lista
-    detalle?: Array<{ sede: number; fecha: Date; motivo: 'crear' | 'ocupado' }>;
+    // DETALLE AHORA usa YMD string (no Date)
+    detalle?: Array<{ sede: number; fechaYmd: string; motivo: 'crear' | 'ocupado' }>;
   } | null = null;
 
   constructor(
@@ -88,29 +88,28 @@ export class CalendarioLaboralComponent implements OnInit {
     this.limpiarPreviewAsistente();
   }
 
-    // ── Utils de fecha ─────────────────────────────────────────────────────────────
-  private parseDate(d: string): Date {
-    // 'YYYY-MM-DD' → Date local a medianoche
-    return new Date(`${d}T00:00:00`);
+  // ── Utils de fecha: TODO en YYYY-MM-DD ───────────────────────────────────────
+  private toYmdLocal(d: string | Date): string {
+    if (typeof d === 'string') return d.slice(0, 10);
+    const iso = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+    return iso.slice(0, 10);
   }
-  private isSameDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear()
-      && a.getMonth() === b.getMonth()
-      && a.getDate() === b.getDate();
-  }
-  private getDomingosEnRango(inicio: Date, fin: Date): Date[] {
-    const out: Date[] = [];
-    const cur = new Date(inicio);
-    // avanza hasta el primer domingo
-    while (cur.getDay() !== 0) cur.setDate(cur.getDate() + 1);
+
+  private getDomingosEnRangoYmd(inicioYmd: string, finYmd: string): string[] {
+    const ini = new Date(`${inicioYmd}T00:00:00Z`);
+    const fin = new Date(`${finYmd}T00:00:00Z`);
+    const out: string[] = [];
+    const cur = new Date(ini);
+    // primer domingo (usamos UTC para no “correr” días)
+    while (cur.getUTCDay() !== 0) cur.setUTCDate(cur.getUTCDate() + 1);
     while (cur <= fin) {
-      out.push(new Date(cur));
-      cur.setDate(cur.getDate() + 7);
+      out.push(cur.toISOString().slice(0, 10)); // YYYY-MM-DD
+      cur.setUTCDate(cur.getUTCDate() + 7);
     }
     return out;
   }
 
-  // ── Estado UI asistente ───────────────────────────────────────────────────────
+  // ── Estado UI asistente ──────────────────────────────────────────────────────
   limpiarPreviewAsistente(): void {
     this.previewAsistente = null;
   }
@@ -125,20 +124,25 @@ export class CalendarioLaboralComponent implements OnInit {
       .map(s => ({ id: s.id, nombre: s.nombre, seleccionada: false }));
   }
 
-  // ── Carga calendarios por sede ────────────────────────────────────────────────
+  // ── Carga calendarios por sede (normaliza a YMD) ─────────────────────────────
   private async fetchCalendarioSedeAnio(sedeId: number, anio: number): Promise<any[]> {
     return await new Promise((resolve) => {
       this.calendarioService.obtenerPorSedeYAnio(sedeId, anio).subscribe({
-        next: (res: any) => resolve(Array.isArray(res?.diasEspeciales) ? res.diasEspeciales.map((e: any) => ({
-          ...e,
-          fecha: new Date(e.fecha?.$date ?? e.fecha)
-        })) : []),
+        next: (res: any) => resolve(
+          Array.isArray(res?.diasEspeciales)
+            ? res.diasEspeciales.map((e: any) => {
+                const raw = e?.fecha?.$date ?? e?.fecha;
+                const ymd = raw ? new Date(raw).toISOString().slice(0, 10) : null;
+                return { ...e, fecha: ymd };
+              })
+            : []
+        ),
         error: () => resolve([])
       });
     });
   }
 
-  // ── Vista previa ──────────────────────────────────────────────────────────────
+  // ── Vista previa ─────────────────────────────────────────────────────────────
   async simularAsistenteDomingo(): Promise<void> {
     try {
       if (!this.esAdmin() || !this.asistenteDomingoActivo) return;
@@ -152,17 +156,16 @@ export class CalendarioLaboralComponent implements OnInit {
         return;
       }
 
-      const ini = this.parseDate(this.rangoDomingoInicio);
-      const fin = this.parseDate(this.rangoDomingoFin);
-
-      // (simple) En esta primera versión nos quedamos dentro del año elegido
-      if (ini.getFullYear() !== this.anioSeleccionado || fin.getFullYear() !== this.anioSeleccionado) {
+      // Mantenerse dentro del año seleccionado
+      const yIni = Number(this.rangoDomingoInicio.slice(0,4));
+      const yFin = Number(this.rangoDomingoFin.slice(0,4));
+      if (yIni !== this.anioSeleccionado || yFin !== this.anioSeleccionado) {
         Swal.fire('Año no coincide', 'Usa un rango dentro del año seleccionado en el filtro.', 'info');
         return;
       }
 
-      const domingos = this.getDomingosEnRango(ini, fin);
-      if (!domingos.length) {
+      const domingosYmd = this.getDomingosEnRangoYmd(this.rangoDomingoInicio, this.rangoDomingoFin);
+      if (!domingosYmd.length) {
         Swal.fire('Sin domingos', 'No hay domingos en el rango elegido.', 'info');
         return;
       }
@@ -181,36 +184,38 @@ export class CalendarioLaboralComponent implements OnInit {
 
       // Contadores
       let aCrear = 0, conEvento = 0;
-      const detalle: Array<{ sede: number; fecha: Date; motivo: 'crear' | 'ocupado' }> = [];
+      const detalle: Array<{ sede: number; fechaYmd: string; motivo: 'crear' | 'ocupado' }> = [];
 
       for (const sid of sedeIds) {
         const lista = porSedeEventos[sid] || [];
-        for (const d of domingos) {
-          const ya = lista.some(e => e?.fecha && this.isSameDay(new Date(e.fecha), d));
+        for (const dYmd of domingosYmd) {
+          const ya = lista.some(e => e?.fecha && e.fecha.slice(0,10) === dYmd);
           if (ya) {
             conEvento++;
-            detalle.push({ sede: sid, fecha: d, motivo: 'ocupado' });
+            detalle.push({ sede: sid, fechaYmd: dYmd, motivo: 'ocupado' });
           } else {
             aCrear++;
-            detalle.push({ sede: sid, fecha: d, motivo: 'crear' });
+            detalle.push({ sede: sid, fechaYmd: dYmd, motivo: 'crear' });
           }
         }
       }
 
       this.previewAsistente = {
-        totalDomingos: domingos.length * sedeIds.length,
+        totalDomingos: domingosYmd.length * sedeIds.length,
         aCrear,
         conEvento,
         sedesProcesadas: sedeIds.length,
         detalle
       };
 
-      Swal.fire('Vista previa lista',
-        `Domingos en rango: ${domingos.length * sedeIds.length}\n` +
+      Swal.fire(
+        'Vista previa lista',
+        `Domingos en rango: ${domingosYmd.length * sedeIds.length}\n` +
         `A crear: ${aCrear}\n` +
         `Ya ocupados: ${conEvento}\n` +
         `Sedes: ${sedeIds.length}`,
-        'success');
+        'success'
+      );
     } catch (e) {
       console.error(e);
       Swal.fire('Error', 'No se pudo generar la vista previa.', 'error');
@@ -218,7 +223,7 @@ export class CalendarioLaboralComponent implements OnInit {
   }
 
   // ── Aplicar ──────────────────────────────────────────────────────────────────
-  private async aplicarBatchCrearDescansos(items: Array<{ sede: number; fecha: Date }>, año: number): Promise<void> {
+  private async aplicarBatchCrearDescansos(items: Array<{ sede: number; fechaYmd: string }>, año: number): Promise<void> {
     // Procesa en lotes para no saturar el backend
     const batch = 12;
     for (let i = 0; i < items.length; i += batch) {
@@ -228,7 +233,7 @@ export class CalendarioLaboralComponent implements OnInit {
           this.calendarioService.agregarDia({
             año,
             sede: it.sede,
-            fecha: it.fecha,
+            fecha: it.fechaYmd, // ← enviamos YMD
             tipo: 'descanso',
             descripcion: 'Asistente de Domingo'
           }).subscribe({ next: () => resolve(), error: () => resolve() });
@@ -262,7 +267,7 @@ export class CalendarioLaboralComponent implements OnInit {
       // Construye la lista a crear desde el detalle de preview
       const crear = (this.previewAsistente.detalle || [])
         .filter(d => d.motivo === 'crear')
-        .map(d => ({ sede: d.sede, fecha: d.fecha }));
+        .map(d => ({ sede: d.sede, fechaYmd: d.fechaYmd }));
 
       await this.aplicarBatchCrearDescansos(crear, this.anioSeleccionado);
 
@@ -286,15 +291,16 @@ export class CalendarioLaboralComponent implements OnInit {
 
     this.calendarioService.obtenerPorSedeYAnio(this.sedeSeleccionada, this.anioSeleccionado).subscribe({
       next: (res: any) => {
+        // NORMALIZA FECHAS A YMD
         this.diasEspeciales = Array.isArray(res?.diasEspeciales)
-          ? res.diasEspeciales.map((e: any) => ({
-              ...e,
-              fecha: new Date(e.fecha?.$date ?? e.fecha),
-              sedes: res.sedes
-            }))
+          ? res.diasEspeciales.map((e: any) => {
+              const raw = e?.fecha?.$date ?? e?.fecha; // soporta BSON/ISO
+              const ymd = raw ? new Date(raw).toISOString().slice(0, 10) : null;
+              return { ...e, fecha: ymd, sedes: res.sedes };
+            })
           : [];
 
-        // ✅ Muy importante
+        // ✅ Muy importante para refrescar el calendario hijo
         this.busquedaRealizada = false;
         setTimeout(() => this.busquedaRealizada = true, 10);
       },
@@ -308,32 +314,30 @@ export class CalendarioLaboralComponent implements OnInit {
   }
 
   onEventoGuardado(evento: any) {
-  const eventoCompleto = {
-    ...evento,
-    año: this.anioSeleccionado,
-    ...(evento.tipo === 'media jornada' ? {
-      horaInicio: evento.horaInicio,
-      horaFin: evento.horaFin
-    } : {})
-  };
+    // Normaliza fecha a YMD antes de enviar al servicio
+    const fechaYmd = this.toYmdLocal(evento?.fecha);
+
+    const eventoCompleto = {
+      ...evento,
+      fecha: fechaYmd,                  // ← YMD
+      año: this.anioSeleccionado,
+      ...(evento.tipo === 'media jornada' ? {
+        horaInicio: evento.horaInicio,
+        horaFin: evento.horaFin
+      } : {})
+    };
 
     if (evento.editar) {
-      // Llamamos al servicio de edición
       this.calendarioService.editarDia(eventoCompleto).subscribe({
-        next: () => {
-          this.consultarCalendario();
-        },
+        next: () => { this.consultarCalendario(); },
         error: (err: any) => {
           console.error('❌ Error al editar día especial:', err.error?.message || err.message || err);
           Swal.fire('Error', err.error?.message || 'No se pudo editar el día', 'error');
         }
       });
     } else {
-      // Llamamos al servicio de agregar
       this.calendarioService.agregarDia(eventoCompleto).subscribe({
-        next: () => {
-          this.consultarCalendario();
-        },
+        next: () => { this.consultarCalendario(); },
         error: (err: any) => {
           console.error('❌ Error al guardar día especial:', err.error?.message || err.message || err);
           Swal.fire('Error', err.error?.message || 'No se pudo guardar el día', 'error');
@@ -343,16 +347,14 @@ export class CalendarioLaboralComponent implements OnInit {
   }
 
   onEventoEliminado(evento: any) {
-    console.log('📥 Evento recibido para eliminar:', evento);
-
+    // Normaliza fecha a YMD antes de eliminar
     const { contraseña, ...datosEvento } = evento;
+    const payload = { ...datosEvento, fecha: this.toYmdLocal(datosEvento?.fecha) };
 
     this.authService.verificarPassword(contraseña).subscribe({
       next: (resp: any) => {
         if (resp.valido) {
-          console.log('🔐 Contraseña verificada, eliminando...');
-
-          this.calendarioService.eliminarDia(datosEvento).subscribe({
+          this.calendarioService.eliminarDia(payload).subscribe({
             next: () => {
               Swal.fire('✅ Eliminado', 'El día fue eliminado correctamente.', 'success');
               this.consultarCalendario();

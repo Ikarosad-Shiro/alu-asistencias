@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import {
   addMonths, subMonths, startOfMonth, endOfMonth,
-  eachDayOfInterval, isSameDay, isToday
+  eachDayOfInterval, isToday
 } from 'date-fns';
 import Swal from 'sweetalert2';
 import { AuthService } from 'src/app/services/auth.service';
@@ -22,26 +22,32 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
 
   @Input()
   set eventos(value: any[]) {
-    this._eventos = value || [];
-    this.generarDiasMes(); // ✅ Forzamos regeneración al recibir eventos
+    // Normaliza a YMD string por robustez
+    this._eventos = (value || []).map(e => ({
+      ...e,
+      // e.fecha puede venir como Date/ISO/BSON — lo dejamos en 'YYYY-MM-DD'
+      fecha: e?.fecha
+        ? new Date(e.fecha).toISOString().slice(0, 10)
+        : null
+    }));
+    this.reconstruirIndiceEventos();
+    this.generarDiasMes();
   }
-
-  get eventos(): any[] {
-    return this._eventos;
-  }
+  get eventos(): any[] { return this._eventos; }
 
   @Input() todasLasSedes: { id: number, nombre: string, seleccionada?: boolean }[] = [];
   @Input() asistenteDomingoActivo: boolean = false;
-
 
   @Output() eventoGuardado = new EventEmitter<any>();
   @Output() eventoEliminado = new EventEmitter<any>();
 
   mesActual = new Date();
   diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  diasMes: any[] = [];
+  diasMes: Array<{ fecha: Date | null; seleccionado: boolean; evento: any | null }> = [];
+
   mostrarModal = false;
-  fechaSeleccionada!: Date;
+  fechaSeleccionada!: Date;    // Date local SOLO para UI
+  ymdSeleccionado: string = ''; // YMD para emitir al backend
 
   nuevoEvento = {
     tipo: '',
@@ -54,6 +60,9 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   usuarioRol: string = '';
   modoEdicion: boolean = false;
   eventoExistente: any = null;
+
+  // Set para lookup O(1) por YMD
+  private eventosYmd = new Set<string>();
 
   constructor(private authService: AuthService) {}
 
@@ -73,12 +82,28 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['anio'] || changes['sede']) {
       this.definirMesInicial();
+      this.generarDiasMes();
     }
   }
 
+  private ymdFromDateLocal(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  private reconstruirIndiceEventos(): void {
+    this.eventosYmd = new Set(
+      (this._eventos || [])
+        .map(e => (e?.fecha ?? '').slice(0, 10))
+        .filter(Boolean)
+    );
+  }
+
   esDomingo(fecha: Date | null | undefined): boolean {
-  return !!fecha && fecha.getDay() === 0;
-}
+    return !!fecha && fecha.getDay() === 0;
+  }
 
   definirMesInicial(): void {
     const hoy = new Date();
@@ -104,69 +129,72 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     const dias = eachDayOfInterval({ start: inicioMes, end: finMes });
 
     const primerDia = inicioMes.getDay();
-    const diasVaciosAntes = Array(primerDia).fill({ fecha: null });
+    const diasVaciosAntes = Array(primerDia).fill({ fecha: null, seleccionado: false, evento: null });
 
     const ultimoDia = finMes.getDay();
-    const diasVaciosDespues = Array(6 - ultimoDia).fill({ fecha: null });
+    const diasVaciosDespues = Array(6 - ultimoDia).fill({ fecha: null, seleccionado: false, evento: null });
 
     this.diasMes = [
       ...diasVaciosAntes,
       ...dias.map(dia => {
-        const evento = this._eventos.find(e =>
-          e?.fecha && isSameDay(new Date(e.fecha), dia)
-        );
-        return {
-          fecha: dia,
-          seleccionado: false,
-          evento: evento || null
-        };
+        const ymd = this.ymdFromDateLocal(dia); // ← YMD LOCAL
+        const evento = this._eventos.find(e => e?.fecha === ymd) || null;
+        return { fecha: dia, seleccionado: false, evento };
       }),
       ...diasVaciosDespues
     ];
   }
 
-seleccionarDia(dia: any): void {
-  if (!dia.fecha) return;
+  seleccionarDia(dia: any): void {
+    if (!dia.fecha) return;
 
-  this.fechaSeleccionada = dia.fecha;
+    this.fechaSeleccionada = dia.fecha;           // Date local para la UI
+    this.ymdSeleccionado   = this.ymdFromDateLocal(dia.fecha); // YMD para backend
 
-  if (!this.puedeEditar) {
-    Swal.fire({ /* ... */ });
-    return;
-  }
-
-  const eventoExistente = this._eventos.find(e =>
-    e?.fecha && isSameDay(new Date(e.fecha), dia.fecha)
-  );
-
-  if (eventoExistente) {
-    this.modoEdicion = true;
-    this.eventoExistente = eventoExistente;
-    this.nuevoEvento = {
-      tipo: eventoExistente.tipo,
-      descripcion: eventoExistente.descripcion,
-      horaInicio: eventoExistente.horaInicio || '',
-      horaFin: eventoExistente.horaFin || ''
-    };
-  } else {
-    this.modoEdicion = false;
-    this.eventoExistente = null;
-    this.nuevoEvento = { tipo: '', descripcion: '', horaInicio: '', horaFin: '' };
-
-    // sugerencia de domingo (si activaste el asistente)
-    if (this.asistenteDomingoActivo && this.esDomingo(dia.fecha)) {
-      this.nuevoEvento = { tipo: 'descanso', descripcion: 'Sugerido por Asistente de Domingo', horaInicio: '', horaFin: '' };
+    if (!this.puedeEditar) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Solo lectura',
+        text: 'Solo los usuarios con rol Dios o Administrador pueden modificar el calendario.'
+      });
+      return;
     }
+
+    const eventoExistente = this._eventos.find(e => e?.fecha === this.ymdSeleccionado);
+
+    if (eventoExistente) {
+      this.modoEdicion = true;
+      this.eventoExistente = eventoExistente;
+      this.nuevoEvento = {
+        tipo: eventoExistente.tipo,
+        descripcion: eventoExistente.descripcion,
+        horaInicio: eventoExistente.horaInicio || '',
+        horaFin: eventoExistente.horaFin || ''
+      };
+    } else {
+      this.modoEdicion = false;
+      this.eventoExistente = null;
+      this.nuevoEvento = { tipo: '', descripcion: '', horaInicio: '', horaFin: '' };
+
+      // sugerencia de domingo (si activaste el asistente)
+      if (this.asistenteDomingoActivo && this.esDomingo(dia.fecha)) {
+        this.nuevoEvento = {
+          tipo: 'descanso',
+          descripcion: 'Sugerido por Asistente de Domingo',
+          horaInicio: '',
+          horaFin: ''
+        };
+      }
+    }
+
+    if (this.todasLasSedes) {
+      this.todasLasSedes = this.todasLasSedes.map(s => ({ ...s, seleccionada: s.seleccionada ?? false }));
+    }
+
+    this.mostrarModal = true;
   }
 
-  if (this.todasLasSedes) {
-    this.todasLasSedes = this.todasLasSedes.map(s => ({ ...s, seleccionada: s.seleccionada ?? false }));
-  }
-
-  this.mostrarModal = true;
-}
-
-    private to24h(s: string): string {
+  private to24h(s: string): string {
     if (!s) return '';
     const m = s.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
     if (!m) return s; // ya viene "HH:mm"
@@ -180,9 +208,9 @@ seleccionarDia(dia: any): void {
     return (+m[1])*60 + (+m[2]);
   }
 
-esHoy(fecha: Date | null | undefined): boolean {
-  return !!fecha && isToday(fecha);
-}
+  esHoy(fecha: Date | null | undefined): boolean {
+    return !!fecha && isToday(fecha);
+  }
 
   mesAnterior(): void {
     this.mesActual = subMonths(this.mesActual, 1);
@@ -200,42 +228,43 @@ esHoy(fecha: Date | null | undefined): boolean {
     }
   }
 
-guardarEvento(): void {
-  const isMJ = this.nuevoEvento.tipo === 'media jornada';
-  let ini = '', fin = '';
+  guardarEvento(): void {
+    const isMJ = this.nuevoEvento.tipo === 'media jornada';
+    let ini = '', fin = '';
 
-  if (isMJ) {
-    ini = this.to24h(this.nuevoEvento.horaInicio);
-    fin = this.to24h(this.nuevoEvento.horaFin);
-    if (!ini || !fin) { Swal.fire('Falta horario','Indica inicio y fin','warning'); return; }
-    if (this.minutes(fin) <= this.minutes(ini)) { Swal.fire('Horario inválido','Fin > inicio','warning'); return; }
-  }
+    if (isMJ) {
+      ini = this.to24h(this.nuevoEvento.horaInicio);
+      fin = this.to24h(this.nuevoEvento.horaFin);
+      if (!ini || !fin) { Swal.fire('Falta horario','Indica inicio y fin','warning'); return; }
+      if (this.minutes(fin) <= this.minutes(ini)) { Swal.fire('Horario inválido','Fin > inicio','warning'); return; }
+    }
 
-  const eventoBase = {
-    fecha: this.fechaSeleccionada,
-    tipo: this.nuevoEvento.tipo,
-    descripcion: this.nuevoEvento.descripcion,
-    ...(isMJ ? { horaInicio: ini, horaFin: fin } : {})
-  };
+    // Importante: emitimos fecha como YMD (string) para evitar desfases
+    const eventoBase = {
+      fecha: this.ymdSeleccionado,
+      tipo: this.nuevoEvento.tipo,
+      descripcion: this.nuevoEvento.descripcion,
+      ...(isMJ ? { horaInicio: ini, horaFin: fin } : {})
+    };
 
-  // aplicar a sedes extra (incluyendo horas si es MJ)
-  if (this.aplicarAMasSedes && this.todasLasSedes) {
-    const sedesSeleccionadas = this.todasLasSedes.filter(s => s.seleccionada);
-    sedesSeleccionadas.forEach(sedeExtra => {
-      this.eventoGuardado.emit({ ...eventoBase, sede: sedeExtra.id, editar: false });
+    // aplicar a sedes extra
+    if (this.aplicarAMasSedes && this.todasLasSedes) {
+      const sedesSeleccionadas = this.todasLasSedes.filter(s => s.seleccionada);
+      sedesSeleccionadas.forEach(sedeExtra => {
+        this.eventoGuardado.emit({ ...eventoBase, sede: sedeExtra.id, editar: false });
+      });
+    }
+
+    // emitir para la sede actual
+    this.eventoGuardado.emit({
+      ...eventoBase,
+      sede: this.sede,
+      editar: this.modoEdicion
     });
+
+    this.cerrarModal();
+    this.generarDiasMes();
   }
-
-  // emitir para la sede actual (solo una vez)
-  this.eventoGuardado.emit({
-    ...eventoBase,
-    sede: this.sede,
-    editar: this.modoEdicion
-  });
-
-  this.cerrarModal();
-  this.generarDiasMes();
-}
 
   eliminarEvento(): void {
     Swal.fire({
@@ -245,10 +274,7 @@ guardarEvento(): void {
       input: 'password',
       inputLabel: 'Confirma tu contraseña',
       inputPlaceholder: 'Ingresa tu contraseña',
-      inputAttributes: {
-        autocapitalize: 'off',
-        autocorrect: 'off'
-      },
+      inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
       showCancelButton: true,
       confirmButtonText: 'Eliminar',
       cancelButtonText: 'Cancelar',
@@ -260,13 +286,13 @@ guardarEvento(): void {
       }
     }).then(result => {
       if (result.isConfirmed) {
+        // Emitimos YMD (string) — NO Date
         const evento = {
           sede: this.sede,
           año: this.anio,
-          fecha: this.fechaSeleccionada,
+          fecha: this.ymdSeleccionado,
           contraseña: result.value
         };
-
         this.eventoEliminado.emit(evento);
         this.cerrarModal();
       }
@@ -286,19 +312,16 @@ guardarEvento(): void {
   }
 
   getTooltip(d: any): string {
-  const e = d?.evento;
-  if (!e) return '';
-  const desc = e.descripcion ? ` — ${e.descripcion}` : '';
-  if ((e.tipo || '') === 'media jornada') {
-    const hi = e.horaInicio || '';
-    const hf = e.horaFin || '';
-    const rango = (hi && hf) ? `: ${hi}–${hf}` : '';
-    return `Media Jornada${rango}${desc}`;
+    const e = d?.evento;
+    if (!e) return '';
+    const desc = e.descripcion ? ` — ${e.descripcion}` : '';
+    if ((e.tipo || '') === 'media jornada') {
+      const hi = e.horaInicio || '';
+      const hf = e.horaFin || '';
+      const rango = (hi && hf) ? `: ${hi}–${hf}` : '';
+      return `Media Jornada${rango}${desc}`;
+    }
+    const tipo = (e.tipo || '');
+    return `${tipo.charAt(0).toUpperCase()}${tipo.slice(1)}${desc}`;
   }
-  // default
-  const tipo = (e.tipo || '');
-  return `${tipo.charAt(0).toUpperCase()}${tipo.slice(1)}${desc}`;
-}
-
-
 }

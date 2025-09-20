@@ -27,7 +27,7 @@
         [class.dia-seleccionado]="dia.seleccionado"
         [class.dia-especial]="dia.evento"
         [class.descanso]="dia.evento?.tipo === 'descanso'"
-          [class.domingo]="asistenteDomingoActivo && esDomingo(dia.fecha) && !dia.evento"
+        [class.domingo]="asistenteDomingoActivo && esDomingo(dia.fecha) && !dia.evento"
         [class.festivo]="dia.evento?.tipo === 'festivo'"
         [class.puente]="dia.evento?.tipo === 'puente'"
         [class.media-jornada]="dia.evento?.tipo === 'media jornada'"

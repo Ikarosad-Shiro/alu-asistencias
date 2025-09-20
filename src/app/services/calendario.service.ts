@@ -12,9 +12,28 @@ export class CalendarioService {
 
   constructor(private http: HttpClient) {}
 
-  // 🔍 Obtener calendario por sede y año
+
+  private toYmd(v: Date | string): string {
+  if (typeof v === 'string') {
+    // ya viene como YYYY-MM-DD o ISO → corta
+    return v.split('T')[0];
+  }
+  // Fuerza a "fecha de calendario" estable
+  const iso = new Date(Date.UTC(v.getFullYear(), v.getMonth(), v.getDate())).toISOString();
+  return iso.slice(0, 10); // YYYY-MM-DD
+}
+
+  // 🔍 Obtener calendario por sede y año (normaliza fechas a YMD)
   obtenerPorSedeYAnio(sede: number, anio: number) {
-    return this.http.get<any>(`${this.baseUrl}/sede/${sede}/anio/${anio}`);
+    return this.http.get<any>(`${this.baseUrl}/sede/${sede}/anio/${anio}`)
+      .pipe(map(res => ({
+        ...res,
+        diasEspeciales: (res?.diasEspeciales || []).map((e: any) => ({
+          ...e,
+          // <- MUY IMPORTANTE: el front guarda sólo YMD
+          fecha: new Date(e.fecha).toISOString().slice(0, 10)
+        }))
+      })));
   }
 
   // ✅ Obtener todos los calendarios
@@ -24,60 +43,40 @@ export class CalendarioService {
 
   // ➕ Agregar un día especial
   agregarDia(data: {
-    año: number;
-    sede: number;
-    fecha: Date | string;
-    tipo: string;
-    descripcion: string;
+    año: number; sede: number; fecha: Date | string; tipo: string; descripcion: string;
   }) {
     const payload = {
       año: data.año,
       sede: data.sede,
       tipo: data.tipo,
       descripcion: data.descripcion || '',
-      fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
+      fecha: this.toYmd(data.fecha) // <- YYYY-MM-DD
     };
-
     return this.http.post<any>(`${this.baseUrl}/agregar-dia`, payload);
   }
 
-  // ✏️ Editar un día especial
-  editarDia(data: {
-    año: number;
-    sede: number;
-    fecha: Date | string;
-    tipo: string;
-    descripcion: string;
-  }) {
+  // ✏️ Editar
+  editarDia(data: { año: number; sede: number; fecha: Date | string; tipo: string; descripcion: string; }) {
     const payload = {
       año: data.año,
       sede: data.sede,
       tipo: data.tipo,
       descripcion: data.descripcion || '',
-      fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString()
+      fecha: this.toYmd(data.fecha) // <- YYYY-MM-DD
     };
-
     return this.http.put<any>(`${this.baseUrl}/editar-dia`, payload);
   }
 
-  // ❌ Eliminar un día especial (con contraseña)
-  eliminarDia(data: {
-    año: number;
-    sede: number;
-    fecha: Date | string;
-    contraseña?: string;
-  }) {
-    const payload = {
-      año: data.año,
-      sede: data.sede,
-      fecha: typeof data.fecha === 'string' ? data.fecha : data.fecha.toISOString(),
-      contraseña: data.contraseña
-    };
-
-    return this.http.request<any>('delete', `${this.baseUrl}/eliminar-dia`, {
-      body: payload
-    });
-  }
+// ❌ Eliminar
+eliminarDia(data: { año: number; sede: number; fecha: Date | string; contraseña?: string; }) {
+  const payload = {
+    año: data.año,
+    sede: data.sede,
+    fecha: this.toYmd(data.fecha), // <- YYYY-MM-DD
+    contraseña: data.contraseña
+  };
+  return this.http.request<any>('delete', `${this.baseUrl}/eliminar-dia`, { body: payload });
+}
 
   // 🆕 Alias para compatibilidad con detalle-sede
   guardarDiaEspecial(data: {
