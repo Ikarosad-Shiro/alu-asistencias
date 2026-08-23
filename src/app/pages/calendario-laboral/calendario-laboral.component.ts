@@ -313,7 +313,7 @@ export class CalendarioLaboralComponent implements OnInit {
     });
   }
 
-  onEventoGuardado(evento: any) {
+  /*onEventoGuardado(evento: any) {
     // Normaliza fecha a YMD antes de enviar al servicio
     const fechaYmd = this.toYmdLocal(evento?.fecha);
 
@@ -344,8 +344,78 @@ export class CalendarioLaboralComponent implements OnInit {
         }
       });
     }
+  }*/
+  onEventoGuardado(evento: any) {
+  console.log('📥 Evento recibido en calendario-laboral:', evento);
+
+  const fechaYmd = this.toYmdLocal(evento?.fecha);
+
+  const tipoNormalizado = String(evento?.tipo || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  const esMediaJornada = tipoNormalizado === 'media jornada';
+
+  const eventoCompleto: any = {
+    ...evento,
+    fecha: fechaYmd,
+    año: this.anioSeleccionado,
+    tipo: evento.tipo,
+    descripcion: evento.descripcion || ''
+  };
+
+  if (esMediaJornada) {
+    if (!evento.horaInicio || !evento.horaFin) {
+      console.warn('⚠️ Media jornada sin horas en calendario-laboral:', evento);
+
+      Swal.fire(
+        '⚠️ Horario requerido',
+        'Para media jornada debes indicar hora de inicio y hora de fin.',
+        'warning'
+      );
+      return;
+    }
+
+    eventoCompleto.horaInicio = evento.horaInicio;
+    eventoCompleto.horaFin = evento.horaFin;
   }
 
+  console.log('📤 Evento enviado al backend desde calendario-laboral:', eventoCompleto);
+
+  if (evento.editar) {
+    this.calendarioService.editarDia(eventoCompleto).subscribe({
+      next: () => {
+        this.consultarCalendario();
+        Swal.fire('✅ Guardado', 'El día fue actualizado correctamente.', 'success');
+      },
+      error: (err: any) => {
+        console.error('❌ Error al editar día especial:', err);
+        Swal.fire(
+          'Error',
+          err?.error?.message || err?.error?.error || 'No se pudo editar el día',
+          'error'
+        );
+      }
+    });
+  } else {
+    this.calendarioService.agregarDia(eventoCompleto).subscribe({
+      next: () => {
+        this.consultarCalendario();
+        Swal.fire('✅ Guardado', 'El día fue guardado correctamente.', 'success');
+      },
+      error: (err: any) => {
+        console.error('❌ Error al guardar día especial:', err);
+        Swal.fire(
+          'Error',
+          err?.error?.message || err?.error?.error || 'No se pudo guardar el día',
+          'error'
+        );
+      }
+    });
+  }
+}
   onEventoEliminado(evento: any) {
     // Normaliza fecha a YMD antes de eliminar
     const { contraseña, ...datosEvento } = evento;
@@ -384,7 +454,7 @@ export class CalendarioLaboralComponent implements OnInit {
     return this.usuarioRol === 'Administrador' || this.usuarioRol === 'Dios';
   }
 
-  toggleSidebar() {
+  toggleSidebar(): void {
     this.sidebarAbierto = !this.sidebarAbierto;
   }
 }

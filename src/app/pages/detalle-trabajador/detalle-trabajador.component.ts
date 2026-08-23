@@ -87,6 +87,7 @@ type SedeChip = { id: number; nombre: string; tipo: 'principal' | 'foranea' };
 
 export class DetalleTrabajadorComponent implements OnInit {
   trabajador: any = {};
+  sidebarAbierto: boolean = false;
   trabajadorOriginal: any;
   modoEdicion: boolean = false;
   rolUsuario: string = '';
@@ -147,20 +148,50 @@ ngOnInit(): void {
 
       const sedeBase = Number(trabajador.sedePrincipal ?? trabajador.sede);
 
-      // 🔥 Paso 2: obtener en paralelo asistencias (legacy para otras vistas) + eventos
+      // 🔥 Paso 2: obtener en paralelo asistencias + calendarios.
+      // Si un calendario todavía no existe (404), continuamos con diasEspeciales vacío
+      // para que las asistencias reales sí puedan mostrarse.
       forkJoin({
         asistencias: this.trabajadoresService.obtenerAsistencias(trabajadorId),
-        calendarioSede: this.sedeService.obtenerEventosCalendario(
-          sedeBase,
-          new Date().getFullYear()
-        ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>,
-        calendarioTrabajador: this.trabajadoresService.obtenerEventosCalendarioTrabajador(
-          trabajadorId,
-          new Date().getFullYear()
-        ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>
+
+        calendarioSede: (
+          this.sedeService.obtenerEventosCalendario(
+            sedeBase,
+            new Date().getFullYear()
+          ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>
+        ).pipe(
+          catchError((error: HttpErrorResponse) => {
+            if (error.status === 404) {
+              console.warn(
+                `⚠️ La sede ${sedeBase} no tiene calendario para ${new Date().getFullYear()}. Se continuará sin eventos de sede.`
+              );
+              return of({ diasEspeciales: [] as EventoEspecial[] });
+            }
+
+            return throwError(() => error);
+          })
+        ),
+
+        calendarioTrabajador: (
+          this.trabajadoresService.obtenerEventosCalendarioTrabajador(
+            trabajadorId,
+            new Date().getFullYear()
+          ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>
+        ).pipe(
+          catchError((error: HttpErrorResponse) => {
+            if (error.status === 404) {
+              console.warn(
+                `⚠️ El trabajador no tiene calendario individual para ${new Date().getFullYear()}. Se continuará sin eventos individuales.`
+              );
+              return of({ diasEspeciales: [] as EventoEspecial[] });
+            }
+
+            return throwError(() => error);
+          })
+        )
       }).subscribe({
         next: ({ asistencias, calendarioSede, calendarioTrabajador }) => {
-          // 📅 Procesar asistencias (las dejamos para otras funciones/PDF/Excel)
+          // 📅 Procesar asistencias legacy (se conservan para otras funciones/PDF/Excel)
           this.trabajador.asistencias = (asistencias || []).map((a: any) => ({
             ...a,
             fecha: this.normalizarFecha(a.fecha),
@@ -170,41 +201,53 @@ ngOnInit(): void {
             }))
           }));
 
-          // 📅 Procesar eventos sede
+          // 📅 Procesar eventos de sede
           this.eventosSede = (calendarioSede?.diasEspeciales || []).map((e: EventoEspecial) => ({
             ...e,
             fecha: this.normalizarFecha(e.fecha),
             descripcion: e.descripcion || e.tipo || ''
           }));
 
-          // 📅 Procesar eventos trabajador
+          // 📅 Procesar eventos del trabajador
           this.eventosTrabajador = (calendarioTrabajador?.diasEspeciales || []).map((e: EventoEspecial) => ({
             ...e,
             fecha: this.normalizarFecha(e.fecha),
             descripcion: e.descripcion || e.tipo || ''
           }));
 
-          // ✅ SOLO para el CALENDARIO del detalle:
-          //    traemos asistencias unificadas IGNORANDO sede (mezcladas)
-          const start = DateTime.now().set({ day: 1 }).toJSDate();
-          const end   = DateTime.now().endOf('month').toJSDate();
+          // ✅ SOLO para el calendario visual del detalle:
+          // traemos asistencias unificadas ignorando sede (mezcladas).
+          const start = DateTime.now()
+            .setZone('America/Mexico_City')
+            .startOf('month')
+            .toJSDate();
+
+          const end = DateTime.now()
+            .setZone('America/Mexico_City')
+            .endOf('month')
+            .toJSDate();
 
           this.asistenciaService
             .obtenerDatosUnificadosParaCalendario(trabajadorId, start, end)
             .subscribe({
               next: ({ asistencias: asistUnificadas }) => {
+                console.log('📥 Asistencias unificadas recibidas:', asistUnificadas);
+
                 const asistenciasNorm = (asistUnificadas || []).map((a: any) => ({
                   ...a,
                   fecha: this.normalizarFecha(a.fecha),
                   detalle: (a.detalle || []).map((d: any) => ({
-                    ...d, fechaHora: this.normalizarFechaHora(d.fechaHora)
+                    ...d,
+                    fechaHora: this.normalizarFechaHora(d.fechaHora)
                   }))
                 }));
 
-                // 👇 lo importante para el componente visual
+                console.log('📅 Asistencias normalizadas para calendario:', asistenciasNorm);
+
+                // 👇 Datos que recibe el calendario visual
                 this.asistenciasCalendario = asistenciasNorm;
 
-                // (si quieres seguir generando diasProcesados para PDF/Excel, lo dejas)
+                // Se conserva diasProcesados para PDF/Excel y otras funciones
                 const dias = this.generarDias(start, end);
                 this.diasProcesados = this.procesarDias(
                   dias,
@@ -215,7 +258,7 @@ ngOnInit(): void {
               },
               error: (err) => {
                 console.error('❌ Error cargando calendario unificado:', err);
-                this.asistenciasCalendario = []; // fallback
+                this.asistenciasCalendario = [];
                 this.diasProcesados = [];
               }
             });
@@ -233,7 +276,28 @@ ngOnInit(): void {
     }
   });
 }
+cargarAsistenciasCalendarioPorRango(inicio: Date, fin: Date): void {
+  if (!this.trabajador?._id) return;
 
+  this.asistenciaService
+    .obtenerDatosUnificadosParaCalendario(this.trabajador._id, inicio, fin)
+    .subscribe({
+      next: ({ asistencias: asistUnificadas }) => {
+        this.asistenciasCalendario = (asistUnificadas || []).map((a: any) => ({
+          ...a,
+          fecha: this.normalizarFecha(a.fecha),
+          detalle: (a.detalle || []).map((d: any) => ({
+            ...d,
+            fechaHora: this.normalizarFechaHora(d.fechaHora)
+          }))
+        }));
+      },
+      error: (err) => {
+        console.error('❌ Error cargando asistencias del mes:', err);
+        this.asistenciasCalendario = [];
+      }
+    });
+}
   // 👉 Ordena y normaliza el historial para la tabla (activo arriba, luego por fechaInicio DESC)
 get historialOrdenado(): HistorialSede[] {
   const sedesCat = this.sedes || [];
@@ -284,22 +348,52 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
         this.trabajadorOriginal = JSON.parse(JSON.stringify(trabajador));
         this.buildSedesChips();  // 👈 añade esto
 
+        const sedeBase = Number(trabajador.sedePrincipal ?? trabajador.sede);
+
         forkJoin({
           asistencias: this.trabajadoresService.obtenerAsistencias(id),
-          calendarioSede: this.sedeService.obtenerEventosCalendario(
-            trabajador.sede,
-            new Date().getFullYear()
-          ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>,
-          calendarioTrabajador: this.trabajadoresService.obtenerEventosCalendarioTrabajador(
-            id,
-            new Date().getFullYear()
-          ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>
+
+          calendarioSede: (
+            this.sedeService.obtenerEventosCalendario(
+              sedeBase,
+              new Date().getFullYear()
+            ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>
+          ).pipe(
+            catchError((error: HttpErrorResponse) => {
+              if (error.status === 404) {
+                console.warn(
+                  `⚠️ La sede ${sedeBase} no tiene calendario para ${new Date().getFullYear()}. Se continuará sin eventos de sede.`
+                );
+                return of({ diasEspeciales: [] as EventoEspecial[] });
+              }
+
+              return throwError(() => error);
+            })
+          ),
+
+          calendarioTrabajador: (
+            this.trabajadoresService.obtenerEventosCalendarioTrabajador(
+              id,
+              new Date().getFullYear()
+            ) as unknown as Observable<{ diasEspeciales: EventoEspecial[] }>
+          ).pipe(
+            catchError((error: HttpErrorResponse) => {
+              if (error.status === 404) {
+                console.warn(
+                  `⚠️ El trabajador no tiene calendario individual para ${new Date().getFullYear()}. Se continuará sin eventos individuales.`
+                );
+                return of({ diasEspeciales: [] as EventoEspecial[] });
+              }
+
+              return throwError(() => error);
+            })
+          )
         }).subscribe({
           next: ({ asistencias, calendarioSede, calendarioTrabajador }) => {
-            this.trabajador.asistencias = asistencias.map((a: any) => ({
+            this.trabajador.asistencias = (asistencias || []).map((a: any) => ({
               ...a,
               fecha: this.normalizarFecha(a.fecha),
-              detalle: a.detalle?.map((d: any) => ({
+              detalle: (a.detalle || []).map((d: any) => ({
                 ...d,
                 fechaHora: this.normalizarFechaHora(d.fechaHora)
               }))
@@ -531,7 +625,7 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
 
         try {
           const datos = await lastValueFrom(
-            this.asistenciaService.obtenerDatosUnificados(this.trabajador._id, fechaInicio, fechaFin).pipe(
+            this.asistenciaService.obtenerDatosUnificadosParaCalendario(this.trabajador._id, fechaInicio, fechaFin).pipe(
             map(({ asistencias, eventosTrabajador /* , eventosSede */ }) => {
               const eventosSedeBase = this.eventosSede; // ← el de sede principal ya cargado
               const asistenciasValidas = asistencias.filter(
@@ -593,7 +687,7 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
 
       // ✅ Nueva forma unificada usando solo una llamada al backend
       const datos = await lastValueFrom(
-        this.asistenciaService.obtenerDatosUnificados(this.trabajador._id, fechaInicio, fechaFin).pipe(
+        this.asistenciaService.obtenerDatosUnificadosParaCalendario(this.trabajador._id, fechaInicio, fechaFin).pipe(
           map(({ asistencias, eventosTrabajador /* , eventosSede */ }) => {
             const asistenciasValidas = asistencias.filter(
               (a: Asistencia) => (a?.detalle?.length ?? 0) > 0 || a?.estado !== undefined
@@ -925,21 +1019,284 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
   }
 
   private buscarAsistencia(fecha: string, asistencias: Asistencia[]): Asistencia | null {
-    // Buscar primero coincidencia exacta por a.fecha
-    const exacta = asistencias.find((a: Asistencia) => {
+    // =====================================================
+    // 1. BUSCAR TODOS LOS DOCUMENTOS DEL DÍA
+    // =====================================================
+    const asistenciasDelDia = (asistencias || []).filter((a: Asistencia) => {
       if (!a) return false;
-      return a.fecha && this.normalizarFecha(a.fecha) === fecha;
+
+      const asistenciaAny: any = a;
+
+      // Fecha directa del documento
+      if (a.fecha && this.normalizarFecha(a.fecha) === fecha) {
+        return true;
+      }
+
+      // Formato nuevo: registros[]
+      if (
+        Array.isArray(asistenciaAny.registros) &&
+        asistenciaAny.registros.some(
+          (r: any) =>
+            r?.fechaHora &&
+            this.normalizarFecha(r.fechaHora) === fecha
+        )
+      ) {
+        return true;
+      }
+
+      // Formato nuevo: primerRegistro
+      if (
+        asistenciaAny.primerRegistro?.fechaHora &&
+        this.normalizarFecha(asistenciaAny.primerRegistro.fechaHora) === fecha
+      ) {
+        return true;
+      }
+
+      // Formato nuevo: ultimoRegistro
+      if (
+        asistenciaAny.ultimoRegistro?.fechaHora &&
+        this.normalizarFecha(asistenciaAny.ultimoRegistro.fechaHora) === fecha
+      ) {
+        return true;
+      }
+
+      // Formato anterior: detalle[]
+      if (
+        Array.isArray(a.detalle) &&
+        a.detalle.some(
+          (r: RegistroAsistencia) =>
+            r?.fechaHora &&
+            this.normalizarFecha(r.fechaHora) === fecha
+        )
+      ) {
+        return true;
+      }
+
+      return false;
     });
 
-    if (exacta) return exacta;
+    if (asistenciasDelDia.length === 0) {
+      return null;
+    }
 
-    // Si no hay coincidencia por fecha directa, buscar en el detalle
-    return asistencias.find((a: Asistencia) => {
-      if (!a?.detalle?.length) return false;
-      return a.detalle.some((reg: RegistroAsistencia) =>
-        reg.fechaHora && this.normalizarFecha(reg.fechaHora) === fecha
-      );
-    }) || null;
+    // =====================================================
+    // 2. REUNIR TODAS LAS MARCAS DEL DÍA
+    // =====================================================
+    const marcas: any[] = [];
+    const claves = new Set<string>();
+    let existeFormatoNuevo = false;
+
+    const millisMarca = (fechaHora: any): number => {
+      if (!fechaHora) return 0;
+
+      try {
+        let dt: DateTime;
+
+        if (typeof fechaHora === 'string') {
+          dt = DateTime.fromISO(fechaHora, {
+            zone: 'America/Mexico_City'
+          });
+        } else {
+          dt = DateTime.fromJSDate(new Date(fechaHora)).setZone(
+            'America/Mexico_City'
+          );
+        }
+
+        return dt.isValid ? dt.toMillis() : 0;
+      } catch {
+        return 0;
+      }
+    };
+
+    const agregarMarca = (registro: any, sedeFallback: any = null) => {
+      if (!registro?.fechaHora) return;
+
+      if (this.normalizarFecha(registro.fechaHora) !== fecha) {
+        return;
+      }
+
+      const sede = registro.sede ?? sedeFallback ?? null;
+      const millis = millisMarca(registro.fechaHora);
+
+      if (!millis) return;
+
+      const clave = `${millis}|${sede ?? ''}`;
+
+      if (claves.has(clave)) {
+        return;
+      }
+
+      claves.add(clave);
+
+      marcas.push({
+        ...registro,
+        sede
+      });
+    };
+
+    // =====================================================
+    // 3. RECORRER LOS DOCUMENTOS DEL DÍA
+    // =====================================================
+    for (const asistencia of asistenciasDelDia) {
+      const a: any = asistencia;
+      const sedeDocumento = a.sede ?? null;
+
+      // ===================================================
+      // FORMATO NUEVO PRINCIPAL: registros[]
+      // ===================================================
+      if (Array.isArray(a.registros) && a.registros.length > 0) {
+        const registrosDia = a.registros.filter(
+          (r: any) =>
+            r?.fechaHora &&
+            this.normalizarFecha(r.fechaHora) === fecha
+        );
+
+        if (registrosDia.length > 0) {
+          existeFormatoNuevo = true;
+
+          for (const registro of registrosDia) {
+            agregarMarca(registro, sedeDocumento);
+          }
+
+          /*
+           * No procesamos también primerRegistro / ultimoRegistro,
+           * porque serían las mismas marcas.
+           */
+          continue;
+        }
+      }
+
+      // ===================================================
+      // FORMATO NUEVO RESUMIDO
+      // ===================================================
+      if (
+        a.primerRegistro?.fechaHora &&
+        this.normalizarFecha(a.primerRegistro.fechaHora) === fecha
+      ) {
+        existeFormatoNuevo = true;
+
+        agregarMarca(a.primerRegistro, sedeDocumento);
+
+        if (
+          Number(a.totalRegistros || 0) > 1 &&
+          a.ultimoRegistro?.fechaHora
+        ) {
+          agregarMarca(a.ultimoRegistro, sedeDocumento);
+        }
+
+        continue;
+      }
+
+      // ===================================================
+      // FORMATO ANTERIOR
+      // ===================================================
+      if (Array.isArray(a.detalle)) {
+        for (const detalle of a.detalle) {
+          if (
+            detalle?.fechaHora &&
+            this.normalizarFecha(detalle.fechaHora) === fecha
+          ) {
+            agregarMarca(detalle, sedeDocumento);
+          }
+        }
+      }
+    }
+
+    // =====================================================
+    // 4. ORDENAR GLOBALMENTE
+    // =====================================================
+    marcas.sort(
+      (a, b) =>
+        millisMarca(a.fechaHora) -
+        millisMarca(b.fechaHora)
+    );
+
+    // =====================================================
+    // 5. CREAR detalle[] COMPATIBLE
+    // =====================================================
+    const detalleGlobal: RegistroAsistencia[] = [];
+
+    if (existeFormatoNuevo) {
+      // Primera marca global = Entrada
+      if (marcas.length >= 1) {
+        detalleGlobal.push({
+          tipo: 'Entrada',
+          fechaHora: marcas[0].fechaHora,
+          sincronizado: !!marcas[0].sincronizado
+        });
+      }
+
+      // Última marca global = Salida
+      if (marcas.length >= 2) {
+        const ultima = marcas[marcas.length - 1];
+
+        detalleGlobal.push({
+          tipo: 'Salida',
+          fechaHora: ultima.fechaHora,
+          sincronizado: !!ultima.sincronizado
+        });
+      }
+    } else {
+      /*
+       * Para los registros antiguos conservamos Entrada / Salida
+       * tal como estaban registrados.
+       */
+      const entradas = marcas
+        .filter(
+          (m: any) =>
+            m.tipo === 'Entrada' ||
+            m.tipo === 'Asistencia' ||
+            m.tipo === 'Entrada Manual'
+        )
+        .sort(
+          (a, b) =>
+            millisMarca(a.fechaHora) -
+            millisMarca(b.fechaHora)
+        );
+
+      const salidas = marcas
+        .filter(
+          (m: any) =>
+            m.tipo === 'Salida' ||
+            String(m.tipo || '').startsWith('Salida')
+        )
+        .sort(
+          (a, b) =>
+            millisMarca(a.fechaHora) -
+            millisMarca(b.fechaHora)
+        );
+
+      if (entradas.length > 0) {
+        detalleGlobal.push({
+          tipo: 'Entrada',
+          fechaHora: entradas[0].fechaHora,
+          sincronizado: !!entradas[0].sincronizado,
+          salida_automatica: !!entradas[0].salida_automatica
+        });
+      }
+
+      if (salidas.length > 0) {
+        const ultimaSalida = salidas[salidas.length - 1];
+
+        detalleGlobal.push({
+          tipo: 'Salida',
+          fechaHora: ultimaSalida.fechaHora,
+          sincronizado: !!ultimaSalida.sincronizado,
+          salida_automatica: !!ultimaSalida.salida_automatica
+        });
+      }
+    }
+
+    // =====================================================
+    // 6. DEVOLVER UNA SOLA ASISTENCIA LÓGICA DEL DÍA
+    // =====================================================
+    const primeraAsistencia = asistenciasDelDia[0];
+
+    return {
+      ...primeraAsistencia,
+      fecha,
+      detalle: detalleGlobal
+    };
   }
 
   private procesarAsistencia(dia: any, asistencia: Asistencia, eventoSede?: EventoEspecial): DiaProcesado {
@@ -1211,74 +1568,242 @@ exportarExcelConEstilo(nombreArchivo: string = 'Reporte_Asistencias.xlsx'): void
   });
 }
 
-  desactivarTrabajador() {
+desactivarTrabajador() {
+  Swal.fire({
+    title: '¿Estás seguro de desactivar al trabajador?',
+    html: `
+      <p style="font-weight: bold; color: #a30202;">⚠️ Esta acción tiene consecuencias importantes:</p>
+      <ul style="text-align: left; font-size: 0.95rem;">
+        <li>🧼 Se eliminará el registro de la huella en el checador.</li>
+        <li>📆 No se podrán visualizar los calendarios del trabajador.</li>
+        <li>📤 Será desvinculado de su sede actual.</li>
+      </ul>
+      <p style="margin-top: 12px;">¿Deseas continuar?</p>
+    `,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, desactivar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    width: 550
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
     Swal.fire({
-      title: '¿Estás seguro de desactivar al trabajador?',
-      html: `
-        <p style="font-weight: bold; color: #a30202;">⚠️ Esta acción tiene consecuencias importantes:</p>
-        <ul style="text-align: left; font-size: 0.95rem;">
-          <li>🧼 Se eliminará el registro de la huella en el checador.</li>
-          <li>📆 No se podran visualizar los calendarios del trabajador.</li>
-          <li>📤 Será desvinculado de su sede actual.</li>
-        </ul>
-        <p style="margin-top: 12px;">¿Deseas continuar?</p>
-      `,
-      icon: 'warning',
+      title: '🔒 Ingresa tu contraseña',
+      input: 'password',
+      inputPlaceholder: 'Contraseña',
+      inputAttributes: {
+        autocapitalize: 'off',
+        autocorrect: 'off'
+      },
       showCancelButton: true,
-      confirmButtonText: 'Sí, desactivar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      width: 550
-    }).then(result => {
-      if (result.isConfirmed) {
-        // Paso 2: Solicitar contraseña
-        Swal.fire({
-          title: '🔒 Ingresa tu contraseña',
-          input: 'password',
-          inputPlaceholder: 'Contraseña',
-          inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
-          showCancelButton: true,
-          confirmButtonText: 'Confirmar'
-        }).then(confirm => {
-          if (confirm.isConfirmed && confirm.value) {
-            const contraseña = confirm.value;
+      confirmButtonText: 'Confirmar'
+    }).then(confirm => {
+      if (!confirm.isConfirmed || !confirm.value) return;
 
-            this.trabajadoresService.verificarContraseña(contraseña).subscribe(valido => {
-              if (valido) {
-                const historial = this.trabajador.historialSedes || [];
-                const ahora = new Date();
+      const contraseña = confirm.value;
 
-                // 🧠 Cerrar historial abierto (si existe)
-                const ultimoRegistro = historial.find((h: HistorialSede) => !h.fechaFin);
-                if (ultimoRegistro) {
-                  ultimoRegistro.fechaFin = ahora;
-                }
+      this.trabajadoresService.verificarContraseña(contraseña).subscribe({
+        next: (valido) => {
+          if (!valido) {
+            Swal.fire('⚠️ Contraseña incorrecta', '', 'warning');
+            return;
+          }
 
-                const dataActualizada: Partial<TrabajadorUI> & { historialSedes: HistorialSede[] } = {
-                  estado: 'inactivo',
-                  sede: null,
-                  sincronizado: false,
-                  historialSedes: historial
-                };
+          const dataActualizada: Partial<TrabajadorUI> = {
+            estado: 'inactivo',
+            sincronizado: false
+          };
 
-                this.trabajadoresService.actualizarTrabajador(this.trabajador._id!, dataActualizada).subscribe(() => {
-                  Swal.fire('✅ Trabajador desactivado correctamente');
-                  this.cargarTrabajadorPorId(this.trabajador._id!);
-                }, err => {
-                  console.error(err);
-                  Swal.fire('❌ Error al desactivar');
+          this.trabajadoresService
+            .actualizarTrabajador(this.trabajador._id!, dataActualizada)
+            .subscribe({
+              next: () => {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Trabajador desactivado correctamente',
+                  confirmButtonText: 'OK'
+                }).then(() => {
+                  this.router.navigate(['/trabajadores']);
                 });
-
-              } else {
-                Swal.fire('⚠️ Contraseña incorrecta');
+              },
+              error: (err) => {
+                console.error('❌ Error al desactivar trabajador:', err);
+                Swal.fire('❌ Error al desactivar', '', 'error');
               }
             });
+        },
+        error: (err) => {
+          console.error('❌ Error al verificar contraseña:', err);
+          Swal.fire('❌ Error al verificar contraseña', '', 'error');
+        }
+      });
+    });
+  });
+}
+reactivarTrabajador() {
+  const sedes = this.sedes || [];
+
+  if (!sedes.length) {
+    Swal.fire('⚠️ No hay sedes disponibles', 'No se puede reactivar sin asignar una sede.', 'warning');
+    return;
+  }
+
+  const optionsHtml = sedes
+    .map((s: any) => `<option value="${s.id}">${s.nombre}</option>`)
+    .join('');
+
+  const checksHtml = sedes
+    .map((s: any) => `
+      <label class="sw-item" style="display:flex;align-items:center;gap:6px;margin:4px 0;">
+        <input type="checkbox" value="${s.id}" />
+        <span>${s.nombre}</span>
+      </label>
+    `)
+    .join('');
+
+  Swal.fire({
+    title: 'Reactivar trabajador',
+    html: `
+      <div style="text-align:left">
+        <p style="margin-bottom:12px;">
+          Para reactivar al trabajador debes asignarle nuevamente una sede principal.
+        </p>
+
+        <label style="font-weight:600;display:block;margin-bottom:6px;">
+          Sede principal
+        </label>
+
+        <select id="sw-sede-principal" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0 0 12px 0;">
+          <option value="">Selecciona una sede</option>
+          ${optionsHtml}
+        </select>
+
+        <label style="font-weight:600;display:block;margin:6px 0;">
+          Sedes foráneas opcionales
+        </label>
+
+        <div id="sw-foraneas" style="max-height:220px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:8px;">
+          ${checksHtml}
+        </div>
+
+        <small style="display:block;margin-top:8px;color:#666;">
+          La sede principal no puede estar marcada como foránea.
+        </small>
+      </div>
+    `,
+    icon: 'question',
+    width: 600,
+    showCancelButton: true,
+    confirmButtonText: 'Continuar',
+    cancelButtonText: 'Cancelar',
+    focusConfirm: false,
+    didOpen: () => {
+      const principalSel = document.getElementById('sw-sede-principal') as HTMLSelectElement;
+      const forasDiv = document.getElementById('sw-foraneas') as HTMLDivElement;
+
+      const updateDisabled = () => {
+        const principal = Number(principalSel.value);
+
+        forasDiv.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach(chk => {
+          chk.disabled = Number(chk.value) === principal;
+
+          if (chk.disabled) {
+            chk.checked = false;
           }
         });
+      };
+
+      principalSel.addEventListener('change', updateDisabled);
+      updateDisabled();
+    },
+    preConfirm: () => {
+      const principalSel = document.getElementById('sw-sede-principal') as HTMLSelectElement;
+      const forasDiv = document.getElementById('sw-foraneas') as HTMLDivElement;
+
+      const principal = Number(principalSel.value);
+
+      if (!principal || Number.isNaN(principal)) {
+        Swal.showValidationMessage('Selecciona una sede principal válida');
+        return;
       }
+
+      const foraneas = Array.from(
+        forasDiv.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked')
+      )
+        .map(chk => Number(chk.value))
+        .filter(v => v !== principal);
+
+      return { principal, foraneas };
+    }
+  }).then(result => {
+    if (!result.isConfirmed || !result.value) return;
+
+    const { principal, foraneas } = result.value as {
+      principal: number;
+      foraneas: number[];
+    };
+
+    Swal.fire({
+      title: '🔒 Ingresa tu contraseña',
+      input: 'password',
+      inputPlaceholder: 'Contraseña',
+      inputAttributes: {
+        autocapitalize: 'off',
+        autocorrect: 'off'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar',
+      cancelButtonText: 'Cancelar'
+    }).then(confirm => {
+      if (!confirm.isConfirmed || !confirm.value) return;
+
+      const contraseña = confirm.value;
+
+      this.trabajadoresService.verificarContraseña(contraseña).subscribe({
+        next: (valido) => {
+          if (!valido) {
+            Swal.fire('❌ Contraseña incorrecta', '', 'error');
+            return;
+          }
+
+          const body: any = {
+            estado: 'activo',
+            sede: principal,
+            sedePrincipal: principal,
+            sedesForaneas: foraneas,
+            sincronizado: false
+          };
+
+          this.trabajadoresService
+            .actualizarTrabajador(this.trabajador._id!, body)
+            .subscribe({
+              next: () => {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Trabajador reactivado correctamente',
+                  text: 'El trabajador quedó activo y pendiente de sincronización.',
+                  confirmButtonText: 'OK'
+                }).then(() => {
+                  this.cargarTrabajadorPorId(this.trabajador._id!);
+                });
+              },
+              error: (err) => {
+                console.error('❌ Error al reactivar trabajador:', err);
+                Swal.fire('❌ Error', 'No se pudo reactivar el trabajador.', 'error');
+              }
+            });
+        },
+        error: (err) => {
+          console.error('❌ Error al verificar contraseña:', err);
+          Swal.fire('❌ Error', 'No se pudo verificar la contraseña.', 'error');
+        }
+      });
     });
-  }
+  });
+}
 
 cambiarSede() {
   const sedes = this.sedes || [];
@@ -1526,6 +2051,9 @@ private enviarCambiosSedes(id: string, body: any) {
     }
   });
 }
+toggleSidebar(): void {
+  this.sidebarAbierto = !this.sidebarAbierto;
+}
 
 private buildSedesChips(): void {
   if (!this.trabajador) { this.sedesChips = []; return; }
@@ -1554,5 +2082,6 @@ private buildSedesChips(): void {
 
   this.sedesChips = chips;
 }
+
 
 }

@@ -228,7 +228,7 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
     }
   }
 
-  guardarEvento(): void {
+ /* guardarEvento(): void {
     const isMJ = this.nuevoEvento.tipo === 'media jornada';
     let ini = '', fin = '';
 
@@ -264,8 +264,71 @@ export class CalendarioSedeComponent implements OnInit, OnChanges {
 
     this.cerrarModal();
     this.generarDiasMes();
+  }*/
+  guardarEvento(): void {
+  const tipoNormalizado = String(this.nuevoEvento.tipo || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  const isMJ = tipoNormalizado === 'media jornada';
+
+  let ini = '';
+  let fin = '';
+
+  if (isMJ) {
+    ini = this.to24h(this.nuevoEvento.horaInicio);
+    fin = this.to24h(this.nuevoEvento.horaFin);
+
+    if (!ini || !fin) {
+      Swal.fire('Falta horario', 'Indica inicio y fin', 'warning');
+      return;
+    }
+
+    if (this.minutes(fin) <= this.minutes(ini)) {
+      Swal.fire('Horario inválido', 'La hora de fin debe ser mayor que la hora de inicio', 'warning');
+      return;
+    }
   }
 
+  const eventoBase: any = {
+    fecha: this.ymdSeleccionado,
+    tipo: this.nuevoEvento.tipo,
+    descripcion: this.nuevoEvento.descripcion || ''
+  };
+
+  // ✅ Media jornada: aquí agregamos las horas explícitamente
+  if (isMJ) {
+    eventoBase.horaInicio = ini;
+    eventoBase.horaFin = fin;
+  }
+
+  console.log('📤 Evento emitido desde calendario-sede:', eventoBase);
+
+  // aplicar a sedes extra
+  if (this.aplicarAMasSedes && this.todasLasSedes) {
+    const sedesSeleccionadas = this.todasLasSedes.filter(s => s.seleccionada);
+
+    sedesSeleccionadas.forEach(sedeExtra => {
+      this.eventoGuardado.emit({
+        ...eventoBase,
+        sede: sedeExtra.id,
+        editar: false
+      });
+    });
+  }
+
+  // emitir para la sede actual
+  this.eventoGuardado.emit({
+    ...eventoBase,
+    sede: this.sede,
+    editar: this.modoEdicion
+  });
+
+  this.cerrarModal();
+  this.generarDiasMes();
+}
   eliminarEvento(): void {
     Swal.fire({
       title: '¿Eliminar configuración de este día?',

@@ -138,6 +138,7 @@
         <table>
           <thead>
             <tr>
+              <th>ID Checador</th>
               <th>Nombre</th>
               <th>Sede</th>
               <th>Estado</th>
@@ -147,6 +148,9 @@
           </thead>
           <tbody>
             <tr *ngFor="let trabajador of trabajadoresFiltrados">
+              <!-- 🆕 ID DEL CHECADOR -->
+              <td>{{ trabajador.id_checador || '—' }}</td> 
+
               <td>{{ trabajador.nombre }}</td>
               <td>{{ obtenerNombreSede(trabajador.sede) }}</td>
               <td>
@@ -180,7 +184,7 @@
               </td>
             </tr>
             <tr *ngIf="trabajadoresFiltrados.length === 0">
-              <td colspan="5">😢 No se encontraron trabajadores con esos criterios.</td>
+              <td colspan="6">😢 No se encontraron trabajadores con esos criterios.</td>
             </tr>
           </tbody>
         </table>

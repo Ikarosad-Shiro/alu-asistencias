@@ -13,6 +13,7 @@ export interface HistorialSedeUI {
 
 export interface TrabajadorUI {
   _id?: string;
+  id_checador?: number | string | null;
   nombre: string;
   sede: number | null;
   sincronizado: boolean;
@@ -34,6 +35,7 @@ export interface TrabajadorUI {
 /** ===== Posibles formas que devuelve/espera el backend (legacy / nuevo) ===== */
 interface TrabajadorApi {
   _id?: string;
+    id_checador?: number | string | null; // ✅ AGREGAR
   nombre: string;
   // legacy:
   sede?: number | null;
@@ -77,6 +79,7 @@ export class TrabajadoresService {
 
     return {
       _id: t._id,
+       id_checador: t.id_checador ?? null,
       nombre: t.nombre,
       // la UI sigue usando `sede` como “principal”
       sede: sedePrincipal,

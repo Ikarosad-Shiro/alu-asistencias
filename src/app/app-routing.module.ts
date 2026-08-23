@@ -12,6 +12,7 @@ import { TrabajadoresComponent } from './pages/trabajadores/trabajadores.compone
 import { DetalleTrabajadorComponent } from './pages/detalle-trabajador/detalle-trabajador.component';
 import { CalendarioLaboralComponent } from './pages/calendario-laboral/calendario-laboral.component';
 import { AuthGuard } from './guards/auth.guard';
+import { AcercaDeComponent } from './pages/acerca-de/acerca-de.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' }, // 🔥 Redirige a login
@@ -26,6 +27,13 @@ const routes: Routes = [
   { path: 'calendario-laboral', component: CalendarioLaboralComponent, canActivate: [AuthGuard] },
   { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent},
+
+    // ✅ Nueva ruta Acerca de
+  { path: 'acerca-de', component: AcercaDeComponent, canActivate: [AuthGuard] },
+
+  { path: 'reset-password', component: ResetPasswordComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+
   { path: '**', redirectTo: 'login' } // 🔥 Cualquier ruta desconocida también va al login
 ];
 

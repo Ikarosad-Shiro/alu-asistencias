@@ -41,31 +41,73 @@ export class CalendarioService {
     return this.http.get<any[]>(`${this.baseUrl}/todos`);
   }
 
-  // ➕ Agregar un día especial
-  agregarDia(data: {
-    año: number; sede: number; fecha: Date | string; tipo: string; descripcion: string;
-  }) {
-    const payload = {
-      año: data.año,
-      sede: data.sede,
-      tipo: data.tipo,
-      descripcion: data.descripcion || '',
-      fecha: this.toYmd(data.fecha) // <- YYYY-MM-DD
-    };
-    return this.http.post<any>(`${this.baseUrl}/agregar-dia`, payload);
+// ➕ Agregar un día especial
+agregarDia(data: {
+  año: number;
+  sede: number;
+  fecha: Date | string;
+  tipo: string;
+  descripcion: string;
+  horaInicio?: string;
+  horaFin?: string;
+}) {
+  const payload: any = {
+    año: data.año,
+    sede: data.sede,
+    tipo: data.tipo,
+    descripcion: data.descripcion || '',
+    fecha: this.toYmd(data.fecha)
+  };
+
+  const tipoNormalizado = String(data.tipo || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  if (tipoNormalizado === 'media jornada') {
+    payload.horaInicio = data.horaInicio;
+    payload.horaFin = data.horaFin;
   }
 
-  // ✏️ Editar
-  editarDia(data: { año: number; sede: number; fecha: Date | string; tipo: string; descripcion: string; }) {
-    const payload = {
-      año: data.año,
-      sede: data.sede,
-      tipo: data.tipo,
-      descripcion: data.descripcion || '',
-      fecha: this.toYmd(data.fecha) // <- YYYY-MM-DD
-    };
-    return this.http.put<any>(`${this.baseUrl}/editar-dia`, payload);
+  console.log('📤 Payload final agregarDia:', payload);
+
+  return this.http.post<any>(`${this.baseUrl}/agregar-dia`, payload);
+}
+
+// ✏️ Editar
+editarDia(data: {
+  año: number;
+  sede: number;
+  fecha: Date | string;
+  tipo: string;
+  descripcion: string;
+  horaInicio?: string;
+  horaFin?: string;
+}) {
+  const payload: any = {
+    año: data.año,
+    sede: data.sede,
+    tipo: data.tipo,
+    descripcion: data.descripcion || '',
+    fecha: this.toYmd(data.fecha)
+  };
+
+  const tipoNormalizado = String(data.tipo || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  if (tipoNormalizado === 'media jornada') {
+    payload.horaInicio = data.horaInicio;
+    payload.horaFin = data.horaFin;
   }
+
+  console.log('📤 Payload final editarDia:', payload);
+
+  return this.http.put<any>(`${this.baseUrl}/editar-dia`, payload);
+}
 
 // ❌ Eliminar
 eliminarDia(data: { año: number; sede: number; fecha: Date | string; contraseña?: string; }) {
@@ -79,18 +121,20 @@ eliminarDia(data: { año: number; sede: number; fecha: Date | string; contraseñ
 }
 
   // 🆕 Alias para compatibilidad con detalle-sede
-  guardarDiaEspecial(data: {
-    año: number;
-    sede: number;
-    fecha: Date | string;
-    tipo: string;
-    descripcion: string;
-    editar?: boolean;
-  }) {
-    return data.editar
-      ? this.editarDia(data)
-      : this.agregarDia(data);
-  }
+guardarDiaEspecial(data: {
+  año: number;
+  sede: number;
+  fecha: Date | string;
+  tipo: string;
+  descripcion: string;
+  horaInicio?: string;
+  horaFin?: string;
+  editar?: boolean;
+}) {
+  return data.editar
+    ? this.editarDia(data)
+    : this.agregarDia(data);
+}
 
   eliminarDiaEspecial(data: {
     año: number;

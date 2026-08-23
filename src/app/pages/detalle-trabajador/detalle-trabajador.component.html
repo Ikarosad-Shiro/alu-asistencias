@@ -1,15 +1,52 @@
 <div class="detalle-trabajador-container">
 
   <!-- Sidebar -->
-  <div class="sidebar">
+<div class="detalle-trabajador-container">
+
+  <!-- 📱 Botón menú para tablet/celular -->
+  <button
+    class="menu-toggle"
+    type="button"
+    (click)="toggleSidebar()">
+    ☰
+  </button>
+
+  <!-- 📱 Fondo oscuro cuando el menú está abierto -->
+  <div
+    class="sidebar-overlay"
+    [class.active]="sidebarAbierto"
+    (click)="toggleSidebar()">
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" [class.active]="sidebarAbierto">
+
     <h3>Panel de Trabajadores</h3>
+
     <ul class="nav flex-column">
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/dashboard">🏠 Dashboard</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/sedes">📍 Sedes</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/trabajadores">👷 Trabajadores</button></li>
-      <li class="nav-item"><button class="btn-sidebar" routerLink="/perfil">👤 Perfil</button></li>
+      <li class="nav-item">
+        <button class="btn-sidebar" routerLink="/dashboard">
+          🏠 Dashboard
+        </button>
+      </li>
+
+      <li class="nav-item">
+        <button class="btn-sidebar" routerLink="/sedes">
+          📍 Sedes
+        </button>
+      </li>
+
+      <li class="nav-item">
+        <button class="btn-sidebar" routerLink="/trabajadores">
+          👷 Trabajadores
+        </button>
+      </li>
     </ul>
-    <button class="btn-logout" (click)="cerrarSesion()">❌ Cerrar Sesión</button>
+
+    <button class="btn-logout" (click)="cerrarSesion()">
+      ❌ Cerrar Sesión
+    </button>
+
   </div>
 
   <!-- Contenido Principal -->
@@ -134,10 +171,17 @@
       <div class="calendario-container">
         <h3>📅 Calendario del Trabajador</h3>
           <app-calendario-unificado
+           [asistencias]="asistenciasCalendario?.length ? asistenciasCalendario : trabajador.asistencias"
+           [eventosSede]="eventosSede"
+           [eventosTrabajador]="eventosTrabajador"
+           (mesCambiado)="cargarAsistenciasCalendarioPorRango($event.inicio, $event.fin)">
+</app-calendario-unificado>
+
+         <!--<app-calendario-unificado
             [asistencias]="asistenciasCalendario?.length ? asistenciasCalendario : trabajador.asistencias"
             [eventosSede]="eventosSede"
             [eventosTrabajador]="eventosTrabajador">
-          </app-calendario-unificado>
+          </app-calendario-unificado>-->
       </div>
 
       <mat-card class="card-info mt-4">
@@ -179,12 +223,38 @@
       </mat-card>
 
       <!-- 📌 Opciones administrativas (al fondo) -->
-      <div *ngIf="rolUsuario === 'Administrador' || rolUsuario === 'Dios'" class="acciones-admin-final">
-        <h4>⚙️ Acciones administrativas</h4>
-        <p>Puedes cambiar la sede principal y administrar sedes foráneas o desactivar al trabajador.</p>
-        <button class="btn btn-warning" (click)="cambiarSede()">🔄 Cambiar Sede (principal/foráneas)</button>
-        <button class="btn btn-danger" (click)="desactivarTrabajador()">❌ Desactivar Trabajador</button>
-      </div>
+     <!-- 📌 Opciones administrativas (al fondo) -->
+<div *ngIf="rolUsuario === 'Administrador' || rolUsuario === 'Dios'" class="acciones-admin-final">
+
+  <h4>⚙️ Acciones administrativas</h4>
+
+  <!-- Si el trabajador está activo -->
+  <ng-container *ngIf="trabajador?.estado !== 'inactivo'; else trabajadorInactivo">
+    <p>
+      Puedes cambiar la sede principal, administrar sedes foráneas o desactivar al trabajador.
+    </p>
+
+    <button class="btn btn-warning" (click)="cambiarSede()">
+      🔄 Cambiar Sede (principal/foráneas)
+    </button>
+
+    <button class="btn btn-danger" (click)="desactivarTrabajador()">
+      ❌ Desactivar Trabajador
+    </button>
+  </ng-container>
+
+  <!-- Si el trabajador está inactivo -->
+  <ng-template #trabajadorInactivo>
+    <p>
+      Este trabajador está inactivo. Puedes reactivarlo asignándole nuevamente una sede principal.
+    </p>
+
+    <button class="btn btn-success btn-reactivar-trabajador" (click)="reactivarTrabajador()">
+      🔄 Reactivar Trabajador
+    </button>
+  </ng-template>
+
+</div>
     </div>
   </div>
 </div>

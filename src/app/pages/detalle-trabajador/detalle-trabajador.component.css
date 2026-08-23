@@ -1,12 +1,12 @@
 /* 📌 Contenedor principal */
 .detalle-trabajador-container {
   display: flex;
+  width: 100%;
   height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: url('../../../assets/dashboard.webp') no-repeat center center fixed;
   background-size: cover;
-  overflow-x: hidden;
-  backdrop-filter: blur(4px); /* Efecto glass suave */
+  overflow: hidden;
 }
 
 /* 📌 Sidebar (Menú lateral) */
@@ -15,6 +15,7 @@
   color: white;
   padding: 15px;
   width: 250px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -22,8 +23,11 @@
   position: fixed;
   left: 0;
   top: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
-  transition: left 0.3s;
+  transition: transform 0.3s ease;
   z-index: 1000;
 }
 
@@ -101,21 +105,29 @@
 
 /* 📌 Contenido principal */
 .main-content {
-  flex-grow: 1;
   margin-left: 250px;
+  width: calc(100% - 250px);
+  height: 100vh;
+  min-width: 0;
+
   padding: 30px;
+  box-sizing: border-box;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  width: calc(100% - 250px);
+
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* 📌 Contenedor del contenido */
 .content-container {
-  width: 90%;
+  width: 100%;
   max-width: 900px;
+  min-width: 0;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0);
   padding: 25px;
   border-radius: 20px;
@@ -253,6 +265,7 @@ mat-card-title {
 .info-campos input,
 .info-campos select {
   width: 100%;
+  box-sizing: border-box;
   padding: 6px 10px;
   margin-top: 5px;
   border: 1px solid #ccc;
@@ -272,6 +285,7 @@ mat-card-title {
 .botones {
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-top: 2rem;
 }
@@ -320,11 +334,16 @@ mat-card-title {
 
 /* 📌 Calendario de asistencias */
 .calendario-container {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin-top: 25px;
   background: rgba(255, 255, 255, 0.247);
   padding: 20px;
   border-radius: 20px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  overflow-x: hidden;
 }
 
 .calendario-container h3 {
@@ -426,44 +445,300 @@ mat-expansion-panel-header.mat-expanded {
   background-color: rgba(106, 18, 117, 0.1);
 }
 
+
+/* =====================================================
+   📱 Controles del sidebar responsive
+   ===================================================== */
+.menu-toggle {
+  display: none;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
 /* 📌 Responsive */
-@media (max-width: 768px) {
+
+
+/* =====================================================
+   💻 Pantalla dividida / laptop pequeña / tablet horizontal
+   ===================================================== */
+@media (max-width: 1100px) {
+
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: fixed;
+    top: 15px;
+    left: 15px;
+
+    width: 45px;
+    height: 45px;
+
+    border: none;
+    border-radius: 10px;
+
+    background-color: #6a1275;
+    color: white;
+
+    font-size: 1.5rem;
+    cursor: pointer;
+
+    z-index: 1200;
+
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  }
+
   .sidebar {
-    width: 200px;
-    left: -200px;
+    width: 250px;
+    left: 0;
+    padding: 15px;
+
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+
+    z-index: 1100;
   }
 
   .sidebar.active {
-    left: 0;
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+
+    z-index: 1050;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .main-content {
     margin-left: 0;
     width: 100%;
-    padding: 20px;
+    max-width: 100%;
+    height: 100vh;
+
+    padding: 75px 15px 20px;
+
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .content-container {
-    width: 95%;
+    width: 100%;
+    max-width: 900px;
+    min-width: 0;
+    padding: 15px;
+    box-sizing: border-box;
+  }
+
+  .fila-extremos {
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 0;
+  }
+
+  .botones-descarga {
+    flex-wrap: wrap;
+  }
+
+  .calendario-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 12px;
+  }
+
+  app-calendario-unificado {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 }
 
-@media (max-width: 480px) {
+/* =====================================================
+   📱 Tablet / celular
+   ===================================================== */
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    width: 46px;
+    height: 46px;
+    border: none;
+    border-radius: 10px;
+    background: #6a1275;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 1100;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  }
+
   .sidebar {
-    width: 180px;
-    left: -180px;
+    width: min(78vw, 260px);
+    left: 0;
+    transform: translateX(-100%);
+    padding: 15px;
+    z-index: 1050;
   }
 
   .sidebar.active {
-    left: 0;
+    transform: translateX(0);
   }
 
-  .btn-sidebar {
-    font-size: 0.9rem;
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 1040;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .main-content {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+    padding: 75px 12px 20px;
+    overflow-x: hidden;
+  }
+
+  .content-container {
+    width: 100%;
+    max-width: 100%;
     padding: 10px;
+  }
+
+  .botones-descarga {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn-descarga {
+    flex: 1 1 140px;
+  }
+
+  .fila-extremos {
+    width: 100%;
+    padding: 0;
+  }
+
+  .calendario-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 8px;
+  }
+
+  mat-accordion,
+  mat-expansion-panel,
+  mat-card {
+    max-width: 100%;
+  }
+
+  .acciones-admin-final .btn {
+    min-width: 0;
+  }
+}
+
+/* =====================================================
+   📱 Celular pequeño
+   ===================================================== */
+@media (max-width: 480px) {
+  .menu-toggle {
+    width: 42px;
+    height: 42px;
+    top: 10px;
+    left: 10px;
+    font-size: 1.3rem;
+  }
+
+  .main-content {
+    padding: 65px 6px 15px;
+  }
+
+  .content-container {
+    padding: 5px;
+  }
+
+  .fila-extremos {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fila-extremos .btn-morado {
+    width: 100%;
+  }
+
+  .btn-descarga {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .calendario-container {
+    padding: 5px;
+    border-radius: 12px;
+  }
+
+  .titulo-nombre {
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 1.25rem;
+    word-break: break-word;
+  }
+
+  .sedes-line {
+    gap: 5px;
+  }
+
+  .chip {
+    font-size: 0.75rem;
+  }
+
+  .botones {
+    flex-direction: column;
+  }
+
+  .editar,
+  .actualizar,
+  .cancelar {
+    width: 100%;
+  }
+
+  .acciones-admin-final button,
+  .acciones-admin-final .btn {
+    width: 100%;
+    min-width: 0;
+    margin: 6px 0;
   }
 }
 
@@ -499,4 +774,36 @@ mat-expansion-panel-header.mat-expanded {
 
 .chip-ico { line-height: 1; }
 .chip-text { white-space: nowrap; }
+/* ✅ Botón Reactivar Trabajador */
+.btn-reactivar-trabajador {
+  background: linear-gradient(135deg, #198754, #20c997) !important;
+  color: white !important;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(25, 135, 84, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
+.btn-reactivar-trabajador:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 20px rgba(25, 135, 84, 0.35);
+  background: linear-gradient(135deg, #157347, #1aa179) !important;
+}
+
+/* ✅ Ajuste visual para botones administrativos */
+.acciones-admin-final .btn {
+  min-width: 260px;
+}
+
+/* ✅ Mensaje cuando el trabajador está inactivo */
+.acciones-admin-final p {
+  max-width: 620px;
+  margin: 0 auto 15px auto;
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.5;
+}

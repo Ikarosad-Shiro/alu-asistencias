@@ -191,6 +191,7 @@ export class TrabajadoresComponent implements OnInit {
 
   resetFormAdd() {
     this.formAdd = {
+      
       nombre: '',
       sedePrincipal: null,
       esForaneo: false,

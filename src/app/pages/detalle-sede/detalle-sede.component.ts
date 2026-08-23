@@ -538,7 +538,7 @@ private esCeldaVaciaOInerte(celda: any): boolean {
     });
   }
 
-  guardarEventoDesdeCalendario(evento: any): void {
+  /*guardarEventoDesdeCalendario(evento: any): void {
     if (this.esSoloRevisor()) return;
     const data = {
       año: this.anioActual,
@@ -554,7 +554,65 @@ private esCeldaVaciaOInerte(celda: any): boolean {
       next: () => this.obtenerEventos(this.sede.id, this.anioActual),
       error: (err) => console.error('❌ Error al guardar evento desde detalle-sede:', err)
     });
+  }*/
+  guardarEventoDesdeCalendario(evento: any): void {
+  if (this.esSoloRevisor()) return;
+
+  console.log('📅 Evento recibido desde calendario-sede:', evento);
+
+  const tipoNormalizado = String(evento.tipo || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  const data: any = {
+    año: this.anioActual,
+    sede: evento.sede,
+    fecha: evento.fecha,
+    tipo: evento.tipo,
+    descripcion: evento.descripcion || ''
+  };
+
+  // ✅ Media jornada: mandar horas sí o sí
+  if (tipoNormalizado === 'media jornada') {
+    if (!evento.horaInicio || !evento.horaFin) {
+      console.warn('⚠️ Media jornada sin horas:', evento);
+
+      Swal.fire(
+        '⚠️ Horario requerido',
+        'Para media jornada debes indicar hora de inicio y hora de fin.',
+        'warning'
+      );
+      return;
+    }
+
+    data.horaInicio = evento.horaInicio;
+    data.horaFin = evento.horaFin;
   }
+
+  console.log('📤 Data enviada al backend:', data);
+
+  const servicio = evento.editar
+    ? this.calendarioService.editarDia(data)
+    : this.calendarioService.agregarDia(data);
+
+  servicio.subscribe({
+    next: () => {
+      this.obtenerEventos(this.sede.id, this.anioActual);
+      Swal.fire('✅ Guardado', 'El evento se asignó correctamente.', 'success');
+    },
+    error: (err) => {
+      console.error('❌ Error al guardar evento desde detalle-sede:', err);
+
+      Swal.fire(
+        '❌ Error',
+        err?.error?.message || err?.error?.error || 'No se pudo asignar el evento.',
+        'error'
+      );
+    }
+  });
+}
 
   eliminarEventoDesdeCalendario(evento: any): void {
     if (this.esSoloRevisor()) return;
@@ -1666,7 +1724,7 @@ private _columnsForResumen(nodes: any[], pageWidthGuess?: number, preferredCols?
         }
 
         // 🧠 Jerarquía de estado
-        if (eventoDia) {
+       /* if (eventoDia) {
           estado = eventoDia.tipo || eventoDia.descripcion || '';
           entrada = salida = '—';
         } else if (tipo === 'asistencia' && datos?.horaEntrada && datos?.horaSalida) {
@@ -1677,7 +1735,59 @@ private _columnsForResumen(nodes: any[], pageWidthGuess?: number, preferredCols?
           estado = 'Asistencia Completa';
         } else if (!estado || estado === '—') {
           estado = 'Falta';
-        }
+        }*/
+       // 🧠 Jerarquía de estado
+// Regla clave:
+// Si el backend ya mandó asistencia real, el Excel NO debe pisarla con evento de sede.
+// Ejemplo: sábado con entrada/salida no debe convertirse en Descanso.
+
+const normalizarTextoExcel = (valor: any): string =>
+  String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+const entradaNormalizada = normalizarTextoExcel(entrada);
+const salidaNormalizada = normalizarTextoExcel(salida);
+const estadoNormalizado = normalizarTextoExcel(estado);
+
+const noEsMarcaReal = (valor: string): boolean =>
+  !valor ||
+  valor === '—' ||
+  valor === '-' ||
+  valor === 'descanso' ||
+  valor === 'falta';
+
+const tieneEntradaReal = !noEsMarcaReal(entradaNormalizada);
+const tieneSalidaReal = !noEsMarcaReal(salidaNormalizada);
+
+const tieneEstadoReal = [
+  'asistencia completa',
+  'salida automatica',
+  'registro incompleto',
+  'otra sede',
+  'asistencia manual',
+  'falta'
+].includes(estadoNormalizado);
+
+const tieneMarcaReal = tieneEntradaReal || tieneSalidaReal || tieneEstadoReal;
+
+if (tipo === 'asistencia' && datos?.horaEntrada && datos?.horaSalida) {
+  estado = 'Asistencia Manual';
+  entrada = datos.horaEntrada;
+  salida = datos.horaSalida;
+} else if (tieneMarcaReal) {
+  // Respetamos lo que ya calculó el backend.
+  // No se pisa con descanso/festivo/evento de sede.
+} else if (eventoDia) {
+  estado = eventoDia.tipo || eventoDia.descripcion || '';
+  entrada = salida = '—';
+} else if (!estado && entrada !== '—' && salida !== '—') {
+  estado = 'Asistencia Completa';
+} else if (!estado || estado === '—') {
+  estado = 'Falta';
+}
 
         const { clave: claveColor, texto: textoEstado } = normalizarEstado(estado);
         const color = this.coloresEstados[claveColor] || this.coloresEstados['—'];

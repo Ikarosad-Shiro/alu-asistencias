@@ -57,6 +57,7 @@ import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { AuthService } from './services/auth.service';
 import { AuthInterceptor } from './services/auth.interceptor';
 import { CalendarioUnificadoComponent } from './components/calendario-unificado/calendario-unificado.component';
+import { AcercaDeComponent } from './pages/acerca-de/acerca-de.component';
 
 @NgModule({
   declarations: [
@@ -75,7 +76,8 @@ import { CalendarioUnificadoComponent } from './components/calendario-unificado/
     DetalleSedeComponent,
     CalendarioTrabajadorVisualComponent,
     ModalDiaEspecialComponent,
-    CalendarioUnificadoComponent
+    CalendarioUnificadoComponent,
+    AcercaDeComponent
   ],
   imports: [
     BrowserModule,
