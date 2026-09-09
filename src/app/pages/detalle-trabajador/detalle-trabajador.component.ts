@@ -664,7 +664,7 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
   }
 
   // Modifica los métodos que procesan fechas para asegurar que siempre sean strings
-  private normalizarFecha(fecha: any): string {
+  /*private normalizarFecha(fecha: any): string {
     if (!fecha) return '';
 
     // Si ya es string en formato YYYY-MM-DD
@@ -679,8 +679,46 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
       console.error('Error al normalizar fecha:', fecha, e);
       return '';
     }
+  }*/
+private normalizarFecha(fecha: any): string {
+  if (!fecha) return '';
+
+  // Si ya viene como YYYY-MM-DD, conservarla tal cual
+  if (
+    typeof fecha === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(fecha)
+  ) {
+    return fecha;
   }
 
+  try {
+    let dt: DateTime;
+
+    if (typeof fecha === 'string') {
+      dt = DateTime.fromISO(fecha, {
+        zone: 'America/Mexico_City'
+      }).setZone('America/Mexico_City');
+    } else {
+      dt = DateTime.fromJSDate(
+        new Date(fecha)
+      ).setZone('America/Mexico_City');
+    }
+
+    if (!dt.isValid) {
+      return '';
+    }
+
+    return dt.toISODate() || '';
+
+  } catch (e) {
+    console.error(
+      '❌ Error al normalizar fecha:',
+      fecha,
+      e
+    );
+    return '';
+  }
+}
   async generarPDF(fechaInicio: Date, fechaFin: Date) {
     try {
       console.log('📅 Rango solicitado:', fechaInicio, fechaFin);
