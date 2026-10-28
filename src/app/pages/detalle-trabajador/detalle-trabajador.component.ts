@@ -1089,7 +1089,7 @@ private normalizarFecha(fecha: any): string {
 
   private buscarEvento(fecha: string, eventos: EventoEspecial[]): EventoEspecial | null {
     return eventos?.find((e: EventoEspecial) =>
-      e?.fecha && this.normalizarFecha(e.fecha) === fecha
+      e?.fecha && this.normalizarFechaCalendario(e.fecha) === fecha
     ) || null;
   }
 
