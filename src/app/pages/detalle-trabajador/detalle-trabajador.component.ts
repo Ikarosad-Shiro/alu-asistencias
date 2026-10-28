@@ -1,3 +1,4 @@
+//detlle-trabajador.component.ts
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -204,14 +205,14 @@ ngOnInit(): void {
           // 📅 Procesar eventos de sede
           this.eventosSede = (calendarioSede?.diasEspeciales || []).map((e: EventoEspecial) => ({
             ...e,
-            fecha: this.normalizarFecha(e.fecha),
+            fecha: this.normalizarFechaCalendario(e.fecha),
             descripcion: e.descripcion || e.tipo || ''
           }));
 
           // 📅 Procesar eventos del trabajador
           this.eventosTrabajador = (calendarioTrabajador?.diasEspeciales || []).map((e: EventoEspecial) => ({
             ...e,
-            fecha: this.normalizarFecha(e.fecha),
+            fecha: this.normalizarFechaCalendario(e.fecha),
             descripcion: e.descripcion || e.tipo || ''
           }));
 
@@ -328,7 +329,41 @@ get historialOrdenado(): HistorialSede[] {
     return bi - ai; // más reciente primero
   });
 }
+// ======================================================
+// 📅 FECHAS DE CALENDARIO
+// Vacaciones, permisos, descansos, asistencia manual, etc.
+// Se conserva el YYYY-MM-DD SIN aplicar zona horaria.
+// ======================================================
+private normalizarFechaCalendario(fecha: any): string {
+  if (!fecha) return '';
 
+  // Ejemplos:
+  // 2026-10-07
+  // 2026-10-07T00:00:00.000Z
+  // 2026-10-07T12:00:00.000Z
+  //
+  // Todos deben representar:
+  // 2026-10-07
+
+  if (typeof fecha === 'string') {
+    const match = fecha.match(/^(\d{4}-\d{2}-\d{2})/);
+
+    if (match) {
+      return match[1];
+    }
+  }
+
+  // Respaldo por si alguna vez llega como Date
+  if (fecha instanceof Date && !isNaN(fecha.getTime())) {
+    const anio = fecha.getUTCFullYear();
+    const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getUTCDate()).padStart(2, '0');
+
+    return `${anio}-${mes}-${dia}`;
+  }
+
+  return '';
+}
 // 👉 Normaliza y asegura que el campo nombre esté si faltara
 private normalizarYOrdenarHistorialEnTrabajador(): void {
   if (!Array.isArray(this.trabajador?.historialSedes)) return;
@@ -401,13 +436,14 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
 
             this.eventosSede = (calendarioSede?.diasEspeciales || []).map((e: EventoEspecial) => ({
               ...e,
-              fecha: this.normalizarFecha(e.fecha),
+              //fecha: this.normalizarFecha(e.fecha),
+              fecha: this.normalizarFechaCalendario(e.fecha),
               descripcion: e.descripcion || e.tipo || ''
             }));
 
             this.eventosTrabajador = (calendarioTrabajador?.diasEspeciales || []).map((e: EventoEspecial) => ({
               ...e,
-              fecha: this.normalizarFecha(e.fecha),
+              fecha: this.normalizarFechaCalendario(e.fecha),
               descripcion: e.descripcion || e.tipo || ''
             }));
           },
@@ -522,7 +558,7 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
           (calendario: any) => {
             this.eventosTrabajador = (calendario?.diasEspeciales || []).map((e: any) => ({
               ...e,
-              fecha: this.normalizarFecha(e.fecha)
+              fecha: this.normalizarFechaCalendario(e.fecha)
             }));
           },
           (error: any) => {
@@ -536,7 +572,8 @@ private normalizarYOrdenarHistorialEnTrabajador(): void {
   actualizarEventosTrabajadorDesdeVisual(nuevosEventos: EventoEspecial[]) {
     this.eventosTrabajador = nuevosEventos.map(e => ({
       ...e,
-      fecha: new Date(e.fecha).toISOString().split('T')[0]
+      //fecha: new Date(e.fecha).toISOString().split('T')[0]
+      fecha: this.normalizarFechaCalendario(e.fecha)
     }));
   }
 
